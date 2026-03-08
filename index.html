@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus Game Launcher</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo"><i class="fa-solid fa-ghost"></i> <span id="sidebarLogoName">Nexus Launcher</span></div>
+        <div class="nav-item active" data-target="libraryArea">
+            <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
+        </div>
+        <div class="nav-item" data-target="favoritesArea">
+            <i class="fa-solid fa-heart"></i> <span data-i18n="nav_favorites">Favorites</span>
+        </div>
+        <div class="nav-item" data-target="settingsArea">
+            <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
+        </div>
+        
+        <div class="library-stats">
+            <span data-i18n="total_games" style="font-size: 13px; font-weight:normal;">Total Installed Games</span>
+            <span id="gameCountDisplay" style="font-size: 20px;">0</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar" id="mainTopbar">
+            <div class="search-box">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Search your library...">
+            </div>
+            <button id="addGameBtn" class="add-btn"><i class="fa-solid fa-folder-plus"></i> <span data-i18n="btn_add_game">Add Game</span></button>
+        </div>
+
+        <div id="libraryArea" class="page-area active">
+            <div class="games-grid" id="gamesContainer"></div>
+        </div>
+
+        <div id="favoritesArea" class="page-area">
+            <h2 style="margin-top:0; color: var(--text-main);"><i class="fa-solid fa-heart" style="color:var(--accent);"></i> <span data-i18n="title_favorites">My Favorites</span></h2>
+            <div class="games-grid" id="favoritesContainer"></div>
+        </div>
+
+        <div id="settingsArea" class="page-area">
+            <div class="settings-container">
+                <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
+                
+                <div class="form-group">
+                    <label data-i18n="set_app_name">Launcher Name (Logo):</label>
+                    <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
+                </div>
+
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label data-i18n="set_theme">Theme:</label>
+                        <select id="themeSetting" class="custom-select">
+                            <option value="dark" data-i18n="theme_dark">Dark</option>
+                            <option value="light" data-i18n="theme_light">Light</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="set_lang">Language:</label>
+                        <select id="langSetting" class="custom-select">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="set_grid">Grid Size:</label>
+                        <select id="gridSizeSetting" class="custom-select">
+                            <option value="200px" data-i18n="grid_small">Small</option>
+                            <option value="260px" data-i18n="grid_medium" selected>Medium</option>
+                            <option value="320px" data-i18n="grid_large">Large</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="save-settings-btn" id="saveGeneralSettings"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_settings">Save Settings</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <h2><i class="fa-solid fa-gamepad"></i> <span data-i18n="modal_title">Game Details</span></h2>
+            
+            <div class="form-group">
+                <label data-i18n="modal_game_name">Game Name (for Steam Search):</label>
+                <div class="input-with-btn"><input type="text" id="gameNameInput"></div>
+            </div>
+            
+            <div class="form-group">
+                <label data-i18n="modal_game_path">Executable Path (.exe or .bat):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="gamePathInput" readonly>
+                    <button id="changePathBtn"><i class="fa-solid fa-folder"></i> <span data-i18n="modal_btn_change">Browse</span></button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label data-i18n="modal_custom_poster">Custom Poster (Optional):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="customPosterInput" readonly placeholder="Leave empty for auto search">
+                    <button id="customImageBtn"><i class="fa-solid fa-image"></i> <span data-i18n="modal_btn_image">Select</span></button>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button id="saveGameModalBtn" class="save-btn"><i class="fa-solid fa-check"></i> <span data-i18n="modal_btn_save">Save & Search</span></button>
+                <button id="cancelModalBtn" class="cancel-btn" data-i18n="modal_btn_cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Localization Dictionary
+        const dictionary = {
+            ar: {
+                nav_library: "مكتبة الألعاب", nav_favorites: "المفضلة", nav_settings: "الإعدادات",
+                total_games: "إجمالي الألعاب المثبتة", search_placeholder: "ابحث في مكتبتك...",
+                btn_add_game: "إضافة لعبة", title_favorites: "ألعابي المفضلة", title_settings: "إعدادات اللانشر",
+                set_app_name: "اسم اللانشر (اللوجو):", set_theme: "المظهر (Theme):", theme_dark: "مظلم (Dark)", theme_light: "فاتح (Light)",
+                set_lang: "اللغة (Language):", set_grid: "حجم البطاقات (Grid Size):", grid_small: "صغير (Small)", grid_medium: "متوسط (Medium)", grid_large: "كبير (Large)",
+                btn_save_settings: "حفظ الإعدادات", modal_title: "بيانات اللعبة", modal_game_name: "اسم اللعبة (للبحث في Steam):",
+                modal_game_path: "مسار الملف (.exe أو .bat):", modal_btn_change: "تغيير", modal_custom_poster: "صورة الغلاف (اختياري - من جهازك):", modal_btn_image: "تحديد",
+                modal_btn_save: "حفظ التعديلات", modal_btn_cancel: "إلغاء",
+                copy: "نسخ",
+                paste: "لصق",
+                cut: "قص",
+            },
+            en: {
+                nav_library: "Game Library", nav_favorites: "Favorites", nav_settings: "Settings",
+                total_games: "Total Installed Games", search_placeholder: "Search your library...",
+                btn_add_game: "Add Game", title_favorites: "My Favorites", title_settings: "Launcher Settings",
+                set_app_name: "Launcher Name (Logo):", set_theme: "Theme:", theme_dark: "Dark", theme_light: "Light",
+                set_lang: "Language:", set_grid: "Grid Size:", grid_small: "Small", grid_medium: "Medium", grid_large: "Large",
+                btn_save_settings: "Save Settings", modal_title: "Game Details", modal_game_name: "Game Name (for Steam Search):",
+                modal_game_path: "Executable Path (.exe or .bat):", modal_btn_change: "Browse", modal_custom_poster: "Custom Poster (Optional):", modal_btn_image: "Select",
+                modal_btn_save: "Save Details", modal_btn_cancel: "Cancel",
+                copy: "Copy",
+                paste: "Paste",
+                cut: "Cut",
+            }
+        };
+
+        // Apply Language Function
+        function applyLanguage(lang) {
+            document.getElementById('htmlRoot').dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.body.style.fontFamily = lang === 'ar' ? "'Cairo', sans-serif" : "'Poppins', sans-serif";
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dictionary[lang][key]) el.innerText = dictionary[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (dictionary[lang][key]) el.placeholder = dictionary[lang][key];
+            });
+        }
+
+        // Load Settings on Startup
+        const userSettings = {
+            appName: localStorage.getItem('appName') || 'Nexus Launcher',
+            theme: localStorage.getItem('theme') || 'dark',
+            lang: localStorage.getItem('lang') || 'ar',
+            gridSize: localStorage.getItem('gridSize') || '260px' 
+        };
+
+        // Initialize UI with saved settings
+        document.getElementById('sidebarLogoName').innerText = userSettings.appName;
+        document.getElementById('appNameSetting').value = userSettings.appName;
+        document.getElementById('themeSetting').value = userSettings.theme;
+        if (userSettings.theme === 'light') document.body.classList.add('light-mode');
+        document.getElementById('langSetting').value = userSettings.lang;
+        applyLanguage(userSettings.lang);
+        document.getElementById('gridSizeSetting').value = userSettings.gridSize;
+        document.documentElement.style.setProperty('--grid-size', userSettings.gridSize);
+
+        // Save General Settings
+        document.getElementById('saveGeneralSettings').addEventListener('click', () => {
+            const newName = document.getElementById('appNameSetting').value;
+            const newTheme = document.getElementById('themeSetting').value;
+            const newLang = document.getElementById('langSetting').value;
+            const newGrid = document.getElementById('gridSizeSetting').value;
+
+            localStorage.setItem('appName', newName);
+            localStorage.setItem('theme', newTheme);
+            localStorage.setItem('lang', newLang);
+            localStorage.setItem('gridSize', newGrid);
+
+            document.getElementById('sidebarLogoName').innerText = newName;
+            if (newTheme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+            document.documentElement.style.setProperty('--grid-size', newGrid);
+            applyLanguage(newLang);
+
+            alert(newLang === 'ar' ? "تم حفظ الإعدادات بنجاح!" : "Settings saved successfully!");
+        });
+
+        // Application State
+        const gamesContainer = document.getElementById('gamesContainer');
+        const favoritesContainer = document.getElementById('favoritesContainer');
+        const editModal = document.getElementById('editModal');
+        const gameNameInput = document.getElementById('gameNameInput');
+        const gamePathInput = document.getElementById('gamePathInput');
+        const customPosterInput = document.getElementById('customPosterInput');
+        
+        let tempGamePath = ""; 
+        let editingGameId = null; 
+        let allGamesData = []; 
+        let currentTab = 'libraryArea'; 
+
+        // Create Game Card Element
+        function createGameCard(game, index) {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.style.animationDelay = `${index * 0.03}s`; 
+            card.setAttribute('data-title', game.name.toLowerCase());
+            
+            const isFav = game.isFavorite ? 'active-fav' : '';
+            const favIcon = game.isFavorite ? 'fa-solid' : 'fa-regular';
+
+            card.innerHTML = `
+                <div class="game-actions">
+                    <button class="action-btn fav-btn ${isFav}" title="Favorite"><i class="${favIcon} fa-heart"></i></button>
+                    <button class="action-btn edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-btn delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <img class="game-poster" src="${game.poster || 'https://via.placeholder.com/260x390/1e293b/FFFFFF?text=' + encodeURIComponent(game.name)}" alt="${game.name}">
+                <div class="game-info"><div class="game-title">${game.name}</div></div>
+            `;
+            
+            // Launch Game (Clicking anywhere on the poster except action buttons)
+            card.addEventListener('click', (e) => {
+                if(!e.target.closest('.action-btn')) {
+                    window.api.launchGame(game.path);
+                }
+            });
+
+            // Delete Game Action
+            card.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent launching game
+                const msg = userSettings.lang === 'ar' ? `هل تريد بالتأكيد حذف "${game.name}"؟` : `Delete "${game.name}"?`;
+                if (confirm(msg)) {
+                    await window.api.deleteGame(game.id);
+                    renderGames();
+                }
+            });
+
+            // Edit Game Action
+            card.querySelector('.edit-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent launching game
+                editingGameId = game.id; 
+                tempGamePath = game.path;
+                gameNameInput.value = game.name;
+                gamePathInput.value = game.path; 
+                
+                customPosterInput.value = "";
+                if(game.poster && game.poster.startsWith('file:///')) {
+                    customPosterInput.value = decodeURIComponent(game.poster.replace('file:///', ''));
+                }
+
+                editModal.style.display = 'flex';
+            });
+
+            // Toggle Favorite Action
+            card.querySelector('.fav-btn').addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent launching game
+                game.isFavorite = !game.isFavorite; // Toggle boolean
+                await window.api.updateGame(game); // Save to DB
+                renderGames(); // Refresh UI
+            });
+
+            return card;
+        }
+
+        // Render all games to the DOM
+        async function renderGames() {
+            gamesContainer.innerHTML = ''; 
+            favoritesContainer.innerHTML = '';
+            
+            try {
+                allGamesData = await window.api.getGames();
+                document.getElementById('gameCountDisplay').innerText = allGamesData.length;
+
+                allGamesData.forEach((game, index) => {
+                    gamesContainer.appendChild(createGameCard(game, index));
+                    if(game.isFavorite) {
+                        favoritesContainer.appendChild(createGameCard(game, index));
+                    }
+                });
+            } catch (error) {
+                console.error("Error loading games:", error);
+            }
+        }
+
+        // Sidebar Navigation Logic
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.page-area').forEach(page => page.classList.remove('active'));
+                
+                const targetArea = this.getAttribute('data-target');
+                document.getElementById(targetArea).classList.add('active');
+                currentTab = targetArea;
+                document.getElementById('mainTopbar').style.display = targetArea === 'settingsArea' ? 'none' : 'flex';
+            });
+        });
+
+        // Search Box Logic
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const activeContainer = currentTab === 'libraryArea' ? gamesContainer : favoritesContainer;
+            const cards = activeContainer.querySelectorAll('.game-card');
+            
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title');
+                card.style.display = title.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Add Game Button Logic
+        document.getElementById('addGameBtn').addEventListener('click', async () => {
+            const selectedPath = await window.api.selectGame();
+            if (selectedPath) {
+                editingGameId = null; 
+                tempGamePath = selectedPath;
+                gamePathInput.value = selectedPath; 
+                gameNameInput.value = selectedPath.split('\\').pop().split('.')[0];
+                customPosterInput.value = ""; 
+                editModal.style.display = 'flex';
+            }
+        });
+
+        // Change Path Button (Inside Modal)
+        document.getElementById('changePathBtn').addEventListener('click', async () => {
+            const newPath = await window.api.selectGame();
+            if (newPath) { 
+                tempGamePath = newPath; 
+                gamePathInput.value = newPath; 
+            }
+        });
+
+        // Select Custom Poster Image
+        document.getElementById('customImageBtn').addEventListener('click', async () => {
+            const imagePath = await window.api.selectImage();
+            if (imagePath) { 
+                customPosterInput.value = imagePath; 
+            }
+        });
+
+        // Close Modal
+        document.getElementById('cancelModalBtn').addEventListener('click', () => editModal.style.display = 'none');
+
+        // Save Game (Add/Update)
+        document.getElementById('saveGameModalBtn').addEventListener('click', async () => {
+            const finalName = gameNameInput.value.trim();
+            if (!finalName || !tempGamePath) return; 
+
+            const btn = document.getElementById('saveGameModalBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            let finalPoster = "";
+            let customImage = customPosterInput.value.trim();
+
+            try {
+                // Determine Poster Source
+                if (customImage !== "") {
+                    finalPoster = "file:///" + customImage.replace(/\\/g, '/');
+                } else {
+                    // Try fetching from Steam API
+                    const steamData = await window.api.fetchGameInfo(finalName);
+                    if (steamData && steamData.poster) {
+                        finalPoster = steamData.poster;
+                    } else if (editingGameId) {
+                        // Keep old poster if fetch fails during edit
+                        const existingGame = allGamesData.find(g => g.id === editingGameId);
+                        if (existingGame) finalPoster = existingGame.poster || "";
+                    }
+                }
+                
+                // Preserve favorite status during edits
+                let existingFavStatus = false;
+                if (editingGameId) {
+                    const existingGame = allGamesData.find(g => g.id === editingGameId);
+                    if (existingGame) existingFavStatus = existingGame.isFavorite || false;
+                }
+                
+                const gameData = {
+                    id: editingGameId || Date.now(),
+                    name: finalName,
+                    path: tempGamePath, 
+                    poster: finalPoster,
+                    isFavorite: existingFavStatus 
+                };
+                
+                // Save to database
+                if (editingGameId) {
+                    await window.api.updateGame(gameData);
+                } else {
+                    await window.api.saveGame(gameData);
+                }
+            } catch (error) {
+                console.error("Error saving game:", error);
+                alert("حدث خطأ أثناء حفظ اللعبة. تأكد من الاتصال بالإنترنت.");
+            } finally {
+                // Always restore button state and close modal
+                editModal.style.display = 'none';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                renderGames(); 
+            }
+        });
+
+        // Initial Render
+        renderGames();
+    </script>
+</body>
+</html>
