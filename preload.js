@@ -8,5 +8,7 @@ contextBridge.exposeInMainWorld('api', {
     updateGame: (game) => ipcRenderer.invoke('db:updateGame', game),
     deleteGame: (id) => ipcRenderer.invoke('db:deleteGame', id),
     launchGame: (path) => ipcRenderer.send('game:launch', path),
-    fetchGameInfo: (name) => ipcRenderer.invoke('api:fetchGameInfo', name)
+    fetchGameInfo: (name) => ipcRenderer.invoke('api:fetchGameInfo', name),
+    fetchGameDetails: (name) => ipcRenderer.invoke('api:fetchGameDetails', name),
+    openExternal: (url) => ipcRenderer.send('shell:openExternal', url)
 });
