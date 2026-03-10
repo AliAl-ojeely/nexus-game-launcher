@@ -79,7 +79,7 @@ npm start
 
 ---
 
-## 🏗 Building the Installer
+## Building the Installer
 
 To generate a production-ready `.exe` installer for Windows:
 
