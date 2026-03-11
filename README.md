@@ -1,5 +1,3 @@
-
-
 # Nexus Game Launcher `v1.5.0`
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron)](https://www.electronjs.org/)
@@ -7,11 +5,23 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)](https://github.com/AliAl-ojeely)
 
+<br>
+<p align="center">
+  <img src="assets/main-library-en.png" alt="Nexus Game Launcher Main Interface" width="800">
+</p>
+<br>
+
 **Nexus Game Launcher** is a sophisticated desktop application built with the **Electron** framework. It provides a cinematic, organized, and high-performance interface to manage and launch locally installed PC games, bridging the gap between your local files and the **Steam Store** ecosystem.
 
 ---
 
 ## What's New in v1.5.0
+
+We've overhauled the game details experience to be more immersive than ever.
+
+<p align="center">
+  <img src="assets/game-details-cinematic.png" alt="Cinematic Game Details View" width="800">
+</p>
 
 - **Cinematic Hero Banners:** Dynamic background rendering in the game details page with medium-opacity overlays for a premium look.
 - **Enhanced Steam Integration:** Automatically fetches game metadata including descriptions, developers, publishers, and release dates.
@@ -21,7 +31,24 @@
 
 ---
 
-## Features
+## Features Snapshot
+
+Explore the powerful organization and customization features of Nexus Launcher.
+
+### Organize Your Way
+Effortlessly manage your collection with dedicated views for your entire library and favorites.
+
+<p align="center">
+  <img src="assets/favorites-view.png" alt="Favorites View" width="800">
+</p>
+
+### Full Customization & Localization
+Tailor the experience to your preference with dark mode, adjustable grid sizes, and full **Arabic (RTL)** support.
+
+<p align="center" style="display: flex; justify-content: center; gap: 10px;">
+  <img src="assets/settings-page.png" alt="Settings Page" width="49%" style="max-width: 400px;">
+  <img src="assets/main-library-ar.png" alt="Arabic RTL Interface" width="49%" style="max-width: 400px;">
+</p>
 
 - **Local Library Management:** Seamlessly add and organize executables (`.exe`, `.bat`, `.lnk`).
 - **Hybrid Cover System:** Choose between automatic Steam API retrieval or manual custom poster selection.
@@ -52,69 +79,32 @@ To get a local copy up and running, follow these steps:
 1. **Clone the repository:**
    ```bash
    git clone [https://github.com/AliAl-ojeely/mygamelauncher.git](https://github.com/AliAl-ojeely/mygamelauncher.git)
+Navigate to the directory:
 
-```
-
-2. **Navigate to the directory:**
-```bash
+Bash
 cd mygamelauncher
+Install dependencies:
 
-```
-
-
-3. **Install dependencies:**
-```bash
+Bash
 npm install
+Run the application:
 
-```
-
-
-4. **Run the application:**
-```bash
+Bash
 npm start
+Building the Installer
+To generate a production-ready .exe installer for Windows:
 
-```
-
-
-
----
-
-## Building the Installer
-
-To generate a production-ready `.exe` installer for Windows:
-
-```bash
+Bash
 npm run dist
+The output will be located in the /dist folder.
 
-```
+Developer
+Ali Nasser Al-ojeely (Mr.Ghost)
+Junior Software Developer | Frontend Specialist
 
-The output will be located in the `/dist` folder.
+Email: alialojeely@gmail.com
 
----
+GitHub: @AliAl-ojeely
 
-## Developer
-
-**Ali Nasser Al-ojeely (Mr.Ghost)** Junior Software Developer | Frontend Specialist
-
-* **Email:** [alialojeely@gmail.com](mailto:alialojeely@gmail.com)
-* **GitHub:** [@AliAl-ojeely](https://github.com/AliAl-ojeely)
-
----
-
-## License
-
-Distributed under the **MIT License**. See `LICENSE` for more information.
-
-```
-
----
-
-### Why this is better for your GitHub:
-* **Visual Appeal:** The badges at the top make the project look "Official."
-* **Clear Value Proposition:** It clearly explains that the app uses **Steam API**, which is a high-level skill for a junior developer to showcase.
-* **v1.5.0 Focus:** Highlighting the new features (Banners, Slideshow, Dev Modal) proves you are actively maintaining the project.
-* **Technical Sections:** The "Technology Stack" and "Installation" sections are exactly what recruiters look for in a portfolio.
-
----
-
-```
+License
+Distributed under the MIT License. See LICENSE for more information.
