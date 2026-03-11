@@ -108,39 +108,39 @@ Customize the experience with theme settings, adjustable layouts, and full **Ara
 
 ---
 
-# Installation & Development
+## Installation & Development
 
 Follow these steps to run the project locally.
 
 ---
 
-# Clone the Repository
+## Clone the Repository
 
 ```bash
 git clone https://github.com/AliAl-ojeely/mygamelauncher.git
 
 ```
 
-# Navigate to the Project
+## Navigate to the Project
 
 ```bash
 cd mygamelauncher
 
 ```
 
-# Install Dependencies
+## Install Dependencies
 
 ```bash
 npm install
 ```
 
-# Run the Application
+## Run the Application
 
 ```bash
 npm start
 ```
 
-# Building the Windows Installer
+## Building the Windows Installer
 
 To generate a production-ready .exe installer:
 ```bash
@@ -149,7 +149,7 @@ npm run dist
 The compiled installer will be located in the /dist directory.
 
 ---
-# Developer
+## Developer
 
 Ali Nasser Al-ojeely
 Junior Software Developer | Frontend Specialist
