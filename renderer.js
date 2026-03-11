@@ -180,48 +180,73 @@ async function openGameDetailsPage(game) {
     const banner = document.getElementById('detailsBanner');
     banner.style.backgroundImage = `url('${game.poster}')`; 
 
-    // Reset Content State
-    document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching from Steam...';
-    document.getElementById('detailsDev').innerText = '...';
-    document.getElementById('detailsPub').innerText = '...';
-    document.getElementById('detailsRelease').innerText = '...';
-    
     const mediaContainer = document.getElementById('detailsMediaContainer');
     const reqMin = document.getElementById('reqMin');
     const reqRec = document.getElementById('reqRec');
-    
-    if(mediaContainer) mediaContainer.innerHTML = '';
-    if(reqMin) reqMin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    if(reqRec) reqRec.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-    // Fetch Details Live
-    const details = await window.api.fetchGameDetails(game.name);
-    
-    if (details) {
+    // Variable to hold the details we will finally display
+    let detailsToDisplay = null;
+
+    // --- CACHE-FIRST LOGIC START ---
+    if (game.fetchedDetails) {
+        // Data is already saved locally. Load instantly without loading spinners!
+        detailsToDisplay = game.fetchedDetails;
+    } else {
+        // Data not found locally. Show loading state and fetch from API.
+        document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching from Steam...';
+        document.getElementById('detailsDev').innerText = '...';
+        document.getElementById('detailsPub').innerText = '...';
+        document.getElementById('detailsRelease').innerText = '...';
+        
+        if(mediaContainer) mediaContainer.innerHTML = '';
+        if(reqMin) reqMin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        if(reqRec) reqRec.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        // Fetch Details Live
+        const details = await window.api.fetchGameDetails(game.name);
+        
+        if (details) {
+            detailsToDisplay = details;
+            
+            // Save the newly fetched data to games.json via main process
+            if (window.api.saveGameDetails) {
+                await window.api.saveGameDetails(game.id, detailsToDisplay);
+            }
+            
+            // Update the local variable so it opens instantly next time in this session
+            game.fetchedDetails = detailsToDisplay;
+        }
+    }
+    // --- CACHE-FIRST LOGIC END ---
+
+    // Render Data to UI
+    if (detailsToDisplay) {
         // Update Hero Image if high-res background exists
-        if(details.background) {
-            banner.style.backgroundImage = `url('${details.background}')`;
+        if(detailsToDisplay.background) {
+            banner.style.backgroundImage = `url('${detailsToDisplay.background}')`;
         }
 
-        document.getElementById('detailsDescription').innerHTML = details.description;
-        document.getElementById('detailsDev').innerText = details.developer;
-        document.getElementById('detailsPub').innerText = details.publisher;
-        document.getElementById('detailsRelease').innerText = details.releaseDate;
+        document.getElementById('detailsDescription').innerHTML = detailsToDisplay.description;
+        document.getElementById('detailsDev').innerText = detailsToDisplay.developer;
+        document.getElementById('detailsPub').innerText = detailsToDisplay.publisher;
+        document.getElementById('detailsRelease').innerText = detailsToDisplay.releaseDate;
 
         if (mediaContainer) {
+            mediaContainer.innerHTML = ''; // Clear container just in case
+            
             // Render Trailer
-            if (details.media.trailer) {
+            if (detailsToDisplay.media.trailer) {
                 mediaContainer.innerHTML += `
-                    <video controls class="media-main-video" poster="${details.background || game.poster}">
-                        <source src="${details.media.trailer}" type="video/webm">
-                        <source src="${details.media.trailer.replace('.webm', '.mp4')}" type="video/mp4">
+                    <video controls class="media-main-video" poster="${detailsToDisplay.background || game.poster}">
+                        <source src="${detailsToDisplay.media.trailer}" type="video/webm">
+                        <source src="${detailsToDisplay.media.trailer.replace('.webm', '.mp4')}" type="video/mp4">
                     </video>`;
             }
             // Render Screenshots Grid with Slideshow functionality
-            if (details.media.screenshots.length > 0) {
-                currentScreenshotsList = details.media.screenshots;
+            if (detailsToDisplay.media.screenshots && detailsToDisplay.media.screenshots.length > 0) {
+                currentScreenshotsList = detailsToDisplay.media.screenshots;
                 let ssHtml = '<div class="screenshots-grid">';
-                details.media.screenshots.forEach((ss, index) => {
+                detailsToDisplay.media.screenshots.forEach((ss, index) => {
                     ssHtml += `<img src="${ss}" alt="Screenshot" onclick="openLightbox(${index})">`;
                 });
                 ssHtml += '</div>';
@@ -230,11 +255,15 @@ async function openGameDetailsPage(game) {
         }
 
         if (reqMin && reqRec) {
-            reqMin.innerHTML = details.systemRequirements.minimum;
-            reqRec.innerHTML = details.systemRequirements.recommended;
+            reqMin.innerHTML = detailsToDisplay.systemRequirements.minimum || "N/A";
+            reqRec.innerHTML = detailsToDisplay.systemRequirements.recommended || "N/A";
         }
     } else {
+        // Handle case where API fails and no local cache exists
         document.getElementById('detailsDescription').innerText = "Game not found. Please check the name.";
+        document.getElementById('detailsDev').innerText = "N/A";
+        document.getElementById('detailsPub').innerText = "N/A";
+        document.getElementById('detailsRelease').innerText = "N/A";
     }
 }
 

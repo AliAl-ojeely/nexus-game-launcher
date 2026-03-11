@@ -146,6 +146,32 @@ ipcMain.handle('db:deleteGame', async (event, gameId) => {
     } catch (err) { return false; }
 });
 
+// Listen for requests to save fetched game details locally
+ipcMain.handle('save-game-details', async (event, gameId, details) => {
+    try {
+        // Read the current games.json file using the correct 'dbPath' variable
+        const data = fs.readFileSync(dbPath, 'utf-8');
+        let games = JSON.parse(data);
+
+        // Find the index of the specific game by ID
+        const gameIndex = games.findIndex(g => g.id === gameId);
+
+        if (gameIndex !== -1) {
+            // Add the new 'fetchedDetails' object to the existing game data
+            games[gameIndex].fetchedDetails = details;
+
+            // Write the updated array back to games.json using 'dbPath'
+            fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
+            return { success: true };
+        }
+        return { success: false, message: "Game not found" };
+
+    } catch (error) {
+        console.error("Error saving game details:", error);
+        return { success: false, error: error.message };
+    }
+});
+
 // ==========================================
 // STEAM API INTEGRATION (Live Fetching)
 // ==========================================
