@@ -379,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     document.querySelectorAll('#devModal a').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -389,4 +388,93 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+});
+
+// --- Keyboard & Mouse Shortcuts ---
+
+// Helper function to handle going back to the library
+function handleGoBack() {
+    const detailsArea = document.getElementById('gameDetailsArea');
+    if (detailsArea && detailsArea.classList.contains('active')) {
+        document.getElementById('backToLibraryBtn').click();
+    }
+}
+
+// 1. Keyboard Shortcuts
+document.addEventListener('keydown', (event) => {
+    // Prevent shortcuts from triggering if typing in the search bar or inputs
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    // Check if the lightbox is currently open
+    const lightbox = document.getElementById('imageLightbox');
+    const isImageViewerOpen = lightbox && lightbox.classList.contains('show'); 
+
+    switch(event.key) {
+        case 'ArrowRight':
+            if (isImageViewerOpen) {
+                document.getElementById('nextLightbox').click(); 
+            }
+            break;
+            
+        case 'ArrowLeft':
+            if (isImageViewerOpen) {
+                document.getElementById('prevLightbox').click(); 
+            }
+            break;
+            
+        case 'Escape':
+            if (isImageViewerOpen) {
+                document.getElementById('closeLightbox').click(); 
+            } else {
+                handleGoBack();
+            }
+            break;
+            
+        case 'Backspace':
+            if (!isImageViewerOpen) {
+                handleGoBack();
+            }
+            break;
+            
+        case 'Enter':
+            // Optional: Start the game directly if on details page
+            const detailsArea = document.getElementById('gameDetailsArea');
+            if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) {
+                document.getElementById('detailsPlayBtn').click();
+            }
+            break;
+    }
+});
+
+// 2. Gaming Mouse Extra Buttons
+document.addEventListener('mouseup', (event) => {
+    // event.button === 3 is the "Back" side button on gaming mouses
+    if (event.button === 3) {
+        event.preventDefault();
+        
+        const lightbox = document.getElementById('imageLightbox');
+        const isImageViewerOpen = lightbox && lightbox.classList.contains('show');
+        
+        if (isImageViewerOpen) {
+            document.getElementById('closeLightbox').click();
+        } else {
+            handleGoBack();
+        }
+    }
+});
+
+// 3. Mouse Wheel in Lightbox
+document.addEventListener('wheel', (event) => {
+    const lightbox = document.getElementById('imageLightbox');
+    const isImageViewerOpen = lightbox && lightbox.classList.contains('show');
+
+    if (isImageViewerOpen) {
+        if (event.deltaY > 0) {
+            document.getElementById('nextLightbox').click();
+        } else if (event.deltaY < 0) {
+            document.getElementById('prevLightbox').click();
+        }
+    }
 });
