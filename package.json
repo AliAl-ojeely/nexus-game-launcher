@@ -1,6 +1,6 @@
 {
   "name": "mygamelauncher",
-  "version": "1.5.0",
+  "version": "1.5.5",
   "description": "A sleek game launcher for managing PC titles",
   "author": "ali al-ojeely <alialojeely@gmail.com>",
   "main": "main.js",
