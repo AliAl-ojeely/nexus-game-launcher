@@ -9,7 +9,6 @@ jobs:
 
     strategy:
       matrix:
-        # هنا الخطأ السابق: يجب إضافة macos-latest للقائمة
         os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
