@@ -191,7 +191,7 @@ npm start
 # Building for Production
 **Windows (.exe)**
 ```bash
-npm run dist-win
+npm run dist
 ```
 **Linux (AppImage)**
 ```bash
