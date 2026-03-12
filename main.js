@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, dialog, shell, protocol, Menu } = require('
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
+const os = require('os');
+const { spawn } = require('child_process');
+
 
 // --- Path Settings ---
 const userDataPath = app.getPath('userData');
@@ -74,31 +77,103 @@ app.on('window-all-closed', () => {
 // IPC HANDLERS (System & Shell Operations)
 // ==========================================
 
-// 1. تشغيل الألعاب (.exe)
-ipcMain.on('game:launch', async (event, gamePath) => {
+// 1. Launch Games (.exe / Native)
+ipcMain.on('game:launch', async (event, gamePath, showFPS) => {
     if (!gamePath) return;
-    const error = await shell.openPath(gamePath);
-    if (error) {
-        dialog.showErrorBox("Launch Error", `Could not start the game. Path might be incorrect.\nError: ${error}`);
+
+    const isLinux = process.platform === 'linux';
+    const isExe = gamePath.toLowerCase().endsWith('.exe');
+
+    if (isLinux && isExe) {
+        console.log(`[Nexus] Preparing to launch Windows game via Proton: ${gamePath}`);
+
+        const protonVersion = 'GE-Proton10-32'; 
+        const userHome = os.homedir();
+        const appData = app.getPath('userData');
+
+        const protonPath = path.join(userHome, 'Nexus-Proton', protonVersion, 'proton');
+        const compatDataPath = path.join(appData, 'nexus_proton_prefix');
+
+        // Create prefix directory if missing
+        if (!fs.existsSync(compatDataPath)) {
+            fs.mkdirSync(compatDataPath, { recursive: true });
+        }
+
+        const gameDir = path.dirname(gamePath);
+
+        const processEnv = Object.assign({}, process.env, {
+            STEAM_COMPAT_DATA_PATH: compatDataPath,
+            STEAM_COMPAT_CLIENT_INSTALL_PATH: path.join(userHome, 'Nexus-Proton'),
+            
+            // Graphics: Support for NVIDIA/AMD Hybrid Graphics
+            __NV_PRIME_RENDER_OFFLOAD: "1",
+            __VK_LAYER_NV_optimus: "NVIDIA_only",
+            __GLX_VENDOR_LIBRARY_NAME: "nvidia",
+
+            // Compatibility: Combined Overrides
+            // dxgi & d3d11 for Proton stability, xaudio2 for sound, mscoree/mshtml to skip popups
+            WINEDLLOVERRIDES: "mscoree=d;mshtml=d;dxgi=n,b;d3d11=n,b;xaudio2_7=n,b",
+            
+            PROTON_NO_ESYNC: "1", 
+            PROTON_FORCE_LARGE_ADDRESS_AWARE: "1", 
+            PIPEWIRE_LATENCY: "128/48000",
+            DXVK_HUD: showFPS ? "compiler,fps" : "0",
+            GALLIMU_HUD: showFPS ? "simple,fps" : "",
+            VKD3D_CONFIG: "dxr",
+        });
+
+        try {
+            const gameProcess = spawn(protonPath, ['run', gamePath], {
+                env: processEnv,
+                cwd: gameDir,
+                detached: true
+            });
+
+            // --- Error Handling ---
+            gameProcess.on('error', (err) => {
+                event.reply('game:error', { message: `Process Error: ${err.message}` });
+            });
+
+            gameProcess.on('close', (code) => {
+                if (code !== 0 && code !== null) {
+                    event.reply('game:error', { 
+                        message: "The game crashed or closed with an error.", 
+                        code: code 
+                    });
+                }
+            });
+
+            gameProcess.stdout.on('data', (data) => console.log(`[Game]: ${data}`));
+            gameProcess.stderr.on('data', (data) => console.error(`[Proton Error]: ${data}`));
+
+            gameProcess.unref(); 
+            console.log(`[Nexus] Game launched successfully.`);
+        } catch (error) {
+            event.reply('game:error', { message: error.message });
+        }
+    } else {
+        // Default behavior for Windows or Native Linux
+        const error = await shell.openPath(gamePath);
+        if (error) event.reply('game:error', { message: `Could not open path: ${error}` });
     }
 });
 
-// 2. فتح الروابط الخارجية (GitHub, Email, etc.)
+// 2. Open External Links (GitHub, Email, etc.)
 ipcMain.on('shell:openExternal', (event, url) => {
     if (url) shell.openExternal(url);
 });
 
-// 3. اختيار ملف اللعبة
+// 3. Select Game File
 ipcMain.handle('dialog:selectGame', async () => {
     const result = await dialog.showOpenDialog({ 
         title: 'Select Game Executable', 
-        filters: [{ name: 'Executables', extensions: ['exe', 'bat', 'lnk'] }], 
+        filters: [{ name: 'Executables', extensions: ['exe', 'bat', 'lnk', 'sh', 'AppImage'] }], // Added Linux native extensions
         properties: ['openFile'] 
     });
     return result.canceled ? null : result.filePaths[0];
 });
 
-// 4. اختيار صورة مخصصة
+// 4. Select Custom Image
 ipcMain.handle('dialog:selectImage', async () => {
     const result = await dialog.showOpenDialog({ 
         title: 'Select Cover Image', 

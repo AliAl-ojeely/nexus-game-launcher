@@ -12,7 +12,9 @@ const dictionary = {
         copy: "نسخ", paste: "لصق", cut: "قص",
         btn_back: "رجوع", btn_play: "إلعب الآن", title_description: "وصف اللعبة",
         meta_developer: "المطور", meta_publisher: "الناشر", meta_release: "تاريخ الإصدار",
-        title_media: "الوسائط", title_requirements: "متطلبات التشغيل"
+        title_media: "الوسائط", title_requirements: "متطلبات التشغيل",
+        set_fps: "إظهار عداد الأداء (FPS):",
+        fps_desc: "تفعيل عداد الإطارات داخل اللعبة",
     },
     en: {
         nav_library: "Game Library", nav_favorites: "Favorites", nav_settings: "Settings",
@@ -26,7 +28,9 @@ const dictionary = {
         copy: "Copy", paste: "Paste", cut: "Cut",
         btn_back: "Back", btn_play: "Play", title_description: "Description",
         meta_developer: "Developer", meta_publisher: "Publisher", meta_release: "Release Date",
-        title_media: "Media", title_requirements: "System Requirements"
+        title_media: "Media", title_requirements: "System Requirements",
+        set_fps: "Show Performance HUD:",
+        fps_desc: "Enable FPS Counter in-game",
     }
 };
 
@@ -53,6 +57,8 @@ const userSettings = {
 };
 
 // Initialize UI
+// Initialize Toggle State
+document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
 document.getElementById('sidebarLogoName').innerText = userSettings.appName;
 document.getElementById('appNameSetting').value = userSettings.appName;
 document.getElementById('themeSetting').value = userSettings.theme;
@@ -68,6 +74,7 @@ document.getElementById('saveGeneralSettings').addEventListener('click', () => {
     const newTheme = document.getElementById('themeSetting').value;
     const newLang = document.getElementById('langSetting').value;
     const newGrid = document.getElementById('gridSizeSetting').value;
+    localStorage.setItem('showFPS', document.getElementById('fpsToggle').checked);
     localStorage.setItem('appName', newName);
     localStorage.setItem('theme', newTheme);
     localStorage.setItem('lang', newLang);
@@ -316,9 +323,13 @@ document.getElementById('backToLibraryBtn').addEventListener('click', () => {
     if(currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
 });
 
-// Play Button
+// Play Button (Corrected)
 document.getElementById('detailsPlayBtn').addEventListener('click', () => {
-    if (currentGameExePath) window.api.launchGame(currentGameExePath);
+    if (currentGameExePath) {
+        
+        const showFPS = localStorage.getItem('showFPS') === 'true';
+        window.api.launchGame(currentGameExePath, showFPS); 
+    }
 });
 
 // Search
@@ -332,16 +343,34 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 document.getElementById('addGameBtn').addEventListener('click', async () => {
     const selectedPath = await window.api.selectGame();
     if (selectedPath) {
-        editingGameId = null; tempGamePath = selectedPath;
+        editingGameId = null; 
+        tempGamePath = selectedPath;
         gamePathInput.value = selectedPath; 
-        gameNameInput.value = selectedPath.split('\\').pop().split('.')[0];
-        customPosterInput.value = ""; editModal.style.display = 'flex';
+        
+        // Extract the folder name from the path (Handles both Linux '/' and Windows '\')
+        const pathParts = selectedPath.split(/[/\\]/).filter(Boolean);
+        
+        // If path has folders, get the parent folder. Otherwise, fallback to executable name.
+        const defaultName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0].split('.')[0];
+        gameNameInput.value = defaultName;
+        
+        customPosterInput.value = ""; 
+        editModal.style.display = 'flex';
     }
 });
 
 document.getElementById('changePathBtn').addEventListener('click', async () => {
     const newPath = await window.api.selectGame();
-    if (newPath) { tempGamePath = newPath; gamePathInput.value = newPath; }
+    if (newPath) { 
+        tempGamePath = newPath; 
+        gamePathInput.value = newPath; 
+        
+        // Auto-update the game name only if the user hasn't typed anything manually
+        if (!gameNameInput.value.trim()) {
+            const pathParts = newPath.split(/[/\\]/).filter(Boolean);
+            gameNameInput.value = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0].split('.')[0];
+        }
+    }
 });
 
 document.getElementById('customImageBtn').addEventListener('click', async () => {
@@ -506,4 +535,26 @@ document.addEventListener('wheel', (event) => {
             document.getElementById('prevLightbox').click();
         }
     }
+});
+
+window.api.onGameError((error) => {
+    alert(`Oops! Something went wrong.\n\nError: ${error.message}\nExit Code: ${error.code}`);
+});
+
+
+window.api.onGameError((data) => {
+    console.error("Game Launch Error:", data);
+    
+    const errorModal = document.createElement('div');
+    errorModal.className = 'custom-error-modal';
+    errorModal.innerHTML = `
+        <div class="error-content">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <h3>Game Execution Error</h3>
+            <p>${data.message}</p>
+            <small>Exit Code: ${data.code || 'Unknown'}</small>
+            <button onclick="this.parentElement.parentElement.remove()">Dismiss</button>
+        </div>
+    `;
+    document.body.appendChild(errorModal);
 });
