@@ -172,11 +172,11 @@ chmod +x Nexus_Game_Launcher_1.6.0.AppImage./Nexus_Game_Launcher_1.6.0.AppImage
 # Installation & Development
 Clone the Repository
 ```bash
-git clone https://github.com/AliAl-ojeely/mygamelauncher.git
+git clone https://github.com/AliAl-ojeely/nexus-game-launcher.git
 ```
 Navigate to the Project
 ```bash
-cd mygamelauncher
+cd nexus-game-launcher
 ```
 Install Dependencies
 ```bash
