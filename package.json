@@ -7,8 +7,9 @@
   "productName": "Nexus Game Launcher",
   "scripts": {
     "start": "electron .",
-    "dist-linux": "electron-builder --linux",
-    "dist-win": "electron-builder --win"
+    "dist": "electron-builder",
+    "dist-win": "electron-builder --win",
+    "dist-linux": "electron-builder --linux"
   },
   "devDependencies": {
     "electron": "^40.8.0",
@@ -20,7 +21,6 @@
   },
   "build": {
     "appId": "com.nexus.launcher",
-    "productName": "Nexus Game Launcher",
     "directories": {
       "output": "dist"
     },
@@ -29,7 +29,6 @@
       "**/*",
       "!dist/*"
     ],
-
     "linux": {
       "icon": "assets/icon.png",
       "target": [
