@@ -9,14 +9,15 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        # هنا الخطأ السابق: يجب إضافة macos-latest للقائمة
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # حدثناها لـ v4 للأداء الأفضل
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # حدثناها لـ v4
         with:
           node-version: 22
 
@@ -38,5 +39,5 @@ jobs:
       - name: Build and Publish for macOS
         if: matrix.os == 'macos-latest'
         env:
-            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --mac --universal --publish always
