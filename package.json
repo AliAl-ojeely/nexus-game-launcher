@@ -29,13 +29,16 @@
       "**/*",
       "!dist/*"
     ],
+    
     "linux": {
       "icon": "assets/icon.png",
-      "target": [
-        "AppImage"
-      ],
       "category": "Game",
-      "arch": ["x64", "arm64"]
+      "target": [
+        {
+        "target": "AppImage",
+        "arch": ["x64", "arm64"]
+        }
+      ]
     },
 
     "win": {
