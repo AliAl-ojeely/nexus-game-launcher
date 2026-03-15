@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('api', {
     fetchGameDetails: (name) => ipcRenderer.invoke('api:fetchGameDetails', name),
     openExternal: (url) => ipcRenderer.send('shell:openExternal', url),
     onGameError: (callback) => ipcRenderer.on('game:error', (event, data) => callback(data)),
-    removeGameErrorListener: () => ipcRenderer.removeAllListeners('game:error') // clean up errors
+    removeGameErrorListener: () => ipcRenderer.removeAllListeners('game:error'),
+    openFolder: (path) => ipcRenderer.send('shell:openFolder', path),
 });

@@ -15,6 +15,7 @@ const dictionary = {
         title_media: "الوسائط", title_requirements: "متطلبات التشغيل",
         set_fps: "إظهار عداد الأداء (FPS):",
         fps_desc: "تفعيل عداد الإطارات داخل اللعبة",
+        btn_folder: "مجلد اللعبة",
     },
     en: {
         nav_library: "Game Library", nav_favorites: "Favorites", nav_settings: "Settings",
@@ -31,6 +32,7 @@ const dictionary = {
         title_media: "Media", title_requirements: "System Requirements",
         set_fps: "Show Performance HUD:",
         fps_desc: "Enable FPS Counter in-game",
+        btn_folder: "Game Folder",
     }
 };
 
@@ -323,12 +325,19 @@ document.getElementById('backToLibraryBtn').addEventListener('click', () => {
     if(currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
 });
 
-// Play Button (Corrected)
+// Play Button
 document.getElementById('detailsPlayBtn').addEventListener('click', () => {
     if (currentGameExePath) {
         
         const showFPS = localStorage.getItem('showFPS') === 'true';
         window.api.launchGame(currentGameExePath, showFPS); 
+    }
+});
+
+// Open Game Folder Button
+document.getElementById('detailsFolderBtn').addEventListener('click', () => {
+    if (currentGameExePath) {
+        window.api.openFolder(currentGameExePath);
     }
 });
 

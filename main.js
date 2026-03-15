@@ -304,3 +304,18 @@ ipcMain.handle('api:fetchGameDetails', async (event, gameName) => {
     } catch (err) { console.error("Steam Details API Error:", err.message); }
     return null; 
 });
+
+// ==========================================
+// SHELL OPERATIONS (Open Folder)
+// ==========================================
+ipcMain.on('shell:openFolder', (event, filePath) => {
+    if (!filePath) return;
+    
+    const folderPath = path.dirname(filePath);
+    
+    if (fs.existsSync(folderPath)) {
+        shell.openPath(folderPath);
+    } else {
+        console.error("Folder does not exist:", folderPath);
+    }
+});
