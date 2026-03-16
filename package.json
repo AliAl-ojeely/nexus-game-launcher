@@ -25,8 +25,12 @@
     },
 
     "files": [
-      "**/*",
-      "!dist/*"
+    "src/**/*",
+    "css/**/*",
+    "modules/**/*",
+    "assets/**/*",
+    "index.html",
+    "package.json"
     ],
 
 "linux": {
@@ -47,6 +51,17 @@
       "arch": ["x64", "arm64"]
     }
   ]
+},
+
+"nsis": {
+  "oneClick": false,
+  "allowToChangeInstallationDirectory": true,
+  "allowElevation": true,
+  "createDesktopShortcut": true,
+  "createStartMenuShortcut": true,
+  "installerIcon": "assets/icon.ico",
+  "uninstallerIcon": "assets/icon.ico",
+  "runAfterFinish": true
 },
      
     "mac": {
