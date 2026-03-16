@@ -1,7 +1,7 @@
-# Nexus Game Launcher `v1.6.0`
+# Nexus Game Launcher `v1.6.5`
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.6.0-red)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-1.6.5-red)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux)](https://github.com/AliAl-ojeely)
@@ -22,13 +22,29 @@ The launcher bridges the gap between **local game files** and the **Steam Store 
 
 ---
 
-# What's New in `v1.6.0`
+# What's New in `v1.6.5`
 
 The **Game Details experience** has been completely redesigned to deliver a more immersive and cinematic interface, alongside a major step forward with **Linux compatibility**.
 
 <p align="center">
   <img src="assets/game-details-cinematic.png" alt="Cinematic Game Details View" width="650">
 </p>
+
+### Major Improvements
+
+- **Smart Launch Protection 🚀** The Play button now intelligently updates to a "Running" state once clicked. This provides clear visual feedback that the game is launching and strictly prevents accidental double-launches.
+
+- **Quick Directory Access 📂** Added a new, dedicated blue "Game Folder" button right next to the Play button, allowing you to instantly open the local installation directory of any game with a single click.
+
+- **Linux & Proton Integration 🐧** Full support for launching Windows executables (`.exe`) on Linux using the **Proton compatibility layer**.
+
+- **Cinematic Hero Banners 🖼️** Dynamic background rendering in the game details page with medium-opacity overlays for a premium visual experience.
+
+- **Enhanced Steam Integration 🌐** Automatically fetches game metadata including **description, developer, publisher, release date, and system requirements**.
+
+- **Interactive Media Hub 🎬** Built-in **video trailer player** with a custom **Image Lightbox / Slideshow** for high-resolution screenshots.
+
+- **Developer Info Modal ℹ️** Interactive **"About Developer"** window with floating animations and external social links.
 
 ### Major Improvements
 
@@ -151,7 +167,7 @@ Enable Allow executing file as program
 
 Method 2 — Terminal
 ```bash
-chmod +x Nexus_Game_Launcher_1.6.0.AppImage./Nexus_Game_Launcher_1.6.0.AppImage
+chmod +x Nexus_Game_Launcher_1.6.5.AppImage./Nexus_Game_Launcher_1.6.5.AppImage
 ```
 ---
 
@@ -168,6 +184,46 @@ chmod +x Nexus_Game_Launcher_1.6.0.AppImage./Nexus_Game_Launcher_1.6.0.AppImage
 | Icons | FontAwesome 6 |
 | Installer | Electron Builder (NSIS / AppImage) |
 ---
+
+# Project Structure
+
+```bash
+
+NEXUS-GAME-LAUNCHER/
+├── assets/
+│   ├── favorites-view.png
+│   ├── game-details-cinematic.png
+│   ├── icon.ico
+│   ├── icon.png
+│   ├── main-library-ar.png
+│   ├── main-library-en.png
+│   └── settings-page.png
+├── css/
+│   ├── components.css
+│   ├── layout.css
+│   ├── main.css
+│   ├── modals.css
+│   ├── pages.css
+│   └── variables.css
+├── dist/
+├── modules/
+│   ├── database.js
+│   ├── dialogs.js
+│   ├── game-launcher.js
+│   └── steam-api.js
+├── node_modules/
+├── src/
+│   ├── main.js
+│   ├── preload.js
+│   └── renderer.js
+├── .gitignore
+├── games.json
+├── index.html
+├── package-lock.json
+├── package.json
+└── README.md
+
+```
 
 # Installation & Development
 Clone the Repository
@@ -200,18 +256,12 @@ npm run dist-linux
 Compiled files will appear inside the /dist directory.
 
 ---
-# Developer
----
 
-Ali Nasser Al-ojeely
-Junior Software Developer | Frontend Specialist
+# Developer & Contact
 
----
+**Ali Nasser Al-ojeely (Mr.Ghost)** *Junior Software Developer | Frontend Specialist*
 
-# Email
-alialojeely@gmail.com
+[![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?logo=github)](https://github.com/AliAl-ojeely)
+[![Email](https://img.shields.io/badge/Email-Contact_Me-EA4335?logo=gmail)](mailto:alialojeely@gmail.com)
 
----
-
-# GitHub
-@AliAl-ojeely
+If you have any suggestions, encounter bugs, or want to contribute, feel free to open an issue or reach out directly!

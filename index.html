@@ -5,9 +5,10 @@
     <title>Nexus Game Launcher</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    
     <div class="sidebar">
         <div class="logo"><i class="fa-solid fa-ghost"></i> <span id="sidebarLogoName">Nexus Launcher</span></div>
         <div class="nav-item active" data-target="libraryArea">
@@ -27,6 +28,7 @@
     </div>
 
     <div class="main-content">
+        
         <div class="topbar" id="mainTopbar">
             <div class="search-box">
                 <i class="fa-solid fa-search"></i>
@@ -61,7 +63,6 @@
                             <option value="light" data-i18n="theme_light">Light</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label data-i18n="set_lang">Language:</label>
                         <select id="langSetting" class="custom-select">
@@ -69,7 +70,6 @@
                             <option value="en">English</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label data-i18n="set_grid">Grid Size:</label>
                         <select id="gridSizeSetting" class="custom-select">
@@ -99,9 +99,8 @@
                     <h1 class="details-title" id="detailsGameTitle">Game Title</h1>
                     <div class="details-actions">
                         <button id="detailsPlayBtn" class="play-btn-green"><i class="fa-solid fa-play"></i> <span data-i18n="btn_play">Play</span></button>
-
                         <button id="detailsFolderBtn" class="folder-btn-blue">
-                        <i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">Game Folder</span>
+                            <i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">Game Folder</span>
                         </button>
                     </div>
                 </div>
@@ -114,8 +113,7 @@
 
                     <div class="details-media-section">
                         <h2><i class="fa-solid fa-image"></i> <span data-i18n="title_media">Media</span></h2>
-                        <div id="detailsMediaContainer" class="media-container">
-                            </div>
+                        <div id="detailsMediaContainer" class="media-container"></div>
                     </div>
 
                     <div class="details-req-section">
@@ -146,13 +144,12 @@
                         <span data-i18n="meta_release">Release Date</span>
                         <strong id="detailsRelease">...</strong>
                     </div>
-                </div>
+                    </div>
             </div>
         </div>
-
     </div>
 
-    <div class="modal-overlay" id="editModal">
+    <div class="modal-overlay" id="editModal">                                
         <div class="modal-content">
             <h2><i class="fa-solid fa-gamepad"></i> <span data-i18n="modal_title">Game Details</span></h2>
             
@@ -166,6 +163,13 @@
                 <div class="input-with-btn">
                     <input type="text" id="gamePathInput" readonly>
                     <button id="changePathBtn"><i class="fa-solid fa-folder"></i> <span data-i18n="modal_btn_change">Browse</span></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="modal_launch_args">Launch Arguments (Optional):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="launchArgsInput" placeholder="e.g. -windowed -high">
                 </div>
             </div>
             
@@ -190,7 +194,6 @@
         <a class="prev-lightbox" id="prevLightbox"><i class="fa-solid fa-chevron-left"></i></a>
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
-
     
     <div class="modal-overlay" id="devModal">
         <div class="modal-content" style="text-align: center;">
@@ -204,6 +207,6 @@
         </div>
     </div>
     
-    <script src="renderer.js"></script>
+    <script src="src/renderer.js"></script>
 </body>
 </html>
