@@ -1,7 +1,7 @@
-# Nexus Game Launcher `v1.6.5`
+# Nexus Game Launcher `v1.7.0`
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.6.5-red)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-1.7.0-red)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux)](https://github.com/AliAl-ojeely)
@@ -22,46 +22,46 @@ The launcher bridges the gap between **local game files** and the **Steam Store 
 
 ---
 
-# What's New in `v1.6.5`
+# 🚀 What's New in `v1.7.0` - The "Creative Freedom" Update
 
-The **Game Details experience** has been completely redesigned to deliver a more immersive and cinematic interface, alongside a major step forward with **Linux compatibility**.
+Version `1.7.0` is a major milestone for **Nexus Game Launcher**. We’ve moved beyond automated fetching to give you absolute control over your library's visual identity, backed by a more robust and modular codebase.
 
 <p align="center">
-  <img src="assets/game-details-cinematic.png" alt="Cinematic Game Details View" width="650">
+  <img src="assets/main-library-en.png" alt="Nexus Launcher v1.7.0" width="750">
 </p>
 
-### Major Improvements
+---
 
-- **Smart Launch Protection 🚀** The Play button now intelligently updates to a "Running" state once clicked. This provides clear visual feedback that the game is launching and strictly prevents accidental double-launches.
+### 🎨 NEW: Personalization & Asset Management
+The highlight of this update is the **Advanced Assets Control Panel**, allowing you to curate every game's look manually:
 
-- **Quick Directory Access 📂** Added a new, dedicated blue "Game Folder" button right next to the Play button, allowing you to instantly open the local installation directory of any game with a single click.
+- **Custom Graphics Trio:** You can now manually set a **Custom Poster**, **Custom Logo**, and **Custom Background** for every game. Perfect for rare titles or high-quality fan art.
+- **Smart Reset System (API Fallback) 🔄:** Each asset field now features a "Remove" (X) button. If you delete a custom path, the launcher intelligently triggers a fresh API request to find the best official assets automatically.
+- **Dynamic Previews:** The "Edit Game" modal has been redesigned with a custom-styled scrollbar to house all these new options comfortably.
 
-- **Linux & Proton Integration 🐧** Full support for launching Windows executables (`.exe`) on Linux using the **Proton compatibility layer**.
+### 🌐 Technical & Architectural Overhaul
+- **Dual-API Engine 🛠️:** We've integrated a sophisticated dual-fetching system:
+  - **SteamGridDB API:** Specifically for high-fidelity transparent logos and vertical posters.
+  - **RAWG API:** For rich metadata, including descriptions, developer info, and cinematic backgrounds.
+- **Decoupled Localization (i18n):** All text strings are now separated into a dedicated `translations.js` file. This cleaner architecture supports easy switching between **Arabic** and **English** and paves the way for future languages.
+- **Intelligent Save Logic:** Improved state management ensures that any manual changes are prioritized over API data, while empty fields trigger auto-fetch sequences.
 
-- **Cinematic Hero Banners 🖼️** Dynamic background rendering in the game details page with medium-opacity overlays for a premium visual experience.
+---
 
-- **Enhanced Steam Integration 🌐** Automatically fetches game metadata including **description, developer, publisher, release date, and system requirements**.
+### 📂 Core Features (From Previous Versions)
 
-- **Interactive Media Hub 🎬** Built-in **video trailer player** with a custom **Image Lightbox / Slideshow** for high-resolution screenshots.
+- **Linux & Proton Integration 🐧:** Full support for launching Windows executables (`.exe`) on Linux systems using the **Proton compatibility layer**.
+- **Smart Launch Protection 🚀:** The "Play" button intelligently updates to a "Running" state to prevent accidental double-launches and provide clear feedback.
+- **Interactive Media Hub 🎬:** Built-in **video trailer player** and a high-resolution **Image Lightbox / Slideshow** for game screenshots.
+- **Quick Directory Access 📂:** A dedicated "Game Folder" button to instantly open local installation directories.
+- **Developer Info Modal ℹ️:** Interactive "About Developer" window with floating animations and external social links.
 
-- **Developer Info Modal ℹ️** Interactive **"About Developer"** window with floating animations and external social links.
+---
 
-### Major Improvements
-
-- **Linux & Proton Integration 🐧**  
-  Full support for launching Windows executables (`.exe`) on Linux using the **Proton compatibility layer**.
-
-- **Cinematic Hero Banners**  
-  Dynamic background rendering in the game details page with medium-opacity overlays for a premium visual experience.
-
-- **Enhanced Steam Integration**  
-  Automatically fetches game metadata including **description, developer, publisher, release date, and system requirements**.
-
-- **Interactive Media Hub**  
-  Built-in **video trailer player** with a custom **Image Lightbox / Slideshow** for high-resolution screenshots.
-
-- **Developer Info Modal**  
-  Interactive **"About Developer"** window with floating animations and external social links.
+### 🛠️ UI/UX Refinements
+- **Custom Modal Scrollbars:** Unified the scrollbar design across the entire app, ensuring the "Game Details" modal remains accessible on all screen resolutions.
+- **Enhanced Visual Hierarchy:** Improved padding and spacing in the edit modal for a more "Premium" feel.
+- **Responsive Animations:** Refined the fade-in and hover effects for game cards and action buttons.
 
 ---
 
@@ -167,7 +167,7 @@ Enable Allow executing file as program
 
 Method 2 — Terminal
 ```bash
-chmod +x Nexus_Game_Launcher_1.6.5.AppImage./Nexus_Game_Launcher_1.6.5.AppImage
+chmod +x Nexus_Game_Launcher_1.7.0.AppImage./Nexus_Game_Launcher_1.7.0.AppImage
 ```
 ---
 
@@ -211,11 +211,14 @@ NEXUS-GAME-LAUNCHER/
 │   ├── dialogs.js
 │   ├── game-launcher.js
 │   └── steam-api.js
+│   └── steamGrid-api.js
+│   └── rawg-api-api.js
 ├── node_modules/
 ├── src/
 │   ├── main.js
 │   ├── preload.js
 │   └── renderer.js
+│   └── translation.js
 ├── .gitignore
 ├── games.json
 ├── index.html

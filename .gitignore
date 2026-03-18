@@ -4,3 +4,4 @@ dist/
 nexus_proton_prefix/
 *.log
 *.pfx
+*.env

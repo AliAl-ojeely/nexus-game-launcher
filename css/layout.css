@@ -152,3 +152,30 @@ body {
     from { opacity: 0; transform: translateY(15px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
+
+.details-banner {
+    position: relative; /* ضروري جداً لكي يطفو اللوجو داخله */
+    height: 450px; /* أو الارتفاع الذي حددته */
+    background-size: cover;
+    background-position: center;
+    transition: background 0.5s ease-in-out;
+}
+
+/* الكود الخاص بك الذي أرسلته (سليم جداً) */
+.game-logo-floating {
+    position: absolute;    
+    right: 50px;            
+    bottom: 60px;           
+    max-width: 280px;       
+    max-height: 180px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6)); 
+    z-index: 5;
+    pointer-events: none;
+    animation: fadeInLogoRight 1s ease-out;
+}
+
+@keyframes fadeInLogoRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}

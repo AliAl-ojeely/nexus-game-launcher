@@ -1,37 +1,3 @@
-// Localization Dictionary
-const dictionary = {
-    ar: {
-        nav_library: "مكتبة الألعاب", nav_favorites: "المفضلة", nav_settings: "الإعدادات",
-        total_games: "إجمالي الألعاب المثبتة", search_placeholder: "ابحث في مكتبتك...",
-        btn_add_game: "إضافة لعبة", title_favorites: "ألعابي المفضلة", title_settings: "إعدادات اللانشر",
-        set_app_name: "اسم اللانشر:", set_theme: "المظهر (Theme):", theme_dark: "مظلم", theme_light: "فاتح",
-        set_lang: "اللغة (Language):", set_grid: "حجم البطاقات:", grid_small: "صغير", grid_medium: "متوسط", grid_large: "كبير",
-        btn_save_settings: "حفظ الإعدادات", modal_title: "بيانات اللعبة", modal_game_name: "اسم اللعبة (للبحث في Steam):",
-        modal_game_path: "مسار الملف (.exe):", modal_btn_change: "تغيير", modal_custom_poster: "صورة الغلاف (اختياري):", modal_btn_image: "تحديد",
-        modal_btn_save: "حفظ", modal_btn_cancel: "إلغاء", copy: "نسخ", paste: "لصق", cut: "قص",
-        btn_back: "رجوع", btn_play: "إلعب الآن", title_description: "وصف اللعبة",
-        meta_developer: "المطور", meta_publisher: "الناشر", meta_release: "تاريخ الإصدار",
-        title_media: "الوسائط", title_requirements: "متطلبات التشغيل",
-        set_fps: "إظهار عداد الأداء (FPS):", fps_desc: "تفعيل عداد الإطارات داخل اللعبة",
-        btn_folder: "مجلد اللعبة", modal_launch_args: "خيارات التشغيل (اختياري):"
-    },
-    en: {
-        nav_library: "Game Library", nav_favorites: "Favorites", nav_settings: "Settings",
-        total_games: "Total Installed Games", search_placeholder: "Search your library...",
-        btn_add_game: "Add Game", title_favorites: "My Favorites", title_settings: "Launcher Settings",
-        set_app_name: "Launcher Name:", set_theme: "Theme:", theme_dark: "Dark", theme_light: "Light",
-        set_lang: "Language:", set_grid: "Grid Size:", grid_small: "Small", grid_medium: "Medium", grid_large: "Large",
-        btn_save_settings: "Save Settings", modal_title: "Game Details", modal_game_name: "Game Name:",
-        modal_game_path: "Executable Path:", modal_btn_change: "Browse", modal_custom_poster: "Custom Poster:", modal_btn_image: "Select",
-        modal_btn_save: "Save", modal_btn_cancel: "Cancel", copy: "Copy", paste: "Paste", cut: "Cut",
-        btn_back: "Back", btn_play: "Play", title_description: "Description",
-        meta_developer: "Developer", meta_publisher: "Publisher", meta_release: "Release Date",
-        title_media: "Media", title_requirements: "System Requirements",
-        set_fps: "Show Performance HUD:", fps_desc: "Enable FPS Counter in-game",
-        btn_folder: "Game Folder", modal_launch_args: "Launch Arguments (Optional):"
-    }
-};
-
 let isGameRunning = false;
 
 // Apply Language Function
@@ -93,6 +59,8 @@ const editModal = document.getElementById('editModal');
 const gameNameInput = document.getElementById('gameNameInput');
 const gamePathInput = document.getElementById('gamePathInput');
 const customPosterInput = document.getElementById('customPosterInput');
+const customLogoInput = document.getElementById('customLogoInput');
+const customLogoBtn = document.getElementById('customLogoBtn');
 
 let tempGamePath = ""; 
 let editingGameId = null; 
@@ -112,13 +80,15 @@ function createGameCard(game, index) {
     const isFav = game.isFavorite ? 'active-fav' : '';
     const favIcon = game.isFavorite ? 'fa-solid' : 'fa-regular';
 
+    const posterUrl = game.assets?.poster || 'https://via.placeholder.com/260x390/1e293b/FFFFFF?text=' + encodeURIComponent(game.name);
+
     card.innerHTML = `
         <div class="game-actions">
             <button class="action-btn fav-btn ${isFav}" title="Favorite"><i class="${favIcon} fa-heart"></i></button>
             <button class="action-btn edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
             <button class="action-btn delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
         </div>
-        <img class="game-poster" src="${game.poster || 'https://via.placeholder.com/260x390/1e293b/FFFFFF?text=' + encodeURIComponent(game.name)}" alt="${game.name}">
+        <img class="game-poster" src="${posterUrl}" alt="${game.name}">
         <div class="game-info"><div class="game-title">${game.name}</div></div>
     `;
     
@@ -140,7 +110,18 @@ function createGameCard(game, index) {
         tempGamePath = game.path;
         gameNameInput.value = game.name;
         gamePathInput.value = game.path; 
-        customPosterInput.value = game.poster && game.poster.startsWith('file:///') ? decodeURIComponent(game.poster.replace('file:///', '')) : "";
+        const currentPos = game.assets?.poster || "";
+        customPosterInput.value = currentPos.startsWith('file:///') ? decodeURIComponent(currentPos.replace('file:///', '')) : "";
+        
+        const currentLogo = game.assets?.logo || "";
+        customLogoInput.value = currentLogo.startsWith('file:///') ? decodeURIComponent(currentLogo.replace('file:///', '')) : "";
+
+        const currentBg = game.assets?.background || "";
+        
+        document.getElementById('customBgInput').value = currentBg.startsWith('file:///') ? 
+        decodeURIComponent(currentBg.replace('file:///', '')) : "";
+
+        document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes";
         editModal.style.display = 'flex';
         document.getElementById('launchArgsInput').value = game.arguments || "";
     });
@@ -171,6 +152,7 @@ async function renderGames() {
 
 // Game Details Page Logic
 async function openGameDetailsPage(game) {
+
     document.querySelectorAll('.page-area').forEach(page => page.classList.remove('active'));
     document.getElementById('mainTopbar').style.display = 'none';
     document.getElementById('gameDetailsArea').classList.add('active');
@@ -179,72 +161,85 @@ async function openGameDetailsPage(game) {
     currentGameExePath = game.path;
 
     const banner = document.getElementById('detailsBanner');
-    banner.style.backgroundImage = `url('${game.poster}')`; 
-
+    const logoImg = document.getElementById('detailsLogo');
     const mediaContainer = document.getElementById('detailsMediaContainer');
-    const reqMin = document.getElementById('reqMin');
-    const reqRec = document.getElementById('reqRec');
+    
+    const initialBg = game.assets?.background || game.assets?.poster || "";
+    banner.style.backgroundImage = `url('${initialBg}')`; 
+    if (logoImg) {
+        logoImg.src = ""; 
+        logoImg.style.display = 'none';
+    }
 
-    let detailsToDisplay = null;
-
-    if (game.fetchedDetails) {
-        detailsToDisplay = game.fetchedDetails;
+    if (game.assets?.background) {
+        banner.style.backgroundImage = `url('${game.assets.background}')`;
     } else {
-        document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching from Steam...';
-        document.getElementById('detailsDev').innerText = '...';
-        document.getElementById('detailsPub').innerText = '...';
-        document.getElementById('detailsRelease').innerText = '...';
-        
-        if(mediaContainer) mediaContainer.innerHTML = '';
-        if(reqMin) reqMin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        if(reqRec) reqRec.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        // إذا لم توجد خلفية، نستخدم البوستر كخلفية مؤقتة (Fallback)
+        banner.style.backgroundImage = `url('${game.assets.poster}')`;
+        }
 
-        const details = await window.api.fetchGameDetails(game.name);
+    if (!game.metadata || !game.metadata.description || game.metadata.description === "") {
+        document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching details...';
         
-        if (details) {
-            detailsToDisplay = details;
-            if (window.api.saveGameDetails) await window.api.saveGameDetails(game.id, detailsToDisplay);
-            game.fetchedDetails = detailsToDisplay;
+
+        const freshData = await window.api.fetchGameDetails(game.name);
+        
+        if (freshData) {
+            await window.api.saveGameDetails(game.id, freshData);
+            
+            game.assets = freshData.assets;
+            game.metadata = freshData.metadata;
         }
     }
 
-    if (detailsToDisplay) {
-        if(detailsToDisplay.background) banner.style.backgroundImage = `url('${detailsToDisplay.background}')`;
+    const assets = game.assets || {};
+    const meta = game.metadata || {};
 
-        document.getElementById('detailsDescription').innerHTML = detailsToDisplay.description;
-        document.getElementById('detailsDev').innerText = detailsToDisplay.developer;
-        document.getElementById('detailsPub').innerText = detailsToDisplay.publisher;
-        document.getElementById('detailsRelease').innerText = detailsToDisplay.releaseDate;
+    if (assets.background) {
+        banner.style.backgroundImage = `url('${assets.background}')`;
+    }
 
-        if (mediaContainer) {
-            mediaContainer.innerHTML = ''; 
-            if (detailsToDisplay.media.trailer) {
-                mediaContainer.innerHTML += `
-                    <video controls class="media-main-video" poster="${detailsToDisplay.background || game.poster}">
-                        <source src="${detailsToDisplay.media.trailer}" type="video/webm">
-                        <source src="${detailsToDisplay.media.trailer.replace('.webm', '.mp4')}" type="video/mp4">
-                    </video>`;
-            }
-            if (detailsToDisplay.media.screenshots && detailsToDisplay.media.screenshots.length > 0) {
-                currentScreenshotsList = detailsToDisplay.media.screenshots;
-                let ssHtml = '<div class="screenshots-grid">';
-                detailsToDisplay.media.screenshots.forEach((ss, index) => {
-                    ssHtml += `<img src="${ss}" alt="Screenshot" onclick="openLightbox(${index})">`;
-                });
-                ssHtml += '</div>';
-                mediaContainer.innerHTML += ssHtml;
-            }
+    if (assets.logo && logoImg) {
+        logoImg.src = assets.logo;
+        logoImg.style.display = 'block';
+    } else if (logoImg) {
+        logoImg.style.display = 'none';
+    }
+
+    document.getElementById('detailsDescription').innerHTML = meta.description || "No description available.";
+    document.getElementById('detailsDev').innerText = meta.developer || "N/A";
+    document.getElementById('detailsPub').innerText = meta.publisher || "N/A";
+    document.getElementById('detailsRelease').innerText = meta.releaseDate || "N/A";
+
+    if (mediaContainer) {
+        mediaContainer.innerHTML = ''; 
+        
+        if (meta.media?.trailer) {
+            mediaContainer.innerHTML += `
+                <div class="video-wrapper">
+                    <video controls class="media-main-video" poster="${assets.background}">
+                        <source src="${meta.media.trailer}" type="video/webm">
+                    </video>
+                </div>`;
         }
-
-        if (reqMin && reqRec) {
-            reqMin.innerHTML = detailsToDisplay.systemRequirements.minimum || "N/A";
-            reqRec.innerHTML = detailsToDisplay.systemRequirements.recommended || "N/A";
+        
+        if (meta.media?.screenshots && meta.media.screenshots.length > 0) {
+            currentScreenshotsList = meta.media.screenshots;
+            let ssHtml = '<div class="screenshots-grid">';
+            meta.media.screenshots.forEach((ss, index) => {
+                ssHtml += `<img src="${ss}" alt="Screenshot" onclick="openLightbox(${index})" loading="lazy">`;
+            });
+            ssHtml += '</div>';
+            mediaContainer.innerHTML += ssHtml;
         }
-    } else {
-        document.getElementById('detailsDescription').innerText = "Game not found. Please check the name.";
-        document.getElementById('detailsDev').innerText = "N/A";
-        document.getElementById('detailsPub').innerText = "N/A";
-        document.getElementById('detailsRelease').innerText = "N/A";
+    }
+
+    const reqMinEl = document.getElementById('reqMin');
+    const reqRecEl = document.getElementById('reqRec');
+    
+    if (reqMinEl && reqRecEl) {
+        reqMinEl.innerHTML = meta.systemRequirements?.minimum || "N/A";
+        reqRecEl.innerHTML = meta.systemRequirements?.recommended || "N/A";
     }
 }
 
@@ -327,9 +322,21 @@ document.getElementById('addGameBtn').addEventListener('click', async () => {
         editingGameId = null; 
         tempGamePath = selectedPath;
         gamePathInput.value = selectedPath; 
+        
         const pathParts = selectedPath.split(/[/\\]/).filter(Boolean);
-        gameNameInput.value = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0].split('.')[0];
+        let rawName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0];
+
+        rawName = rawName
+        .replace(/[-_.]/g, ' ')
+        .replace(/\b(repack|fitgirl|empress|codex|skidrow)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+        gameNameInput.value = rawName;
+        customLogoInput.value = "";
+        
         customPosterInput.value = ""; 
+        document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar' ? "إضافة وبحث" : "Add & Search";
         editModal.style.display = 'flex';
     }
 });
@@ -351,6 +358,11 @@ document.getElementById('customImageBtn').addEventListener('click', async () => 
     if (imagePath) customPosterInput.value = imagePath; 
 });
 
+customLogoBtn.addEventListener('click', async () => {
+    const imagePath = await window.api.selectImage();
+    if (imagePath) customLogoInput.value = imagePath; 
+});
+
 document.getElementById('cancelModalBtn').addEventListener('click', () => editModal.style.display = 'none');
 
 document.getElementById('saveGameModalBtn').addEventListener('click', async () => {
@@ -358,47 +370,113 @@ document.getElementById('saveGameModalBtn').addEventListener('click', async () =
     if (!finalName || !tempGamePath) return; 
 
     const btn = document.getElementById('saveGameModalBtn');
+    const originalBtnText = btn.innerText;
+    
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
 
-    let finalPoster = "";
-    let customImage = customPosterInput.value.trim();
-    const launchArgs = document.getElementById('launchArgsInput').value.trim();
-
     try {
-        if (customImage !== "") {
-            finalPoster = "file:///" + customImage.replace(/\\/g, '/');
-        } else {
-            const steamData = await window.api.fetchGameInfo(finalName);
-            finalPoster = steamData ? steamData.poster : "";
-        }
+        let customImage = customPosterInput.value.trim();
+        let customLogo = customLogoInput.value.trim(); 
+        let customBg = document.getElementById('customBgInput').value.trim();
+        const launchArgs = document.getElementById('launchArgsInput').value.trim();
         
         const existingGame = editingGameId ? allGamesData.find(g => g.id === editingGameId) : null;
-        
-        // تم إزالة playtime و isFavorite من كائن الحفظ الجديد
+
+        let finalAssets = existingGame ? { ...existingGame.assets } : { poster: "", background: "", logo: "" };
+        let finalMetadata = existingGame ? { ...existingGame.metadata } : {};
+
+
+        if (customImage !== "") {
+
+            finalAssets.poster = customImage.startsWith('file:///') ? customImage : "file:///" + customImage.replace(/\\/g, '/');
+        } else if (existingGame && (existingGame.name !== finalName || existingGame.assets.poster.startsWith('file:///'))) {
+
+            const freshInfo = await window.api.fetchGameInfo(finalName);
+            finalAssets.poster = freshInfo?.poster || "";
+        }
+
+        if (customLogo !== "") {
+
+            finalAssets.logo = customLogo.startsWith('file:///') ? customLogo : "file:///" + customLogo.replace(/\\/g, '/');
+        } else {
+            const freshDetails = await window.api.fetchGameDetails(finalName);
+            if (freshDetails && freshDetails.assets) {
+                finalAssets.logo = freshDetails.assets.logo;
+                finalAssets.background = freshDetails.assets.background; 
+                finalMetadata = freshDetails.metadata;
+            } else {
+                finalAssets.logo = "";
+            }
+        }
+
+        if (customBg !== "") {
+            finalAssets.background = customBg.startsWith('file:///') ? customBg : "file:///" + customBg.replace(/\\/g, '/');
+        } else {
+            // إذا حذفها المستخدم، نطلب من الـ API جلب الخلفية التلقائية
+            finalAssets.background = ""; // تصفير مؤقت
+            const freshDetails = await window.api.fetchGameDetails(finalName);
+            if (freshDetails && freshDetails.assets) {
+            finalAssets.background = freshDetails.assets.background;
+            }
+        }
+
+        if (existingGame && existingGame.name !== finalName) {
+            finalMetadata = {}; 
+        }
+
         const gameData = {
             id: editingGameId || Date.now(),
             name: finalName,
-            path: tempGamePath, 
-            poster: finalPoster,
+            path: tempGamePath,
             arguments: launchArgs,
             isFavorite: existingGame ? existingGame.isFavorite : false,
-            fetchedDetails: existingGame ? existingGame.fetchedDetails : null 
+            assets: finalAssets,
+            metadata: finalMetadata
         };
+
+        if (editingGameId) {
+            await window.api.updateGame(gameData);
+        } else {
+            await window.api.saveGame(gameData);
+        }
         
-        if (editingGameId) await window.api.updateGame(gameData);
-        else await window.api.saveGame(gameData);
-        
-    } catch (error) { console.error("Save Error:", error); } 
-    finally {
         editModal.style.display = 'none';
-        btn.innerHTML = "Save & Search";
+        await renderGames();
+
+    } catch (error) { 
+        console.error("Critical Save Error:", error);
+        alert(userSettings.lang === 'ar' ? "فشل الحفظ، تحقق من الاتصال" : "Save failed, check your connection");
+    } finally {
         btn.disabled = false;
-        renderGames();
+        btn.innerText = userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes";
     }
 });
 
 renderGames();
+
+
+document.getElementById('removePosterBtn').addEventListener('click', () => {
+    document.getElementById('customPosterInput').value = "";
+
+    console.log("Poster path cleared. API will fetch a new one on save.");
+});
+
+document.getElementById('removeLogoBtn').addEventListener('click', () => {
+    document.getElementById('customLogoInput').value = "";
+
+    console.log("Logo cleared, will revert to auto-fetch on save.");
+});
+
+document.getElementById('customBgBtn').addEventListener('click', async () => {
+    const imagePath = await window.api.selectImage();
+    if (imagePath) document.getElementById('customBgInput').value = imagePath; 
+});
+
+document.getElementById('removeBgBtn').addEventListener('click', () => {
+    document.getElementById('customBgInput').value = "";
+    console.log("Background cleared.");
+});
 
 // Developer & Shortcuts Logic
 document.addEventListener('DOMContentLoaded', () => {
@@ -472,7 +550,6 @@ window.api.onGameError((data) => {
     document.body.appendChild(errorModal);
 });
 
-// فك القفل عن زر التشغيل عند الإغلاق (سيكون فورياً لملفات bat)
 window.api.onGameStopped((data) => {
     isGameRunning = false; 
     const playBtn = document.getElementById('detailsPlayBtn');

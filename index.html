@@ -95,6 +95,9 @@
         <div id="gameDetailsArea" class="page-area" style="padding: 0;">
             <div class="details-banner" id="detailsBanner">
                 <button id="backToLibraryBtn" class="back-btn-top"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_back">Back</span></button>
+
+                <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
+
                 <div class="banner-overlay">
                     <h1 class="details-title" id="detailsGameTitle">Game Title</h1>
                     <div class="details-actions">
@@ -173,11 +176,36 @@
                 </div>
             </div>
             
-            <div class="form-group">
+        <div class="form-group">
                 <label data-i18n="modal_custom_poster">Custom Poster (Optional):</label>
+            <div class="input-with-btn">
+                <input type="text" id="customPosterInput" readonly placeholder="Leave empty for auto search">
+                <button id="customImageBtn" title="Select Poster"><i class="fa-solid fa-image"></i></button>
+                <button id="removePosterBtn" class="action-btn delete-btn" title="Remove Current Poster">
+                <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+                <label data-i18n="modal_custom_logo">Custom Logo (Optional):</label>
+            <div class="input-with-btn">
+                <input type="text" id="customLogoInput" readonly placeholder="Leave empty for auto search">
+                <button id="customLogoBtn" title="Select Logo"><i class="fa-solid fa-image"></i></button>
+                <button id="removeLogoBtn" class="action-btn delete-btn" title="Remove Current Logo">
+                <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+            <div class="form-group">
+                    <label data-i18n="modal_custom_bg">Custom Background (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="customPosterInput" readonly placeholder="Leave empty for auto search">
-                    <button id="customImageBtn"><i class="fa-solid fa-image"></i> <span data-i18n="modal_btn_image">Select</span></button>
+                    <input type="text" id="customBgInput" readonly placeholder="Leave empty for auto search">
+                    <button id="customBgBtn" title="Select Background"><i class="fa-solid fa-image"></i></button>
+                    <button id="removeBgBtn" class="action-btn delete-btn" title="Remove Current Background">
+                    <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             </div>
             
@@ -203,10 +231,11 @@
                 <h3 style="margin: 0; color: var(--text-main);">Ali Al-ojeely (Mr.Ghost)</h3>
                 <p style="color: var(--text-muted); margin: 5px 0;">alialojeely@gmail.com</p>
                 <p><a href="https://github.com/AliAl-ojeely" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
+                <p>version 1.7.0</p>
             </div>
         </div>
     </div>
-    
+    <script src="src/translations.js"></script>
     <script src="src/renderer.js"></script>
 </body>
 </html>
