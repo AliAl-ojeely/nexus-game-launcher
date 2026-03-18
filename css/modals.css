@@ -276,7 +276,16 @@
     transform: scale(0.95);
 }
 
-
 .input-with-btn {
     align-items: stretch;
+}
+
+.input-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4) !important;
+    transition: all 0.3s ease;
+}
+.input-error::placeholder {
+    color: #ef4444;
+    opacity: 0.8;
 }

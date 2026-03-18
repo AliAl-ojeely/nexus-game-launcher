@@ -1,51 +1,32 @@
-const axios = require('axios');
-require('dotenv').config();
+const axios = require("axios");
 
-const RAWG_API_KEY = "aa4561f264de4ce097bb54c4d29953ad";
-
-function cleanName(name) {
-    return name
-        .replace(/[-_.]/g, ' ')
-        .replace(/\b(repack|fitgirl|empress|codex|skidrow|goldberg)\b/gi, '')
-        .replace(/\[.*?\]/g, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-async function fetchGameDetails(gameName) {
+async function fetchGameDetails(name) {
     try {
-        const cleaned = cleanName(gameName);
 
         // البحث عن اللعبة
         const search = await axios.get("https://api.rawg.io/api/games", {
             params: {
-                key: RAWG_API_KEY,
-                search: cleaned,
+                key: process.env.RAWG_API_KEY,
+                search: name,
                 page_size: 1
             }
         });
 
-        if (!search.data.results || search.data.results.length === 0)
-            return null;
+        if (!search.data.results.length) return null;
 
-        const game = search.data.results[0];
+        const exactMatch = search.data.results.find(g => g.name.toLowerCase() === name.toLowerCase());
+        const game = exactMatch || search.data.results[0];
 
-        // جلب التفاصيل الأساسية
+        // جلب التفاصيل
         const details = await axios.get(`https://api.rawg.io/api/games/${game.id}`, {
-            params: { key: RAWG_API_KEY }
+            params: { key: process.env.RAWG_API_KEY }
         });
 
         const data = details.data;
 
-        // جلب Screenshots منفصلة
-        const screenshotsRes = await axios.get(
-            `https://api.rawg.io/api/games/${game.id}/screenshots`,
-            { params: { key: RAWG_API_KEY } }
-        );
-
         // استخراج متطلبات PC
         const pcPlatform = data.platforms?.find(p => p.platform.slug === "pc");
+
         const minimum = pcPlatform?.requirements?.minimum || "N/A";
         const recommended = pcPlatform?.requirements?.recommended || "N/A";
 
@@ -55,20 +36,25 @@ async function fetchGameDetails(gameName) {
             publisher: data.publishers?.map(p => p.name).join(", ") || "N/A",
             releaseDate: data.released || "N/A",
             systemRequirements: {
-                minimum,
-                recommended
+                minimum: minimum,
+                recommended: recommended
             },
             media: {
                 trailer: data.clip?.clip || "",
-                screenshots: screenshotsRes.data.results?.map(s => s.image) || []
+                // التعديل هنا: استخدام game بدلاً من data لجلب الصور
+                screenshots: game.short_screenshots
+                    ? game.short_screenshots.map(s => s.image)
+                    : []
             },
             poster: data.background_image || "",
             background: data.background_image_additional || data.background_image || ""
         };
 
     } catch (error) {
-        console.error("RAWG API Error:", error.message || error);
+
+        console.error("RAWG API Error:", error);
         return null;
+
     }
 }
 

@@ -1,5 +1,12 @@
-const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
 const path = require('path');
+const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
+
+
+const envPath = app.isPackaged 
+    ? path.join(process.resourcesPath, '.env') 
+    : path.join(__dirname, '../.env');
+
+require('dotenv').config({ path: envPath });
 
 // ==========================================
 // استدعاء الوحدات المستقلة
@@ -110,51 +117,66 @@ ipcMain.handle('api:fetchGameInfo', async (event, name) => {
 
 ipcMain.handle('api:fetchGameDetails', async (event, name) => {
     try {
+        // 1. جلب البيانات من Steam أولاً للحصول على الـ AppID الدقيق (Exact Match)
+        const steamData = await steam.fetchGameDetails(name);
 
-        // 1. جلب الصور من SteamGridDB (الأولوية دائماً للصور)
-        const sgAssets = await steamGrid.fetchGameAssets(name);
+        // 2. جلب الصور من SteamGrid مع تمرير الـ AppID (إذا كان متوفراً) لضمان دقة 100%
+        const sgAssets = await steamGrid.fetchGameAssets(name, steamData?.appid);
 
-        // 2. محاولة جلب المعلومات من Steam
-        let steamData = await steam.fetchGameDetails(name);
+        // 3. جلب البيانات من RAWG كدعم احتياطي
+        const rawgData = await rawg.fetchGameDetails(name);
 
-        // 3. إذا Steam لم يرجع بيانات كافية → استخدم RAWG
-        if (!steamData || !steamData.description) {
-
-            console.log("[Nexus] Steam data missing, switching to RAWG fallback");
-
-            const rawgData = await rawg.fetchGameDetails(name);
-
-            if (rawgData) {
-                steamData = rawgData;
-            }
+        // اختيار أفضل وصف
+        let description = "No description available.";
+        if (rawgData?.description && rawgData.description.length > 200) {
+            description = rawgData.description;
+        } else if (steamData?.description) {
+            description = steamData.description;
         }
 
-        return {
+        // اختيار المطور والناشر وتاريخ الإصدار
+        const developer = steamData?.developer || rawgData?.developer || "N/A";
+        const publisher = steamData?.publisher || rawgData?.publisher || "N/A";
+        const releaseDate = steamData?.releaseDate || rawgData?.releaseDate || "N/A";
 
+        // متطلبات التشغيل
+        const systemRequirements = 
+            (steamData && steamData.systemRequirements && steamData.systemRequirements.minimum !== "Not Available")
+                ? steamData.systemRequirements
+                : (rawgData?.systemRequirements || { minimum: "N/A", recommended: "N/A" });
+
+        // screenshots
+        const screenshots = 
+            (sgAssets?.screenshots && sgAssets.screenshots.length > 0)
+                ? sgAssets.screenshots
+                : (steamData?.media?.screenshots?.length > 0 ? steamData.media.screenshots : rawgData?.media?.screenshots || []);
+
+        return {
             assets: {
-                poster: sgAssets?.poster || steamData?.poster || "",
-                background: sgAssets?.background || steamData?.background || "",
+                poster: sgAssets?.poster || steamData?.poster || rawgData?.poster || "",
+                background: sgAssets?.background || steamData?.background || rawgData?.background || "",
                 logo: sgAssets?.logo || ""
             },
-
             metadata: {
-                description: steamData?.description || "No description available.",
-                developer: steamData?.developer || "N/A",
-                publisher: steamData?.publisher || "N/A",
-                releaseDate: steamData?.releaseDate || "N/A",
-                systemRequirements: steamData?.systemRequirements || { minimum: "N/A", recommended: "N/A" },
-                media: steamData?.media || { trailer: "", screenshots: [] }
+                description: description,
+                developer: developer,
+                publisher: publisher,
+                releaseDate: releaseDate,
+                systemRequirements: systemRequirements,
+                media: {
+                    trailer: steamData?.media?.trailer || rawgData?.media?.trailer || "",
+                    screenshots: screenshots
+                }
             }
-
         };
 
     } catch (error) {
-
         console.error("Fetch Error:", error);
-
         return null;
     }
 });
+
+// console.log("RAWG KEY:", process.env.RAWG_API_KEY);
 
 // --- حوارات النظام والمجلدات ---
 ipcMain.handle('dialog:selectGame', () => dialogs.selectGame());

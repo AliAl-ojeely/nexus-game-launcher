@@ -367,11 +367,24 @@ document.getElementById('cancelModalBtn').addEventListener('click', () => editMo
 
 document.getElementById('saveGameModalBtn').addEventListener('click', async () => {
     const finalName = gameNameInput.value.trim();
-    if (!finalName || !tempGamePath) return; 
+    
+    // --- إضافة كود التحقق من حقل الاسم (Error Name) ---
+    if (!finalName) {
+        gameNameInput.classList.add('input-error');
+        gameNameInput.placeholder = userSettings.lang === 'ar' ? "الرجاء إدخال اسم اللعبة!" : "Please enter a game name!";
+        
+        // إزالة اللون الأحمر بمجرد أن يضغط المستخدم على الحقل ليكتب
+        gameNameInput.addEventListener('focus', function() {
+            this.classList.remove('input-error');
+            this.placeholder = "e.g. Resident Evil 4 2023";
+        }, { once: true });
+        
+        return; // إيقاف عملية الحفظ
+    }
+
+    if (!tempGamePath) return; 
 
     const btn = document.getElementById('saveGameModalBtn');
-    const originalBtnText = btn.innerText;
-    
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
 
@@ -383,48 +396,55 @@ document.getElementById('saveGameModalBtn').addEventListener('click', async () =
         
         const existingGame = editingGameId ? allGamesData.find(g => g.id === editingGameId) : null;
 
+        // تهيئة الكائنات الأساسية
         let finalAssets = existingGame ? { ...existingGame.assets } : { poster: "", background: "", logo: "" };
         let finalMetadata = existingGame ? { ...existingGame.metadata } : {};
 
+        // هل نحتاج لجلب بيانات من الإنترنت؟ (لعبة جديدة، أو تم تغيير الاسم، أو تم حذف صورة يدوياً)
+        let needsFetch = false;
+        if (!existingGame) needsFetch = true;
+        else if (existingGame.name !== finalName) needsFetch = true;
+        else if (customImage === "" && existingGame.assets.poster.startsWith('file:///')) needsFetch = true;
+        else if (customLogo === "" && existingGame.assets.logo.startsWith('file:///')) needsFetch = true;
+        else if (customBg === "" && existingGame.assets.background.startsWith('file:///')) needsFetch = true;
 
+        let freshDetails = null;
+        if (needsFetch) {
+            // استدعاء الـ API مرة واحدة فقط لضمان السرعة
+            freshDetails = await window.api.fetchGameDetails(finalName);
+        }
+
+        // 1. معالجة البوستر
         if (customImage !== "") {
-
             finalAssets.poster = customImage.startsWith('file:///') ? customImage : "file:///" + customImage.replace(/\\/g, '/');
-        } else if (existingGame && (existingGame.name !== finalName || existingGame.assets.poster.startsWith('file:///'))) {
-
-            const freshInfo = await window.api.fetchGameInfo(finalName);
-            finalAssets.poster = freshInfo?.poster || "";
+        } else if (freshDetails && freshDetails.assets?.poster) {
+            finalAssets.poster = freshDetails.assets.poster;
         }
 
+        // 2. معالجة اللوجو
         if (customLogo !== "") {
-
             finalAssets.logo = customLogo.startsWith('file:///') ? customLogo : "file:///" + customLogo.replace(/\\/g, '/');
-        } else {
-            const freshDetails = await window.api.fetchGameDetails(finalName);
-            if (freshDetails && freshDetails.assets) {
-                finalAssets.logo = freshDetails.assets.logo;
-                finalAssets.background = freshDetails.assets.background; 
-                finalMetadata = freshDetails.metadata;
-            } else {
-                finalAssets.logo = "";
-            }
+        } else if (freshDetails && freshDetails.assets?.logo) {
+            finalAssets.logo = freshDetails.assets.logo;
+        } else if (needsFetch && freshDetails) {
+            finalAssets.logo = ""; // تصفير إذا لم يوجد لوجو من الـ API
         }
 
+        // 3. معالجة الخلفية
         if (customBg !== "") {
             finalAssets.background = customBg.startsWith('file:///') ? customBg : "file:///" + customBg.replace(/\\/g, '/');
-        } else {
-            // إذا حذفها المستخدم، نطلب من الـ API جلب الخلفية التلقائية
-            finalAssets.background = ""; // تصفير مؤقت
-            const freshDetails = await window.api.fetchGameDetails(finalName);
-            if (freshDetails && freshDetails.assets) {
+        } else if (freshDetails && freshDetails.assets?.background) {
             finalAssets.background = freshDetails.assets.background;
-            }
         }
 
-        if (existingGame && existingGame.name !== finalName) {
-            finalMetadata = {}; 
+        // 4. معالجة البيانات (Metadata)
+        if (freshDetails && freshDetails.metadata) {
+            finalMetadata = freshDetails.metadata;
+        } else if (!existingGame || existingGame.name !== finalName) {
+            finalMetadata = {};
         }
 
+        // تجميع بيانات اللعبة النهائية
         const gameData = {
             id: editingGameId || Date.now(),
             name: finalName,

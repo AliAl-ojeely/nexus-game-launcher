@@ -16,71 +16,86 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "axios": "^1.13.6"
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1"
   },
   "build": {
     "appId": "com.nexus.launcher",
+    "extraResources": [
+      ".env"
+    ],
     "directories": {
       "output": "dist"
     },
-
     "files": [
-    "src/**/*",
-    "css/**/*",
-    "modules/**/*",
-    "assets/**/*",
-    "index.html",
-    "package.json"
+      "src/**/*",
+      "css/**/*",
+      "modules/**/*",
+      "assets/**/*",
+      "index.html",
+      "package.json"
     ],
-
-"linux": {
-  "icon": "assets/icon.png",
-  "category": "Game",
-  "target": [
-    {
-      "target": "AppImage",
-      "arch": ["x64", "arm64"]
-    }
-  ]
-},
-"win": {
-  "icon": "assets/icon.ico",
-  "target": [
-    {
-      "target": "nsis",
-      "arch": ["x64", "arm64"]
-    }
-  ]
-},
-
-"nsis": {
-  "oneClick": false,
-  "allowToChangeInstallationDirectory": true,
-  "allowElevation": true,
-  "createDesktopShortcut": true,
-  "createStartMenuShortcut": true,
-  "installerIcon": "assets/icon.ico",
-  "uninstallerIcon": "assets/icon.ico",
-  "runAfterFinish": true
-},
-     
+    "linux": {
+      "icon": "assets/icon.png",
+      "category": "Game",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "runAfterFinish": true
+    },
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         }
       ],
       "category": "public.app-category.games"
     },
-
     "dmg": {
       "contents": [
-        {"x": 410, "y": 150, "type": "link", "path": "/Applications"},
-        {"x": 130, "y": 150, "type": "file"}
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
       ]
     }
-    
   }
 }

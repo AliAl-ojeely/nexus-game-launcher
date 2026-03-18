@@ -212,7 +212,7 @@ NEXUS-GAME-LAUNCHER/
 │   ├── game-launcher.js
 │   └── steam-api.js
 │   └── steamGrid-api.js
-│   └── rawg-api-api.js
+│   └── rawg-api.js
 ├── node_modules/
 ├── src/
 │   ├── main.js
