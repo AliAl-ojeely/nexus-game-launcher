@@ -1,12 +1,8 @@
 const axios = require('axios');
 
-// التأكد من استدعاء المفتاح من ملف .env
 const API_KEY = process.env.SGDB_API_KEY;
 const SGDB_BASE = 'https://www.steamgriddb.com/api/v2';
 
-/**
- * تنظيف متقدم للاسم للتأكد من دقة البحث
- */
 function cleanName(name) {
     return name
         .replace(/[-_.]/g, ' ')
@@ -18,62 +14,77 @@ function cleanName(name) {
         .trim();
 }
 
-/**
- * جلب الأصول المرئية (البوستر، الخلفية، الشعار) باستخدام المعرف الداخلي
- */
-async function fetchGameAssets(gameName) {
+async function fetchGameAssets(gameName, steamAppId = null) {
+
     try {
-        const cleaned = cleanName(gameName);
-        console.log(`[SteamGrid] Searching assets for: "${cleaned}"`);
 
-        // 1. البحث في قاعدة بيانات SteamGridDB الذكية
-        const searchRes = await axios.get(`${SGDB_BASE}/search/autocomplete/${encodeURIComponent(cleaned)}`, {
-            headers: { Authorization: `Bearer ${API_KEY}` }
-        });
+        let gameId = null;
 
-        // التحقق من وجود نتائج
-        if (!searchRes.data.success || searchRes.data.data.length === 0) {
-            console.log(`[SteamGrid] No game found for: ${cleaned}`);
-            return null;
+        // =====================================
+        // إذا توفر Steam AppID نستخدمه مباشرة
+        // =====================================
+        if (steamAppId) {
+
+            const steamMatch = await axios.get(
+                `${SGDB_BASE}/games/steam/${steamAppId}`,
+                { headers: { Authorization: `Bearer ${API_KEY}` } }
+            );
+
+            if (steamMatch.data.success && steamMatch.data.data) {
+                gameId = steamMatch.data.data.id;
+            }
         }
 
-        // 2. أخذ الـ ID الداخلي لأول نتيجة
-        const results = searchRes.data.data;
-        const exactMatch = results.find(g => g.name.toLowerCase() === cleaned.toLowerCase());
-        const gameId = exactMatch ? exactMatch.id : results[0].id;
-        console.log(`[SteamGrid] Found Internal Game ID: ${gameId}`);
+        // =====================================
+        // fallback البحث بالاسم
+        // =====================================
+        if (!gameId) {
 
-        // 3. جلب جميع الصور بالتوازي لسرعة الاستجابة
-        // ملاحظة: تم حذف شرط المقاس (?dimensions) لضمان جلب البوستر دائماً مهما كان مقاسه
+            const cleaned = cleanName(gameName);
+
+            const searchRes = await axios.get(
+                `${SGDB_BASE}/search/autocomplete/${encodeURIComponent(cleaned)}`,
+                { headers: { Authorization: `Bearer ${API_KEY}` } }
+            );
+
+            if (!searchRes.data.success || !searchRes.data.data.length) {
+                return null;
+            }
+
+            gameId = searchRes.data.data[0].id;
+        }
+
+        // =====================================
+        // جلب الصور
+        // =====================================
+
         const [grids, heroes, logos] = await Promise.all([
+
             axios.get(`${SGDB_BASE}/grids/game/${gameId}`, {
                 headers: { Authorization: `Bearer ${API_KEY}` }
             }),
+
             axios.get(`${SGDB_BASE}/heroes/game/${gameId}`, {
                 headers: { Authorization: `Bearer ${API_KEY}` }
             }),
+
             axios.get(`${SGDB_BASE}/logos/game/${gameId}`, {
                 headers: { Authorization: `Bearer ${API_KEY}` }
             })
+
         ]);
 
-        // 4. استخراج الروابط مع الحماية من الأخطاء (Optional Chaining)
-        const posterUrl = grids.data.data?.[0]?.url || "";
-        const backgroundUrl = heroes.data.data?.[0]?.url || "";
-        const logoUrl = logos.data.data?.[0]?.url || "";
-
-        // طباعة حالة الصور في الـ Console للتأكد
-        console.log(`[SteamGrid] Poster: ${posterUrl ? 'Yes' : 'No'} | Background: ${backgroundUrl ? 'Yes' : 'No'} | Logo: ${logoUrl ? 'Yes' : 'No'}`);
-
         return {
-            poster: posterUrl,
-            background: backgroundUrl,
-            logo: logoUrl
+            poster: grids.data.data?.[0]?.url || "",
+            background: heroes.data.data?.[0]?.url || "",
+            logo: logos.data.data?.[0]?.url || ""
         };
 
     } catch (error) {
+
         console.error("[SteamGrid] API Error:", error.message);
         return null;
+
     }
 }
 

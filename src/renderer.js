@@ -19,7 +19,7 @@ const userSettings = {
     appName: localStorage.getItem('appName') || 'Nexus Launcher',
     theme: localStorage.getItem('theme') || 'dark',
     lang: localStorage.getItem('lang') || 'ar',
-    gridSize: localStorage.getItem('gridSize') || '260px' 
+    gridSize: localStorage.getItem('gridSize') || '260px'
 };
 
 // Initialize UI
@@ -39,6 +39,9 @@ document.getElementById('saveGeneralSettings').addEventListener('click', () => {
     const newTheme = document.getElementById('themeSetting').value;
     const newLang = document.getElementById('langSetting').value;
     const newGrid = document.getElementById('gridSizeSetting').value;
+
+    userSettings.lang = newLang;
+
     localStorage.setItem('showFPS', document.getElementById('fpsToggle').checked);
     localStorage.setItem('appName', newName);
     localStorage.setItem('theme', newTheme);
@@ -62,21 +65,21 @@ const customPosterInput = document.getElementById('customPosterInput');
 const customLogoInput = document.getElementById('customLogoInput');
 const customLogoBtn = document.getElementById('customLogoBtn');
 
-let tempGamePath = ""; 
-let editingGameId = null; 
-let allGamesData = []; 
-let currentTab = 'libraryArea'; 
-let currentGameExePath = ""; 
-let currentScreenshotsList = []; 
-let currentScreenshotIndex = 0;  
+let tempGamePath = "";
+let editingGameId = null;
+let allGamesData = [];
+let currentTab = 'libraryArea';
+let currentGameExePath = "";
+let currentScreenshotsList = [];
+let currentScreenshotIndex = 0;
 
 // Create Game Card Element
 function createGameCard(game, index) {
     const card = document.createElement('div');
     card.className = 'game-card';
-    card.style.animationDelay = `${index * 0.03}s`; 
+    card.style.animationDelay = `${index * 0.03}s`;
     card.setAttribute('data-title', game.name.toLowerCase());
-    
+
     const isFav = game.isFavorite ? 'active-fav' : '';
     const favIcon = game.isFavorite ? 'fa-solid' : 'fa-regular';
 
@@ -91,13 +94,13 @@ function createGameCard(game, index) {
         <img class="game-poster" src="${posterUrl}" alt="${game.name}">
         <div class="game-info"><div class="game-title">${game.name}</div></div>
     `;
-    
+
     card.addEventListener('click', (e) => {
-        if(!e.target.closest('.action-btn')) openGameDetailsPage(game);
+        if (!e.target.closest('.action-btn')) openGameDetailsPage(game);
     });
 
     card.querySelector('.delete-btn').addEventListener('click', async (e) => {
-        e.stopPropagation(); 
+        e.stopPropagation();
         if (confirm(userSettings.lang === 'ar' ? `حذف "${game.name}"؟` : `Delete "${game.name}"?`)) {
             await window.api.deleteGame(game.id);
             renderGames();
@@ -105,21 +108,21 @@ function createGameCard(game, index) {
     });
 
     card.querySelector('.edit-btn').addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        editingGameId = game.id; 
+        e.stopPropagation();
+        editingGameId = game.id;
         tempGamePath = game.path;
         gameNameInput.value = game.name;
-        gamePathInput.value = game.path; 
+        gamePathInput.value = game.path;
         const currentPos = game.assets?.poster || "";
         customPosterInput.value = currentPos.startsWith('file:///') ? decodeURIComponent(currentPos.replace('file:///', '')) : "";
-        
+
         const currentLogo = game.assets?.logo || "";
         customLogoInput.value = currentLogo.startsWith('file:///') ? decodeURIComponent(currentLogo.replace('file:///', '')) : "";
 
         const currentBg = game.assets?.background || "";
-        
-        document.getElementById('customBgInput').value = currentBg.startsWith('file:///') ? 
-        decodeURIComponent(currentBg.replace('file:///', '')) : "";
+
+        document.getElementById('customBgInput').value = currentBg.startsWith('file:///') ?
+            decodeURIComponent(currentBg.replace('file:///', '')) : "";
 
         document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes";
         editModal.style.display = 'flex';
@@ -127,10 +130,10 @@ function createGameCard(game, index) {
     });
 
     card.querySelector('.fav-btn').addEventListener('click', async (e) => {
-        e.stopPropagation(); 
-        game.isFavorite = !game.isFavorite; 
-        await window.api.updateGame(game); 
-        renderGames(); 
+        e.stopPropagation();
+        game.isFavorite = !game.isFavorite;
+        await window.api.updateGame(game);
+        renderGames();
     });
 
     return card;
@@ -138,66 +141,60 @@ function createGameCard(game, index) {
 
 // Render all games
 async function renderGames() {
-    gamesContainer.innerHTML = ''; 
+    gamesContainer.innerHTML = '';
     favoritesContainer.innerHTML = '';
     try {
         allGamesData = await window.api.getGames();
         document.getElementById('gameCountDisplay').innerText = allGamesData.length;
         allGamesData.forEach((game, index) => {
             gamesContainer.appendChild(createGameCard(game, index));
-            if(game.isFavorite) favoritesContainer.appendChild(createGameCard(game, index));
+            if (game.isFavorite) favoritesContainer.appendChild(createGameCard(game, index));
         });
     } catch (error) { console.error("Error loading games:", error); }
 }
 
 // Game Details Page Logic
 async function openGameDetailsPage(game) {
-
-    document.querySelectorAll('.page-area').forEach(page => page.classList.remove('active'));
+    // 1. تهيئة الواجهة
+    document.querySelectorAll('.page-area').forEach(p => p.classList.remove('active'));
     document.getElementById('mainTopbar').style.display = 'none';
     document.getElementById('gameDetailsArea').classList.add('active');
+    document.getElementById('gameDetailsArea').scrollTop = 0;
+
+    const banner = document.getElementById('detailsBanner');
+    const logoImg = document.getElementById('detailsLogo');
+    const screenshotsGrid = document.getElementById('detailsScreenshotsGrid'); // حذفنا mediaContainer
 
     document.getElementById('detailsGameTitle').innerText = game.name;
     currentGameExePath = game.path;
 
-    const banner = document.getElementById('detailsBanner');
-    const logoImg = document.getElementById('detailsLogo');
-    const mediaContainer = document.getElementById('detailsMediaContainer');
-    
-    const initialBg = game.assets?.background || game.assets?.poster || "";
-    banner.style.backgroundImage = `url('${initialBg}')`; 
-    if (logoImg) {
-        logoImg.src = ""; 
-        logoImg.style.display = 'none';
-    }
+    // 2. منطق الكاش الذكي
+    const isCached = game.metadata && game.metadata.description && game.metadata.description !== "";
 
-    if (game.assets?.background) {
-        banner.style.backgroundImage = `url('${game.assets.background}')`;
-    } else {
-        // إذا لم توجد خلفية، نستخدم البوستر كخلفية مؤقتة (Fallback)
-        banner.style.backgroundImage = `url('${game.assets.poster}')`;
-        }
+    if (!isCached) {
+        document.getElementById('detailsDescription').innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Fetching details...';
 
-    if (!game.metadata || !game.metadata.description || game.metadata.description === "") {
-        document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching details...';
-        
-
-        const freshData = await window.api.fetchGameDetails(game.name);
-        
-        if (freshData) {
-            await window.api.saveGameDetails(game.id, freshData);
-            
-            game.assets = freshData.assets;
-            game.metadata = freshData.metadata;
+        try {
+            const freshData = await window.api.fetchGameDetails(game.name);
+            // تأكد أن البيانات وصلت فعلاً قبل استخدامها
+            if (freshData && freshData.assets && freshData.metadata) {
+                game.assets = freshData.assets;
+                game.metadata = freshData.metadata;
+                await window.api.saveGameDetails(game.id, freshData);
+            }
+        } catch (err) {
+            console.error("Fetch failed:", err);
+            document.getElementById('detailsDescription').innerText = "Failed to load details.";
         }
     }
 
     const assets = game.assets || {};
     const meta = game.metadata || {};
 
-    if (assets.background) {
-        banner.style.backgroundImage = `url('${assets.background}')`;
-    }
+    // 3. الهوية البصرية
+    const bgUrl = assets.background || assets.poster || "";
+    banner.style.backgroundImage = `url('${bgUrl}')`;
 
     if (assets.logo && logoImg) {
         logoImg.src = assets.logo;
@@ -206,41 +203,38 @@ async function openGameDetailsPage(game) {
         logoImg.style.display = 'none';
     }
 
+    // 4. النصوص والمعلومات
     document.getElementById('detailsDescription').innerHTML = meta.description || "No description available.";
     document.getElementById('detailsDev').innerText = meta.developer || "N/A";
     document.getElementById('detailsPub').innerText = meta.publisher || "N/A";
     document.getElementById('detailsRelease').innerText = meta.releaseDate || "N/A";
 
-    if (mediaContainer) {
-        mediaContainer.innerHTML = ''; 
-        
-        if (meta.media?.trailer) {
-            mediaContainer.innerHTML += `
-                <div class="video-wrapper">
-                    <video controls class="media-main-video" poster="${assets.background}">
-                        <source src="${meta.media.trailer}" type="video/webm">
-                    </video>
-                </div>`;
-        }
-        
+    // 5. الصور (Slideshow)
+    if (screenshotsGrid) {
+        screenshotsGrid.innerHTML = '';
         if (meta.media?.screenshots && meta.media.screenshots.length > 0) {
+            // تحديث القائمة العالمية للـ Lightbox
             currentScreenshotsList = meta.media.screenshots;
-            let ssHtml = '<div class="screenshots-grid">';
-            meta.media.screenshots.forEach((ss, index) => {
-                ssHtml += `<img src="${ss}" alt="Screenshot" onclick="openLightbox(${index})" loading="lazy">`;
+
+            meta.media.screenshots.forEach((imgUrl, index) => {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.className = 'screenshot-item';
+                img.loading = 'lazy';
+                // فتح الـ Lightbox عند الضغط
+                img.onclick = () => {
+                    if (typeof openLightbox === 'function') openLightbox(index);
+                };
+                screenshotsGrid.appendChild(img);
             });
-            ssHtml += '</div>';
-            mediaContainer.innerHTML += ssHtml;
         }
     }
 
-    const reqMinEl = document.getElementById('reqMin');
-    const reqRecEl = document.getElementById('reqRec');
-    
-    if (reqMinEl && reqRecEl) {
-        reqMinEl.innerHTML = meta.systemRequirements?.minimum || "N/A";
-        reqRecEl.innerHTML = meta.systemRequirements?.recommended || "N/A";
-    }
+    // 6. المتطلبات
+    if (document.getElementById('reqMin'))
+        document.getElementById('reqMin').innerHTML = meta.systemRequirements?.minimum || "N/A";
+    if (document.getElementById('reqRec'))
+        document.getElementById('reqRec').innerHTML = meta.systemRequirements?.recommended || "N/A";
 }
 
 // Lightbox Functions
@@ -268,7 +262,7 @@ document.getElementById('imageLightbox').addEventListener('click', (e) => {
 
 // Sidebar Navigation
 document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', function() {
+    item.addEventListener('click', function () {
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
         this.classList.add('active');
         document.querySelectorAll('.page-area').forEach(page => page.classList.remove('active'));
@@ -282,7 +276,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 document.getElementById('backToLibraryBtn').addEventListener('click', () => {
     document.getElementById('gameDetailsArea').classList.remove('active');
     document.getElementById(currentTab).classList.add('active');
-    if(currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
+    if (currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
 });
 
 // Play Button
@@ -306,7 +300,21 @@ document.getElementById('detailsPlayBtn').addEventListener('click', () => {
 });
 
 document.getElementById('detailsFolderBtn').addEventListener('click', () => {
-    if (currentGameExePath) window.api.openFolder(currentGameExePath);
+    if (!currentGameExePath) return;
+
+    const folderBtn = document.getElementById('detailsFolderBtn');
+
+    folderBtn.disabled = true;
+    folderBtn.style.opacity = "0.7";
+    folderBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${userSettings.lang === 'ar' ? 'جاري الفتح...' : 'Opening...'}`;
+
+    window.api.openFolder(currentGameExePath);
+
+    setTimeout(() => {
+        folderBtn.disabled = false;
+        folderBtn.style.opacity = "1";
+        folderBtn.innerHTML = `<i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">${userSettings.lang === 'ar' ? 'مجلد اللعبة' : 'Game Folder'}</span>`;
+    }, 1200);
 });
 
 document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -317,72 +325,125 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 
 // Add/Edit Game Logic
 document.getElementById('addGameBtn').addEventListener('click', async () => {
-    const selectedPath = await window.api.selectGame();
-    if (selectedPath) {
-        editingGameId = null; 
-        tempGamePath = selectedPath;
-        gamePathInput.value = selectedPath; 
-        
-        const pathParts = selectedPath.split(/[/\\]/).filter(Boolean);
-        let rawName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0];
+    const btn = document.getElementById('addGameBtn');
+    const originalHTML = btn.innerHTML; // حفظ شكل الزر الأصلي
 
-        rawName = rawName
-        .replace(/[-_.]/g, ' ')
-        .replace(/\b(repack|fitgirl|empress|codex|skidrow)\b/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    // 1. تحويل الزر إلى حالة التحميل ومنع الضغط المتكرر
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span data-i18n="btn_opening">${userSettings.lang === 'ar' ? 'جاري الفتح...' : 'Opening...'}</span>`;
 
-        gameNameInput.value = rawName;
-        customLogoInput.value = "";
-        
-        customPosterInput.value = ""; 
-        document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar' ? "إضافة وبحث" : "Add & Search";
-        editModal.style.display = 'flex';
+    try {
+        // 2. انتظار المستخدم ليختار الملف
+        const selectedPath = await window.api.selectGame();
+
+        if (selectedPath) {
+            editingGameId = null;
+            tempGamePath = selectedPath;
+            gamePathInput.value = selectedPath;
+
+            const pathParts = selectedPath.split(/[/\\]/).filter(Boolean);
+            let rawName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0];
+
+            rawName = rawName
+                .replace(/[-_.]/g, ' ')
+                .replace(/\b(repack|fitgirl|empress|codex|skidrow)\b/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            gameNameInput.value = rawName;
+            customLogoInput.value = "";
+            customPosterInput.value = "";
+
+            document.getElementById('saveGameModalBtn').innerHTML = `<i class="fa-solid fa-check"></i> ${userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes"}`;
+            editModal.style.display = 'flex';
+        }
+    } catch (error) {
+        console.error("Selection error:", error);
+    } finally {
+        // 3. إرجاع الزر لحالته الطبيعية في كل الحالات (سواء اختار لعبة أو ضغط Cancel)
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = originalHTML;
     }
 });
 
 document.getElementById('changePathBtn').addEventListener('click', async () => {
-    const newPath = await window.api.selectGame();
-    if (newPath) { 
-        tempGamePath = newPath; 
-        gamePathInput.value = newPath; 
-        if (!gameNameInput.value.trim()) {
-            const pathParts = newPath.split(/[/\\]/).filter(Boolean);
-            gameNameInput.value = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0].split('.')[0];
+    const btn = document.getElementById('changePathBtn');
+    const originalHTML = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+
+    try {
+        const newPath = await window.api.selectGame();
+        if (newPath) {
+            tempGamePath = newPath;
+            gamePathInput.value = newPath;
+            if (!gameNameInput.value.trim()) {
+                const pathParts = newPath.split(/[/\\]/).filter(Boolean);
+                gameNameInput.value = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : pathParts[0].split('.')[0];
+            }
         }
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = originalHTML;
     }
 });
 
 document.getElementById('customImageBtn').addEventListener('click', async () => {
     const imagePath = await window.api.selectImage();
-    if (imagePath) customPosterInput.value = imagePath; 
+    if (imagePath) customPosterInput.value = imagePath;
 });
 
 customLogoBtn.addEventListener('click', async () => {
     const imagePath = await window.api.selectImage();
-    if (imagePath) customLogoInput.value = imagePath; 
+    if (imagePath) customLogoInput.value = imagePath;
 });
 
 document.getElementById('cancelModalBtn').addEventListener('click', () => editModal.style.display = 'none');
 
+// 1. إغلاق المودال عند الضغط على الخلفية الشفافة (Overlay)
+editModal.addEventListener('click', (e) => {
+    // التأكد أن المستخدم ضغط على الخلفية وليس على الحقول أو الأزرار
+    if (e.target === editModal) {
+        editModal.style.display = 'none';
+    }
+});
+
+// 2. حفظ اللعبة بكامل معلوماتها عند الضغط على زر Enter داخل المودال
+editModal.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // لمنع أي سلوك افتراضي (مثل عمل Submit لنموذج بالغلط)
+
+        const saveBtn = document.getElementById('saveGameModalBtn');
+        // التأكد أن زر الحفظ مفعل (لتجنب الحفظ مرتين إذا كان التطبيق يقوم بالحفظ بالفعل)
+        if (!saveBtn.disabled) {
+            saveBtn.click(); // محاكاة الضغط بالماوس على زر الحفظ
+        }
+    }
+});
+
 document.getElementById('saveGameModalBtn').addEventListener('click', async () => {
     const finalName = gameNameInput.value.trim();
-    
+
     // --- إضافة كود التحقق من حقل الاسم (Error Name) ---
     if (!finalName) {
         gameNameInput.classList.add('input-error');
         gameNameInput.placeholder = userSettings.lang === 'ar' ? "الرجاء إدخال اسم اللعبة!" : "Please enter a game name!";
-        
+
         // إزالة اللون الأحمر بمجرد أن يضغط المستخدم على الحقل ليكتب
-        gameNameInput.addEventListener('focus', function() {
+        gameNameInput.addEventListener('focus', function () {
             this.classList.remove('input-error');
             this.placeholder = "e.g. Resident Evil 4 2023";
         }, { once: true });
-        
+
         return; // إيقاف عملية الحفظ
     }
 
-    if (!tempGamePath) return; 
+    if (!tempGamePath) return;
 
     const btn = document.getElementById('saveGameModalBtn');
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -390,10 +451,10 @@ document.getElementById('saveGameModalBtn').addEventListener('click', async () =
 
     try {
         let customImage = customPosterInput.value.trim();
-        let customLogo = customLogoInput.value.trim(); 
+        let customLogo = customLogoInput.value.trim();
         let customBg = document.getElementById('customBgInput').value.trim();
         const launchArgs = document.getElementById('launchArgsInput').value.trim();
-        
+
         const existingGame = editingGameId ? allGamesData.find(g => g.id === editingGameId) : null;
 
         // تهيئة الكائنات الأساسية
@@ -460,16 +521,16 @@ document.getElementById('saveGameModalBtn').addEventListener('click', async () =
         } else {
             await window.api.saveGame(gameData);
         }
-        
+
         editModal.style.display = 'none';
         await renderGames();
 
-    } catch (error) { 
+    } catch (error) {
         console.error("Critical Save Error:", error);
         alert(userSettings.lang === 'ar' ? "فشل الحفظ، تحقق من الاتصال" : "Save failed, check your connection");
     } finally {
         btn.disabled = false;
-        btn.innerText = userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes";
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> ${userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes"}`;
     }
 });
 
@@ -490,7 +551,7 @@ document.getElementById('removeLogoBtn').addEventListener('click', () => {
 
 document.getElementById('customBgBtn').addEventListener('click', async () => {
     const imagePath = await window.api.selectImage();
-    if (imagePath) document.getElementById('customBgInput').value = imagePath; 
+    if (imagePath) document.getElementById('customBgInput').value = imagePath;
 });
 
 document.getElementById('removeBgBtn').addEventListener('click', () => {
@@ -520,19 +581,54 @@ function handleGoBack() {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
-    const lightbox = document.getElementById('imageLightbox');
-    const isImageViewerOpen = lightbox && lightbox.classList.contains('show'); 
 
-    switch(event.key) {
+    // 1. معالجة زر Esc بشكل منفصل (ليعمل حتى لو كان المؤشر داخل حقل البحث)
+    if (event.key === 'Escape') {
+        const searchInput = document.getElementById('searchInput');
+        // إذا كان المؤشر حالياً داخل حقل البحث
+        if (document.activeElement === searchInput) {
+            searchInput.blur(); // اسحب المؤشر (الخروج من البحث)
+            return; // توقف هنا ولا تكمل باقي الدالة
+        }
+    }
+
+    // 2. إيقاف باقي الاختصارات إذا كان المستخدم يكتب نصاً
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+    const lightbox = document.getElementById('imageLightbox');
+    const isImageViewerOpen = lightbox && lightbox.classList.contains('show');
+
+    switch (event.key) {
         case 'ArrowRight': if (isImageViewerOpen) document.getElementById('nextLightbox').click(); break;
         case 'ArrowLeft': if (isImageViewerOpen) document.getElementById('prevLightbox').click(); break;
-        case 'Escape': if (isImageViewerOpen) document.getElementById('closeLightbox').click(); else handleGoBack(); break;
+        case 'Escape':
+            if (isImageViewerOpen) document.getElementById('closeLightbox').click();
+            else handleGoBack();
+            break;
         case 'Backspace': if (!isImageViewerOpen) handleGoBack(); break;
-        case 'Enter':
+        case 'Enter': {
             const detailsArea = document.getElementById('gameDetailsArea');
             if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) document.getElementById('detailsPlayBtn').click();
             break;
+        }
+
+        // 3. اختصار فتح نافذة إضافة اللعبة (زر + أو =)
+        case '+':
+        case '=': {
+            event.preventDefault();
+            const addBtn = document.getElementById('addGameBtn');
+            if (addBtn) addBtn.click();
+            break;
+        }
+
+        // 4. اختصار الانتقال لشريط البحث (زر S أو s)
+        case 's':
+        case 'S': {
+            event.preventDefault();
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.focus();
+            break;
+        }
     }
 });
 
@@ -571,7 +667,7 @@ window.api.onGameError((data) => {
 });
 
 window.api.onGameStopped((data) => {
-    isGameRunning = false; 
+    isGameRunning = false;
     const playBtn = document.getElementById('detailsPlayBtn');
     if (playBtn) {
         playBtn.disabled = false;

@@ -1,6 +1,3 @@
-/* =========================================
-   CSS Variables for Themes
-========================================= */
 :root {
     --bg-body: #0b131b; 
     --bg-sidebar: #121d28; 
@@ -18,9 +15,6 @@
     --grid-size: 260px;
 }
 
-/* =========================================
-   Light Mode Colors
-========================================= */
 .light-mode {
     --bg-body: #f1f5f9; 
     --bg-sidebar: #ffffff; 
@@ -33,4 +27,6 @@
     --border-color: rgba(0,0,0,0.1); 
     --shadow-color: rgba(0,0,0,0.1);
     --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    /* Option: lighter accent for light mode */
+    --accent: #d92b3a; 
 }

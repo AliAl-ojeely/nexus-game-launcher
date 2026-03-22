@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" id="htmlRoot">
+
 <head>
     <meta charset="UTF-8">
     <title>Nexus Game Launcher</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
 </head>
+
 <body>
-    
+
     <div class="sidebar">
         <div class="logo"><i class="fa-solid fa-ghost"></i> <span id="sidebarLogoName">Nexus Launcher</span></div>
         <div class="nav-item active" data-target="libraryArea">
@@ -20,7 +24,7 @@
         <div class="nav-item" data-target="settingsArea">
             <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
         </div>
-        
+
         <div class="library-stats">
             <span data-i18n="total_games" style="font-size: 13px; font-weight:normal;">Total Installed Games</span>
             <span id="gameCountDisplay" style="font-size: 20px;">0</span>
@@ -28,13 +32,15 @@
     </div>
 
     <div class="main-content">
-        
+
         <div class="topbar" id="mainTopbar">
             <div class="search-box">
                 <i class="fa-solid fa-search"></i>
-                <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Search your library...">
+                <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder"
+                    placeholder="Search your library...">
             </div>
-            <button id="addGameBtn" class="add-btn"><i class="fa-solid fa-folder-plus"></i> <span data-i18n="btn_add_game">Add Game</span></button>
+            <button id="addGameBtn" class="add-btn"><i class="fa-solid fa-folder-plus"></i> <span
+                    data-i18n="btn_add_game">Add Game</span></button>
         </div>
 
         <div id="libraryArea" class="page-area active">
@@ -42,17 +48,19 @@
         </div>
 
         <div id="favoritesArea" class="page-area">
-            <h2 style="margin-top:0; color: var(--text-main);"><i class="fa-solid fa-heart" style="color:var(--accent);"></i> <span data-i18n="title_favorites">My Favorites</span></h2>
+            <h2 style="margin-top:0; color: var(--text-main);"><i class="fa-solid fa-heart"
+                    style="color:var(--accent);"></i> <span data-i18n="title_favorites">My Favorites</span></h2>
             <div class="games-grid" id="favoritesContainer"></div>
         </div>
 
         <div id="settingsArea" class="page-area">
             <div class="settings-container">
                 <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
-                
+
                 <div class="form-group">
                     <label data-i18n="set_app_name">Launcher Name (Logo):</label>
-                    <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
+                    <input type="text" id="appNameSetting" data-i18n-placeholder class="custom-input"
+                        placeholder="Nexus Launcher">
                 </div>
 
                 <div class="settings-grid">
@@ -82,45 +90,50 @@
 
                 <div class="form-group">
                     <label data-i18n="set_fps">Show Performance HUD:</label>
-                        <div class="toggle-container">
-                            <input type="checkbox" id="fpsToggle" class="custom-toggle">
-                            <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
-                        </div>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="fpsToggle" data-i18n-placeholder class="custom-toggle">
+                        <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
+                    </div>
                 </div>
 
-                <button class="save-settings-btn" id="saveGeneralSettings"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_settings">Save Settings</span></button>
+                <button class="save-settings-btn" id="saveGeneralSettings"><i class="fa-solid fa-floppy-disk"></i> <span
+                        data-i18n="btn_save_settings">Save Settings</span></button>
             </div>
         </div>
 
         <div id="gameDetailsArea" class="page-area" style="padding: 0;">
             <div class="details-banner" id="detailsBanner">
-                <button id="backToLibraryBtn" class="back-btn-top"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_back">Back</span></button>
+                <button id="backToLibraryBtn" class="back-btn-top"><i class="fa-solid fa-arrow-left"></i> <span
+                        data-i18n="btn_back">Back</span></button>
 
                 <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
 
                 <div class="banner-overlay">
                     <h1 class="details-title" id="detailsGameTitle">Game Title</h1>
                     <div class="details-actions">
-                        <button id="detailsPlayBtn" class="play-btn-green"><i class="fa-solid fa-play"></i> <span data-i18n="btn_play">Play</span></button>
+                        <button id="detailsPlayBtn" class="play-btn-green"><i class="fa-solid fa-play"></i> <span
+                                data-i18n="btn_play">Play</span></button>
                         <button id="detailsFolderBtn" class="folder-btn-blue">
                             <i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">Game Folder</span>
                         </button>
                     </div>
                 </div>
             </div>
-            
+
             <div class="details-content">
                 <div class="details-main">
-                    <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="title_description">Description</span></h2>
+                    <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="title_description">Description</span>
+                    </h2>
                     <p class="details-description" id="detailsDescription">Loading game information...</p>
 
                     <div class="details-media-section">
                         <h2><i class="fa-solid fa-image"></i> <span data-i18n="title_media">Media</span></h2>
-                        <div id="detailsMediaContainer" class="media-container"></div>
+                        <div class="screenshots-grid" id="detailsScreenshotsGrid"></div>
                     </div>
 
                     <div class="details-req-section">
-                        <h2><i class="fa-solid fa-desktop"></i> <span data-i18n="title_requirements">System Requirements</span></h2>
+                        <h2><i class="fa-solid fa-desktop"></i> <span data-i18n="title_requirements">System
+                                Requirements</span></h2>
                         <div class="req-grid">
                             <div class="req-box">
                                 <h3>Minimum</h3>
@@ -147,75 +160,83 @@
                         <span data-i18n="meta_release">Release Date</span>
                         <strong id="detailsRelease">...</strong>
                     </div>
-                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="editModal">                                
+    <div class="modal-overlay" id="editModal">
         <div class="modal-content">
             <h2><i class="fa-solid fa-gamepad"></i> <span data-i18n="modal_title">Game Details</span></h2>
-            
+
             <div class="form-group">
                 <label data-i18n="modal_game_name">Game Name (for Steam Search):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="gameNameInput" placeholder="e.g. Resident Evil 4 2023">
+                    <input type="text" id="gameNameInput" data-i18n-placeholder="modal_name_placeholder"
+                        placeholder="e.g. Resident Evil 4 2023">
                 </div>
-                <small style="color: #94a3b8; font-size: 12px; margin-top: 5px; display: block;" data-i18n="modal_year_hint">
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 5px; display: block;"
+                    data-i18n="modal_year_hint">
                     Hint: Add the release year (e.g. 2023) for 100% accurate results.
                 </small>
             </div>
-            
+
             <div class="form-group">
                 <label data-i18n="modal_game_path">Executable Path (.exe or .bat):</label>
                 <div class="input-with-btn">
                     <input type="text" id="gamePathInput" readonly>
-                    <button id="changePathBtn"><i class="fa-solid fa-folder"></i> <span data-i18n="modal_btn_change">Browse</span></button>
+                    <button id="changePathBtn"><i class="fa-solid fa-folder"></i> <span
+                            data-i18n="modal_btn_change">Browse</span></button>
                 </div>
             </div>
 
             <div class="form-group">
                 <label data-i18n="modal_launch_args">Launch Arguments (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="launchArgsInput" placeholder="e.g. -windowed -high">
+                    <input type="text" id="launchArgsInput" data-i18n-placeholder="modal_args_placeholder"
+                        placeholder="e.g. -windowed -high">
                 </div>
             </div>
-            
-        <div class="form-group">
-                <label data-i18n="modal_custom_poster">Custom Poster (Optional):</label>
-            <div class="input-with-btn">
-                <input type="text" id="customPosterInput" readonly placeholder="Leave empty for auto search">
-                <button id="customImageBtn" title="Select Poster"><i class="fa-solid fa-image"></i></button>
-                <button id="removePosterBtn" class="action-btn delete-btn" title="Remove Current Poster">
-                <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="form-group">
-                <label data-i18n="modal_custom_logo">Custom Logo (Optional):</label>
-            <div class="input-with-btn">
-                <input type="text" id="customLogoInput" readonly placeholder="Leave empty for auto search">
-                <button id="customLogoBtn" title="Select Logo"><i class="fa-solid fa-image"></i></button>
-                <button id="removeLogoBtn" class="action-btn delete-btn" title="Remove Current Logo">
-                <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        </div>
 
             <div class="form-group">
-                    <label data-i18n="modal_custom_bg">Custom Background (Optional):</label>
+                <label data-i18n="modal_custom_poster">Custom Poster (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="customBgInput" readonly placeholder="Leave empty for auto search">
-                    <button id="customBgBtn" title="Select Background"><i class="fa-solid fa-image"></i></button>
-                    <button id="removeBgBtn" class="action-btn delete-btn" title="Remove Current Background">
-                    <i class="fa-solid fa-xmark"></i>
+                    <input type="text" id="customPosterInput" readonly data-i18n-placeholder="modal_leave_empty"
+                        placeholder="Leave empty for auto search">
+                    <button id="customImageBtn" title="Select Poster"><i class="fa-solid fa-image"></i></button>
+                    <button id="removePosterBtn" class="action-btn delete-btn" title="Remove Current Poster">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </div>
-            
+
+            <div class="form-group">
+                <label data-i18n="modal_custom_logo">Custom Logo (Optional):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="customLogoInput" readonly data-i18n-placeholder="modal_leave_empty"
+                        placeholder="Leave empty for auto search">
+                    <button id="customLogoBtn" title="Select Logo"><i class="fa-solid fa-image"></i></button>
+                    <button id="removeLogoBtn" class="action-btn delete-btn" title="Remove Current Logo">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="modal_custom_bg">Custom Background (Optional):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="customBgInput" readonly data-i18n-placeholder="modal_leave_empty"
+                        placeholder="Leave empty for auto search">
+                    <button id="customBgBtn" title="Select Background"><i class="fa-solid fa-image"></i></button>
+                    <button id="removeBgBtn" class="action-btn delete-btn" title="Remove Current Background">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
             <div class="modal-buttons">
-                <button id="saveGameModalBtn" class="save-btn"><i class="fa-solid fa-check"></i> <span data-i18n="modal_btn_save">Save & Search</span></button>
+                <button id="saveGameModalBtn" class="save-btn"><i class="fa-solid fa-check"></i> <span
+                        data-i18n="modal_btn_save">Save & Search</span></button>
                 <button id="cancelModalBtn" class="cancel-btn" data-i18n="modal_btn_cancel">Cancel</button>
             </div>
         </div>
@@ -227,7 +248,7 @@
         <a class="prev-lightbox" id="prevLightbox"><i class="fa-solid fa-chevron-left"></i></a>
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
-    
+
     <div class="modal-overlay" id="devModal">
         <div class="modal-content" style="text-align: center;">
             <i class="fa-solid fa-ghost" style="font-size: 60px; color: var(--accent); margin-bottom: 20px;"></i>
@@ -235,12 +256,15 @@
             <div style="margin: 25px 0; line-height: 1.8;">
                 <h3 style="margin: 0; color: var(--text-main);">Ali Al-ojeely (Mr.Ghost)</h3>
                 <p style="color: var(--text-muted); margin: 5px 0;">alialojeely@gmail.com</p>
-                <p><a href="https://github.com/AliAl-ojeely" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
-                <p>version 1.7.0</p>
+                <p><a href="https://github.com/AliAl-ojeely" target="_blank"
+                        style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
+                <p>version 1.7.5</p>
             </div>
         </div>
     </div>
     <script src="src/translations.js"></script>
-    <script src="src/renderer.js"></script>
+    <script type="module" src="Render/render-main.js"></script>
+    <!-- <script src="src/renderer.js"></script> -->
 </body>
+
 </html>
