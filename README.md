@@ -155,6 +155,8 @@ chmod +x Nexus_Game_Launcher_1.7.0.AppImage./Nexus_Game_Launcher_1.7.0.AppImage
 NEXUS-GAME-LAUNCHER/
 ├── .github/
 ├── assets/
+│   ├── fonts
+│   ├── fontawesome
 │   ├── favorites-view.png
 │   ├── game-details-cinematic.png
 │   ├── icon.ico
