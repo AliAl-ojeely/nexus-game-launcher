@@ -1,6 +1,7 @@
 const axios = require('axios');
+const secrets = require('../src/secrets.json');
 
-const API_KEY = process.env.SGDB_API_KEY;
+const API_KEY = secrets.SGDB_API_KEY;
 const SGDB_BASE = 'https://www.steamgriddb.com/api/v2';
 
 function cleanName(name) {

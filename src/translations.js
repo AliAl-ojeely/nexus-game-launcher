@@ -51,6 +51,8 @@ const dictionary = {
         modal_args_placeholder: "مثال: -windowed -high",
         modal_leave_empty: "اتركه فارغاً للبحث التلقائي",
         modal_name_placeholder: "مثال: Resident Evil 4 2023",
+        total_playtime: "إجمالي وقت اللعب:",
+        theme_darker: "أسود حالك",
     },
     en: {
         nav_library: "Game Library",
@@ -104,5 +106,7 @@ const dictionary = {
         modal_args_placeholder: "e.g. -windowed -high",
         modal_leave_empty: "Leave empty for auto search",
         modal_name_placeholder: "e.g. Resident Evil 4 2023",
+        total_playtime: "Total Playtime:",
+        theme_darker: "Darker",
     }
 };

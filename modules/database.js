@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const playtimeDB = require('./playtime');
 
 const dbPath = path.join(app.getPath('userData'), 'games.json');
 
 function initDB() {
     if (!fs.existsSync(dbPath)) {
         try { fs.writeFileSync(dbPath, '[]', 'utf-8'); }
-        catch (err) { console.error("Database initialization failed:", err); }
+        catch (err) { console.error("[Database] Init Error:", err); }
     }
 }
 
@@ -18,33 +19,32 @@ function getGames() {
         let games = JSON.parse(content || '[]');
 
         return games.map(game => {
-            if (!game.assets) {
-                game.assets = {
-                    poster: game.poster || "",
-                    background: game.background || (game.fetchedDetails ? game.fetchedDetails.background : ""),
-                    logo: game.logo || ""
-                };
-            }
-            if (!game.metadata) {
-                const oldDetails = game.fetchedDetails || {};
-                game.metadata = {
-                    description: oldDetails.description || "",
-                    developer: oldDetails.developer || "N/A",
-                    publisher: oldDetails.publisher || "N/A",
-                    releaseDate: oldDetails.releaseDate || "N/A",
-                    systemRequirements: oldDetails.systemRequirements || {},
-                    media: oldDetails.media || { screenshots: [] }
-                };
-            }
+            if (!game.assets) game.assets = { poster: "", background: "", logo: "" };
+            if (!game.metadata) game.metadata = { description: "", developer: "N/A", publisher: "N/A", releaseDate: "N/A", systemRequirements: {}, media: { screenshots: [] } };
 
-            if (game.metadata && game.metadata.media && game.metadata.media.trailer !== undefined) {
-                delete game.metadata.media.trailer;
-            }
-
+            // ✨ السحر هنا: دمج الوقت ديناميكياً من ملف playTime.json
+            game.playtime = playtimeDB.getPlaytime(game.name);
+            
             delete game.fetchedDetails;
             return game;
         });
     } catch (err) { return []; }
+}
+
+function updateGame(updatedGame) {
+    try {
+        let games = getGames();
+        games = games.map(g => {
+            if (String(g.id) === String(updatedGame.id)) {
+                const tempGame = { ...g, ...updatedGame };
+                delete tempGame.playtime; // 🧹 تنظيف: لا تحفظ الوقت في games.json أبداً
+                return tempGame;
+            }
+            return g;
+        });
+        fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
+        return true;
+    } catch (err) { return false; }
 }
 
 function saveGame(newGame) {
@@ -56,19 +56,11 @@ function saveGame(newGame) {
             path: newGame.path,
             arguments: newGame.arguments || "",
             isFavorite: newGame.isFavorite || false,
-            assets: newGame.assets || { poster: newGame.poster || "", background: "", logo: "" },
+            assets: newGame.assets || { poster: "", background: "", logo: "" },
             metadata: newGame.metadata || { description: "", developer: "N/A", publisher: "N/A", releaseDate: "N/A", systemRequirements: {}, media: { screenshots: [] } }
         };
+        // لاحظ لم نضف playtime هنا أبداً
         games.push(formattedGame);
-        fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
-        return true;
-    } catch (err) { return false; }
-}
-
-function updateGame(updatedGame) {
-    try {
-        let games = getGames();
-        games = games.map(g => g.id == updatedGame.id ? updatedGame : g);
         fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
         return true;
     } catch (err) { return false; }
@@ -77,7 +69,7 @@ function updateGame(updatedGame) {
 function deleteGame(gameId) {
     try {
         let games = getGames();
-        games = games.filter(g => g.id != gameId);
+        games = games.filter(g => String(g.id) !== String(gameId));
         fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
         return true;
     } catch (err) { return false; }
@@ -86,7 +78,7 @@ function deleteGame(gameId) {
 function saveGameDetails(gameId, fetchedData) {
     try {
         let games = getGames();
-        const index = games.findIndex(g => g.id == gameId);
+        const index = games.findIndex(g => String(g.id) === String(gameId));
 
         if (index !== -1 && fetchedData) {
             games[index].assets = {
@@ -94,17 +86,12 @@ function saveGameDetails(gameId, fetchedData) {
                 background: fetchedData.assets?.background || games[index].assets.background,
                 logo: fetchedData.assets?.logo || games[index].assets.logo
             };
-
             games[index].metadata = fetchedData.metadata || games[index].metadata;
-
             fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
             return { success: true };
         }
         return { success: false, error: "Game not found" };
-    } catch (error) {
-        console.error("Save Details Error:", error);
-        return { success: false, error: error.message };
-    }
+    } catch (error) { return { success: false, error: error.message }; }
 }
 
 module.exports = { initDB, getGames, saveGame, updateGame, deleteGame, saveGameDetails };

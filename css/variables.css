@@ -1,32 +1,44 @@
 :root {
-    --bg-body: #0b131b; 
-    --bg-sidebar: #121d28; 
+    --bg-body: #0b131b;
+    --bg-sidebar: #121d28;
     --bg-topbar: rgba(11, 19, 27, 0.95);
-    --bg-card: #1e293b; 
-    --bg-input: #0b131b; 
+    --bg-card: #1e293b;
+    --bg-input: #0b131b;
     --bg-modal: #121d28;
-    --text-main: #ffffff; 
+    --text-main: #ffffff;
     --text-muted: #94a3b8;
-    --accent: #ff4655; 
+    --accent: #ff4655;
     --accent-hover: #e03e4d;
-    --border-color: rgba(255,255,255,0.05); 
-    --shadow-color: rgba(0,0,0,0.5);
-    --card-shadow: 0 8px 20px rgba(0,0,0,0.3); 
+    --border-color: rgba(255, 255, 255, 0.05);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     --grid-size: 260px;
 }
 
 .light-mode {
-    --bg-body: #f1f5f9; 
-    --bg-sidebar: #ffffff; 
+    --bg-body: #f1f5f9;
+    --bg-sidebar: #ffffff;
     --bg-topbar: rgba(241, 245, 249, 0.95);
-    --bg-card: #ffffff; 
-    --bg-input: #f8fafc; 
+    --bg-card: #ffffff;
+    --bg-input: #f8fafc;
     --bg-modal: #ffffff;
-    --text-main: #0f172a; 
+    --text-main: #0f172a;
     --text-muted: #64748b;
-    --border-color: rgba(0,0,0,0.1); 
-    --shadow-color: rgba(0,0,0,0.1);
-    --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    /* Option: lighter accent for light mode */
-    --accent: #d92b3a; 
+    --border-color: rgba(0, 0, 0, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    --accent: #d92b3a;
+}
+
+/* 🦇 الثيم الجديد: الأسود الحالك */
+.darker-mode {
+    --bg-body: #000000;
+    --bg-sidebar: #0a0a0a;
+    --bg-topbar: rgba(0, 0, 0, 0.95);
+    --bg-card: #111111;
+    --bg-input: #050505;
+    --bg-modal: #0a0a0a;
+    --border-color: rgba(255, 255, 255, 0.03);
+    --shadow-color: rgba(0, 0, 0, 0.8);
+    --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
 }

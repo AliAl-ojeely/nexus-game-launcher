@@ -23,12 +23,26 @@ export function handleGoBack() {
     }
 }
 
+// دالة مساعدة لتطبيق الثيم على البودي
+function applyThemeClass(theme) {
+    document.body.classList.remove('light-mode', 'darker-mode'); // إزالة الثيمات الإضافية أولاً
+    if (theme === 'light') {
+        document.body.classList.add('light-mode');
+    } else if (theme === 'darker') {
+        document.body.classList.add('darker-mode');
+    }
+    // إذا كان dark، لا نضيف شيء لأنه الثيم الافتراضي (:root)
+}
+
 export function initUI() {
     document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
     document.getElementById('sidebarLogoName').innerText = userSettings.appName;
     document.getElementById('appNameSetting').value = userSettings.appName;
+
+    // تطبيق الثيم المحفوظ عند فتح اللانشر
     document.getElementById('themeSetting').value = userSettings.theme;
-    if (userSettings.theme === 'light') document.body.classList.add('light-mode');
+    applyThemeClass(userSettings.theme);
+
     document.getElementById('langSetting').value = userSettings.lang;
     applyLanguage(userSettings.lang);
     document.getElementById('gridSizeSetting').value = userSettings.gridSize;
@@ -52,8 +66,9 @@ export function initUI() {
         localStorage.setItem('gridSize', newGrid);
 
         document.getElementById('sidebarLogoName').innerText = newName;
-        if (newTheme === 'light') document.body.classList.add('light-mode');
-        else document.body.classList.remove('light-mode');
+
+        // تطبيق الثيم الجديد عند الحفظ
+        applyThemeClass(newTheme);
 
         document.documentElement.style.setProperty('--grid-size', newGrid);
         applyLanguage(newLang);

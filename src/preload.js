@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('api', {
     saveGameDetails: (id, details) => ipcRenderer.invoke('save-game-details', id, details),
     updateGame: (game) => ipcRenderer.invoke('db:updateGame', game),
     deleteGame: (id) => ipcRenderer.invoke('db:deleteGame', id),
-    launchGame: (path, showFPS, args, id) => ipcRenderer.send('game:launch', path, showFPS, args, id),          
+    launchGame: (path, showFPS, args, id) => ipcRenderer.send('game:launch', path, showFPS, args, id),
     fetchGameInfo: (name) => ipcRenderer.invoke('api:fetchGameInfo', name),
     fetchGameDetails: (name) => ipcRenderer.invoke('api:fetchGameDetails', name),
     openExternal: (url) => ipcRenderer.send('shell:openExternal', url),
@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld('api', {
     removeGameErrorListener: () => ipcRenderer.removeAllListeners('game:error'),
     onGameStopped: (callback) => ipcRenderer.on('game:stopped', (event, data) => callback(data)),
     removeGameStoppedListener: () => ipcRenderer.removeAllListeners('game:stopped'),
+    getPlaytime: (gameName) => ipcRenderer.invoke('db:getPlaytime', gameName),
+    addPlaytime: (gameName, minutes) => ipcRenderer.invoke('db:addPlaytime', gameName, minutes),
+    forceStopGame: (id) => ipcRenderer.send('game:force-stop', id),
 });

@@ -1,24 +1,21 @@
 const path = require('path');
 const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
 
-const envPath = app.isPackaged
-    ? path.join(process.resourcesPath, '.env')
-    : path.join(__dirname, '../.env');
+// const envPath = app.isPackaged
+//     ? path.join(process.resourcesPath, '.env')
+//     : path.join(__dirname, '../.env');
+// require('dotenv').config({ path: envPath });
 
-require('dotenv').config({ path: envPath });
-
-// ==========================================
-// استدعاء الوحدات المستقلة
-// ==========================================
 const db = require('../modules/database');
 const steam = require('../modules/steam-api');
 const steamGrid = require('../modules/steamGrid-api');
 const rawg = require('../modules/rawg-api');
 const dialogs = require('../modules/dialogs');
 const launcher = require('../modules/game-launcher');
+const playtimeDB = require('../modules/playtime');
 
-// تهيئة قاعدة البيانات عند بدء التشغيل
 db.initDB();
+playtimeDB.initPlaytimeDB();
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -61,11 +58,7 @@ function createWindow() {
     });
 }
 
-// ==========================================
-// تهيئة التطبيق
-// ==========================================
 app.whenReady().then(() => {
-
     protocol.registerFileProtocol('local-resource', (request, callback) => {
         const url = request.url.replace(/^local-resource:\/\//, '');
         try {
@@ -86,43 +79,41 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-// ==========================================
-// IPC HANDLERS
-// ==========================================
-
-// تشغيل الألعاب
 ipcMain.on('game:launch', (event, path, showFPS, args, id) =>
     launcher.launchGame(event, path, showFPS, args, id)
 );
 
-// قاعدة البيانات
+ipcMain.on('forceStopGame', (event, gameId) => {
+    forceStopGame(gameId, event);
+});
+
 ipcMain.handle('db:getGames', () => db.getGames());
 ipcMain.handle('db:saveGame', (event, game) => db.saveGame(game));
-ipcMain.handle('db:updateGame', (event, game) => db.updateGame(game));
-ipcMain.handle('db:deleteGame', (event, id) => db.deleteGame(id));
-ipcMain.handle('save-game-details', (event, id, details) => db.saveGameDetails(id, details));
 
-// ==========================================
-// جلب البوستر الأولي
-// ==========================================
+ipcMain.handle('db:updateGame', (event, game) => {
+    console.log(`\n[MAIN IPC] 💾 Received playtime save request...`);
+    console.log(`[MAIN IPC] Game: ${game.name} | New Playtime: ${game.playtime} minutes`);
+
+    const result = db.updateGame(game);
+
+    console.log(`[MAIN IPC] JSON Save Result: ${result ? 'SUCCESS ✅' : 'FAILED ❌'}\n`);
+    return result;
+});
+
+ipcMain.handle('db:deleteGame', (event, id) => db.deleteGame(id));
+
 ipcMain.handle('api:fetchGameInfo', async (event, name) => {
     try {
-
         console.log("\n[Nexus] Fetch Poster For:", name);
-
         const sgAssets = await steamGrid.fetchGameAssets(name);
-
         console.log("Poster Found:", sgAssets?.poster ? "YES" : "NO");
 
         return {
             name: name,
             poster: sgAssets?.poster || ""
         };
-
     } catch (err) {
-
         console.error("Poster Fetch Error:", err);
-
         return {
             name: name,
             poster: ""
@@ -130,35 +121,23 @@ ipcMain.handle('api:fetchGameInfo', async (event, name) => {
     }
 });
 
-// ==========================================
-// جلب بيانات اللعبة الكاملة
-// ==========================================
 ipcMain.handle('api:fetchGameDetails', async (event, name) => {
-
     try {
-
         console.log("\n==============================");
         console.log("Adding Game:", name);
 
-        // Steam
         const steamData = await steam.fetchGameDetails(name);
         console.log("Steam AppID:", steamData?.appid || "NOT FOUND");
 
-        // SteamGrid
         const sgAssets = await steamGrid.fetchGameAssets(name, steamData?.appid);
-
         console.log("SteamGrid Poster:", sgAssets?.poster ? "YES" : "NO");
         console.log("SteamGrid Background:", sgAssets?.background ? "YES" : "NO");
         console.log("SteamGrid Logo:", sgAssets?.logo ? "YES" : "NO");
 
-        // RAWG
         const rawgData = await rawg.fetchGameDetails(name);
-
         console.log("RAWG Description:", rawgData?.description ? "YES" : "NO");
 
-        // اختيار الوصف الأفضل
         let description = "No description available.";
-
         if (rawgData?.description && rawgData.description.length > 200) {
             description = rawgData.description;
         } else if (steamData?.description) {
@@ -182,45 +161,39 @@ ipcMain.handle('api:fetchGameDetails', async (event, name) => {
                     : rawgData?.media?.screenshots || []);
 
         const result = {
-
             assets: {
                 poster: sgAssets?.poster || steamData?.poster || rawgData?.poster || "",
                 background: sgAssets?.background || steamData?.background || rawgData?.background || "",
                 logo: sgAssets?.logo || ""
             },
-
             metadata: {
                 description: description,
                 developer: developer,
                 publisher: publisher,
                 releaseDate: releaseDate,
                 systemRequirements: systemRequirements,
+                metacritic: rawgData?.metacritic || "N/A",
+                genres: rawgData?.genres || "N/A",
+                tags: rawgData?.tags || "N/A",
                 media: {
                     screenshots: screenshots
                 }
             }
-
         };
 
-        // console.log("Final Game Data:");
-        // console.log(JSON.stringify(result, null, 2));
         console.log("==============================");
-
         return result;
 
     } catch (error) {
-
         console.error("Fetch Error:", error);
         return null;
-
     }
-
 });
 
-// ==========================================
-// الحوارات
-// ==========================================
 ipcMain.handle('dialog:selectGame', () => dialogs.selectGame());
 ipcMain.handle('dialog:selectImage', () => dialogs.selectImage());
 ipcMain.on('shell:openFolder', (event, path) => dialogs.openFolder(event, path));
 ipcMain.on('shell:openExternal', (event, url) => dialogs.openExternal(url));
+// === قنوات ملف الوقت المستقل ===
+ipcMain.handle('db:getPlaytime', (event, gameName) => playtimeDB.getPlaytime(gameName));
+ipcMain.handle('db:addPlaytime', (event, gameName, minutes) => playtimeDB.addPlaytime(gameName, minutes));

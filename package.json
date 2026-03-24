@@ -1,6 +1,6 @@
 {
   "name": "mygamelauncher",
-  "version": "1.7.5",
+  "version": "1.8.0",
   "description": "A sleek game launcher for managing PC titles",
   "author": "ali al-ojeely <alialojeely@gmail.com>",
   "main": "src/main.js",
@@ -16,20 +16,16 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "axios": "^1.13.6",
-    "dotenv": "^17.3.1"
+    "axios": "^1.13.6"
   },
   "build": {
     "appId": "com.nexus.launcher",
-    "extraResources": [
-      ".env"
-    ],
     "directories": {
       "output": "dist"
     },
     "files": [
       "src/**/*",
-      "Render/**/*",
+      "render/**/*",
       "css/**/*",
       "modules/**/*",
       "assets/**/*",

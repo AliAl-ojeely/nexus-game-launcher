@@ -60,7 +60,9 @@
     display: flex;
 }
 
-/* Hero Banner */
+/* =========================================
+   Hero Banner & Overlay
+========================================= */
 .details-banner {
     position: relative;
     width: 100%;
@@ -75,32 +77,67 @@
 .banner-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, rgba(11, 19, 27, 0.8) 0%, rgba(11, 19, 27, 0.4) 60%, transparent 100%),
-        linear-gradient(to top, var(--bg-body) 0%, transparent 50%);
+    padding: 20px 40px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 60px 40px;
     box-sizing: border-box;
+    /* 🚨 السحر هنا: التدرج المتجه للأعلى صار هو الأول، وزدنا النسبة إلى 30% لدمج أنعم */
+    background: linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
+        linear-gradient(to right, rgba(11, 19, 27, 0.9) 0%, rgba(11, 19, 27, 0.2) 60%, transparent 100%);
 }
 
 [dir="rtl"] .banner-overlay {
-    background: linear-gradient(to left, rgba(11, 19, 27, 0.8) 0%, rgba(11, 19, 27, 0.4) 60%, transparent 100%),
-        linear-gradient(to top, var(--bg-body) 0%, transparent 50%);
+    background: linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
+        linear-gradient(to left, rgba(11, 19, 27, 0.9) 0%, rgba(11, 19, 27, 0.2) 60%, transparent 100%);
 }
 
+/* =========================================
+   Title & Typography (التعديل الأساسي هنا)
+========================================= */
 .details-title {
-    font-size: 48px;
-    font-weight: 700;
+    /* حجم خط ذكي: لا يقل عن 28 ولا يزيد عن 40 */
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 800;
+    /* خط أعرض قليلاً ليعطي فخامة */
     color: #ffffff;
-    margin: 0 0 20px 0;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+    margin: 0 0 15px 0;
+    line-height: 1.25;
+    /* مسافة مريحة بين السطور */
+    max-width: 60%;
+    /* 🚨 السر هنا: منع النص من الدخول في مساحة اللوجو */
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.6), 0 5px 15px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.5px;
 }
 
+/* اللوجو العائم (لجعله مرتب ولا يغطي الشاشة) */
+.game-logo-floating {
+    position: absolute;
+    /* نزلنا اللوجو من 40px إلى 20px ليكون بمحاذاة الأزرار */
+    bottom: 20px;
+    right: 40px;
+    max-width: 300px;
+    max-height: 160px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+    z-index: 5;
+}
+
+[dir="rtl"] .game-logo-floating {
+    right: auto;
+    left: 40px;
+}
+
+/* =========================================
+   Actions & Buttons
+========================================= */
 .details-actions {
     display: flex;
     gap: 15px;
     align-items: center;
+    max-width: 60%;
+    /* محاذاة الأزرار مع حد النص الجديد */
+    flex-wrap: wrap;
 }
 
 .play-btn-green {
@@ -123,6 +160,19 @@
     background-color: #2ecc71;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6);
+}
+
+.play-btn-green.play-btn-running {
+    background-color: #475569;
+    /* لون رمادي أنيق */
+    box-shadow: 0 4px 15px rgba(71, 85, 105, 0.4);
+}
+
+.play-btn-green.play-btn-running:hover {
+    background-color: #334155;
+    /* رمادي أغمق عند التمرير */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(71, 85, 105, 0.6);
 }
 
 .folder-btn-blue {
@@ -193,6 +243,48 @@
     border-radius: 12px;
     border: 1px solid var(--border-color);
     height: fit-content;
+}
+
+.metacritic-score {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+    background-color: var(--border-color);
+    text-align: center;
+    min-width: 40px;
+}
+
+.metacritic-score.high {
+    background-color: #66cc33;
+}
+
+.metacritic-score.medium {
+    background-color: #ffcc33;
+    color: #333;
+}
+
+.metacritic-score.low {
+    background-color: #ff0000;
+}
+
+.genres-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.genre-tag {
+    background: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .meta-item {
@@ -297,5 +389,82 @@
     .req-grid,
     .details-content {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================
+   Tags Styling
+========================================= */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.feature-tag {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.playtime-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 15px;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.playtime-info {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.playtime-info strong {
+    color: var(--text-main);
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.session-timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #10b981;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 15px;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 1;
     }
 }

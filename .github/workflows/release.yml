@@ -25,11 +25,10 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Create .env file
+      - name: Create secrets.json file
         shell: bash
         run: |
-          echo "SGDB_API_KEY=${{ secrets.SGDB_API_KEY }}" > .env
-          echo "RAWG_API_KEY=${{ secrets.RAWG_API_KEY }}" >> .env
+          echo "{\"SGDB_API_KEY\":\"${{ secrets.SGDB_API_KEY }}\", \"RAWG_API_KEY\":\"${{ secrets.RAWG_API_KEY }}\"}" > src/secrets.json
 
       - name: Build and Publish for Windows
         if: matrix.os == 'windows-latest'

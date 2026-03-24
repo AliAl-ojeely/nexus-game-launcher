@@ -6,12 +6,14 @@ dist/
 build/
 out/
 
-# Environment Variables (Security)
+# Environment Variables & Secrets (Security)
 .env
 *.env
+src/secrets.json
 
 # Local Database (User specific data)
 games.json
+playtime.json
 
 # Logs and Debugging
 *.log

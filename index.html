@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Nexus Game Launcher</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:;">
+
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+
     <link rel="stylesheet" href="css/main.css">
 </head>
 
@@ -68,6 +70,7 @@
                         <label data-i18n="set_theme">Theme:</label>
                         <select id="themeSetting" class="custom-select">
                             <option value="dark" data-i18n="theme_dark">Dark</option>
+                            <option value="darker" data-i18n="theme_darker">Darker</option>
                             <option value="light" data-i18n="theme_light">Light</option>
                         </select>
                     </div>
@@ -117,6 +120,18 @@
                             <i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">Game Folder</span>
                         </button>
                     </div>
+                    
+                    <div id="playtimeDisplayContainer" class="playtime-container">
+                        <div class="playtime-info">
+                            <i class="fa-solid fa-clock"></i>
+                            <span data-i18n="total_playtime">Total Playtime:</span>
+                            <strong id="totalPlaytimeValue">0h 0m</strong>
+                        </div>
+                        <div id="sessionTimerContainer" class="session-timer" style="display: none;">
+                            <span class="pulse-dot"></span>
+                            <span id="sessionTimerValue">00:00:00</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -159,6 +174,21 @@
                     <div class="meta-item">
                         <span data-i18n="meta_release">Release Date</span>
                         <strong id="detailsRelease">...</strong>
+                    </div>
+                
+                    <div class="meta-item">
+                        <span>Metacritic Score</span>
+                        <div id="detailsMetacritic" class="metacritic-score">N/A</div>
+                    </div>
+                
+                    <div class="meta-item">
+                        <span>Genres</span>
+                        <div id="detailsGenres" class="genres-container">...</div>
+                    </div>
+                
+                    <div class="meta-item">
+                        <span>Features & Tags</span>
+                        <div id="detailsTags" class="tags-container">...</div>
                     </div>
                 </div>
             </div>
@@ -258,12 +288,12 @@
                 <p style="color: var(--text-muted); margin: 5px 0;">alialojeely@gmail.com</p>
                 <p><a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
-                <p>version 1.7.5</p>
+                <p>version 1.8.0</p>
             </div>
         </div>
     </div>
     <script src="src/translations.js"></script>
-    <script type="module" src="Render/render-main.js"></script>
+    <script type="module" src="render/render-main.js"></script>
     <!-- <script src="src/renderer.js"></script> -->
 </body>
 
