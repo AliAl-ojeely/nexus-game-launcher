@@ -222,6 +222,7 @@
     grid-template-columns: 3fr 1fr;
     gap: 30px;
     padding: 40px;
+    transition: grid-template-columns 0.3s ease;
 }
 
 .details-main h2 {
@@ -235,6 +236,30 @@
     color: var(--text-muted);
     line-height: 1.8;
     font-size: 16px;
+}
+
+.description-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px dashed var(--border-color);
+    text-align: center;
+}
+
+.description-placeholder i {
+    font-size: 50px;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+
+.description-placeholder p {
+    font-size: 16px;
+    margin: 0;
 }
 
 .details-sidebar {

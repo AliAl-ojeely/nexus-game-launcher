@@ -51,6 +51,14 @@ body {
     transition: 0.3s;
 }
 
+.version-badge {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-inline-start: 6px;
+    font-weight: 400;
+    text-shadow: none;
+}
+
 .logo {
     font-size: 24px;
     font-weight: 700;

@@ -3,7 +3,7 @@
 # Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.8.0-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-1.8.2-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,9 +22,9 @@
 
 ---
 
-## What's New in `v1.8.0` - The "Creative Freedom" Update
+## What's New in `v1.8.2` - The "Creative Freedom" Update
 
-Version `1.8.0` is a major milestone. We’ve moved beyond automated fetching to give you absolute control over your library's visual identity, backed by a highly optimized, modular codebase, advanced smart-search algorithms, and robust tracking.
+Version `1.8.2` is a major milestone. We’ve moved beyond automated fetching to give you absolute control over your library's visual identity, backed by a highly optimized, modular codebase, advanced smart-search algorithms, and robust tracking.
 
 ### Personalization & Asset Management
 

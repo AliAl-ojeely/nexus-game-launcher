@@ -1,11 +1,6 @@
 const path = require('path');
 const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
 
-// const envPath = app.isPackaged
-//     ? path.join(process.resourcesPath, '.env')
-//     : path.join(__dirname, '../.env');
-// require('dotenv').config({ path: envPath });
-
 const db = require('../modules/database');
 const steam = require('../modules/steam-api');
 const steamGrid = require('../modules/steamGrid-api');
@@ -51,7 +46,7 @@ function createWindow() {
             { role: 'paste', label: labels.paste },
             { role: 'cut', label: labels.cut },
             { type: 'separator' },
-            { role: 'inspect', label: labels.inspect }
+            { role: 'inspectElement', label: labels.inspect }
         ]);
 
         menu.popup({ window: win });
@@ -79,121 +74,157 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-ipcMain.on('game:launch', (event, path, showFPS, args, id) =>
-    launcher.launchGame(event, path, showFPS, args, id)
-);
+// ─────────────────────────────────────────────────────────────────────────────
+// GAME LAUNCHER IPC
+// ─────────────────────────────────────────────────────────────────────────────
 
-ipcMain.on('forceStopGame', (event, gameId) => {
-    forceStopGame(gameId, event);
+ipcMain.on('game:launch', (event, gamePath, showFPS, args, id) => {
+    launcher.launchGame(event, gamePath, showFPS, args, id);
 });
 
+ipcMain.on('game:force-stop', (_event, gameId) => {
+    launcher.forceStopGame(gameId);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATABASE IPC
+// ─────────────────────────────────────────────────────────────────────────────
+
 ipcMain.handle('db:getGames', () => db.getGames());
-ipcMain.handle('db:saveGame', (event, game) => db.saveGame(game));
+ipcMain.handle('db:saveGame', (_event, game) => db.saveGame(game));
 
-ipcMain.handle('db:updateGame', (event, game) => {
-    console.log(`\n[MAIN IPC] 💾 Received playtime save request...`);
-    console.log(`[MAIN IPC] Game: ${game.name} | New Playtime: ${game.playtime} minutes`);
-
+ipcMain.handle('db:updateGame', (_event, game) => {
+    console.log(`\n[MAIN IPC] Saving playtime for: ${game.name} | ${game.playtime} mins`);
     const result = db.updateGame(game);
-
-    console.log(`[MAIN IPC] JSON Save Result: ${result ? 'SUCCESS ✅' : 'FAILED ❌'}\n`);
+    console.log(`[MAIN IPC] Result: ${result ? 'SUCCESS' : 'FAILED'}\n`);
     return result;
 });
 
-ipcMain.handle('db:deleteGame', (event, id) => db.deleteGame(id));
+ipcMain.handle('db:deleteGame', (_event, id) => db.deleteGame(id));
 
-ipcMain.handle('api:fetchGameInfo', async (event, name) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// API IPC
+// ─────────────────────────────────────────────────────────────────────────────
+
+ipcMain.handle('api:fetchGameInfo', async (_event, name) => {
     try {
-        console.log("\n[Nexus] Fetch Poster For:", name);
+        console.log('\n[Nexus] Fetch Poster For:', name);
         const sgAssets = await steamGrid.fetchGameAssets(name);
-        console.log("Poster Found:", sgAssets?.poster ? "YES" : "NO");
-
-        return {
-            name: name,
-            poster: sgAssets?.poster || ""
-        };
+        console.log('Poster Found:', sgAssets?.poster ? 'YES' : 'NO');
+        return { name, poster: sgAssets?.poster || '' };
     } catch (err) {
-        console.error("Poster Fetch Error:", err);
-        return {
-            name: name,
-            poster: ""
-        };
+        console.error('Poster Fetch Error:', err);
+        return { name, poster: '' };
     }
 });
 
-ipcMain.handle('api:fetchGameDetails', async (event, name) => {
-    try {
-        console.log("\n==============================");
-        console.log("Adding Game:", name);
+ipcMain.handle('api:fetchGameDetails', async (_event, name) => {
+    console.log('\n==============================');
+    console.log('Fetching details for:', name);
 
-        const steamData = await steam.fetchGameDetails(name);
-        console.log("Steam AppID:", steamData?.appid || "NOT FOUND");
+    const [steamData, rawgData] = await Promise.all([
+        steam.fetchGameDetails(name).catch(err => {
+            console.warn('[Steam] Failed:', err.message);
+            return null;
+        }),
+        rawg.fetchGameDetails(name).catch(err => {
+            console.warn('[RAWG] Failed:', err.message);
+            return null;
+        })
+    ]);
 
-        const sgAssets = await steamGrid.fetchGameAssets(name, steamData?.appid);
-        console.log("SteamGrid Poster:", sgAssets?.poster ? "YES" : "NO");
-        console.log("SteamGrid Background:", sgAssets?.background ? "YES" : "NO");
-        console.log("SteamGrid Logo:", sgAssets?.logo ? "YES" : "NO");
+    console.log('Steam found:', steamData ? `AppID ${steamData.appid}` : 'NO');
+    console.log('RAWG found:', rawgData ? 'YES' : 'NO');
 
-        const rawgData = await rawg.fetchGameDetails(name);
-        console.log("RAWG Description:", rawgData?.description ? "YES" : "NO");
+    const sgAssets = await steamGrid.fetchGameAssets(name, steamData?.appid).catch(err => {
+        console.warn('[SteamGrid] Failed:', err.message);
+        return null;
+    });
 
-        let description = "No description available.";
-        if (rawgData?.description && rawgData.description.length > 200) {
-            description = rawgData.description;
-        } else if (steamData?.description) {
-            description = steamData.description;
-        }
+    console.log('SteamGrid Poster:', sgAssets?.poster ? 'YES' : 'NO');
+    console.log('SteamGrid Background:', sgAssets?.background ? 'YES' : 'NO');
+    console.log('SteamGrid Logo:', sgAssets?.logo ? 'YES' : 'NO');
 
-        const developer = steamData?.developer || rawgData?.developer || "N/A";
-        const publisher = steamData?.publisher || rawgData?.publisher || "N/A";
-        const releaseDate = steamData?.releaseDate || rawgData?.releaseDate || "N/A";
-
-        const systemRequirements =
-            (steamData && steamData.systemRequirements && steamData.systemRequirements.minimum !== "Not Available")
-                ? steamData.systemRequirements
-                : (rawgData?.systemRequirements || { minimum: "N/A", recommended: "N/A" });
-
-        const screenshots =
-            (sgAssets?.screenshots && sgAssets.screenshots.length > 0)
-                ? sgAssets.screenshots
-                : (steamData?.media?.screenshots?.length > 0
-                    ? steamData.media.screenshots
-                    : rawgData?.media?.screenshots || []);
-
-        const result = {
-            assets: {
-                poster: sgAssets?.poster || steamData?.poster || rawgData?.poster || "",
-                background: sgAssets?.background || steamData?.background || rawgData?.background || "",
-                logo: sgAssets?.logo || ""
-            },
+    if (!steamData && !rawgData && !sgAssets) {
+        console.warn('[Nexus] All sources failed for:', name);
+        return {
+            assets: { poster: '', background: '', logo: '' },
             metadata: {
-                description: description,
-                developer: developer,
-                publisher: publisher,
-                releaseDate: releaseDate,
-                systemRequirements: systemRequirements,
-                metacritic: rawgData?.metacritic || "N/A",
-                genres: rawgData?.genres || "N/A",
-                tags: rawgData?.tags || "N/A",
-                media: {
-                    screenshots: screenshots
-                }
+                description: 'No information found for this game.',
+                developer: 'N/A',
+                publisher: 'N/A',
+                releaseDate: 'N/A',
+                systemRequirements: { minimum: 'N/A', recommended: 'N/A' },
+                metacritic: 'N/A',
+                genres: 'N/A',
+                tags: 'N/A',
+                media: { screenshots: [] }
             }
         };
-
-        console.log("==============================");
-        return result;
-
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        return null;
     }
+
+    let description = 'No description available.';
+    if (rawgData?.description && rawgData.description.length > 200) {
+        description = rawgData.description;
+    } else if (steamData?.description) {
+        description = steamData.description;
+    } else if (rawgData?.description) {
+        description = rawgData.description;
+    }
+
+    const developer = steamData?.developer || rawgData?.developer || 'N/A';
+    const publisher = steamData?.publisher || rawgData?.publisher || 'N/A';
+    const releaseDate = steamData?.releaseDate || rawgData?.releaseDate || 'N/A';
+
+    // System requirements: Steam أولوية إذا القيمة صالحة
+    const steamReqValid =
+        steamData?.systemRequirements?.minimum &&
+        !['N/A', 'Not Available', ''].includes(steamData.systemRequirements.minimum);
+
+    const systemRequirements = steamReqValid
+        ? steamData.systemRequirements
+        : (rawgData?.systemRequirements || { minimum: 'N/A', recommended: 'N/A' });
+
+    // Screenshots: SteamGrid ← Steam ← RAWG
+    const screenshots =
+        sgAssets?.screenshots?.length > 0 ? sgAssets.screenshots :
+            steamData?.media?.screenshots?.length > 0 ? steamData.media.screenshots :
+                rawgData?.media?.screenshots || [];
+
+    console.log('==============================\n');
+
+    return {
+        assets: {
+            poster: sgAssets?.poster || steamData?.poster || rawgData?.poster || '',
+            background: sgAssets?.background || steamData?.background || rawgData?.background || '',
+            logo: sgAssets?.logo || ''
+        },
+        metadata: {
+            description,
+            developer,
+            publisher,
+            releaseDate,
+            systemRequirements,
+            metacritic: rawgData?.metacritic || 'N/A',
+            genres: rawgData?.genres || 'N/A',
+            tags: rawgData?.tags || 'N/A',
+            media: { screenshots }
+        }
+    };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIALOGS / SHELL IPC
+// ─────────────────────────────────────────────────────────────────────────────
 
 ipcMain.handle('dialog:selectGame', () => dialogs.selectGame());
 ipcMain.handle('dialog:selectImage', () => dialogs.selectImage());
-ipcMain.on('shell:openFolder', (event, path) => dialogs.openFolder(event, path));
-ipcMain.on('shell:openExternal', (event, url) => dialogs.openExternal(url));
-// === قنوات ملف الوقت المستقل ===
-ipcMain.handle('db:getPlaytime', (event, gameName) => playtimeDB.getPlaytime(gameName));
-ipcMain.handle('db:addPlaytime', (event, gameName, minutes) => playtimeDB.addPlaytime(gameName, minutes));
+ipcMain.on('shell:openFolder', (event, filePath) => dialogs.openFolder(event, filePath));
+ipcMain.on('shell:openExternal', (_event, url) => dialogs.openExternal(url));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAYTIME IPC
+// ─────────────────────────────────────────────────────────────────────────────
+
+ipcMain.handle('db:getPlaytime', (_event, gameName) => playtimeDB.getPlaytime(gameName));
+ipcMain.handle('db:addPlaytime', (_event, gameName, minutes) => playtimeDB.addPlaytime(gameName, minutes));
