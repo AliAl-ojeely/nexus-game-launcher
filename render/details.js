@@ -15,7 +15,6 @@ function formatTime(totalSeconds) {
     return `${h}:${m}:${s}`;
 }
 
-// تحقق موحد من صحة أي قيمة نصية قبل عرضها
 const isValid = (val) =>
     val != null &&
     val !== 'N/A' &&
@@ -23,10 +22,6 @@ const isValid = (val) =>
     val !== 'Loading...' &&
     String(val).trim() !== '';
 
-/**
- * المصدر الوحيد لإنهاء الجلسة وحفظ الوقت وإعادة الـ UI.
- * يُستدعى دائماً من حدث game:stopped — لا من زر Stop مباشرة.
- */
 async function handleGameStop(gameName) {
     if (!state.isGameRunning || sessionStartTime === 0) return;
 
@@ -71,10 +66,39 @@ async function handleGameStop(gameName) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TRAILER BUTTON
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setupTrailerButton(media, gameName) {
+    const btn = document.getElementById('watchTrailerBtn');
+    if (!btn) return;
+
+    const ytId = media?.trailerYouTubeId;
+    const thumb = media?.trailerThumbnail;
+    const targetUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : media?.trailerSearchUrl;
+
+    const freshBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(freshBtn, btn);
+
+    // إخفاء الزر إذا لم تتوفر صورة أو ID (للتصميم الهادئ)
+    if (!ytId || !thumb) {
+        freshBtn.style.display = 'none';
+        return;
+    }
+
+    freshBtn.style.display = 'block';
+    const thumbImg = freshBtn.querySelector('#trailerThumbnail');
+    if (thumbImg) thumbImg.src = thumb;
+
+    freshBtn.onclick = () => { if (targetUrl) window.api.openExternal(targetUrl); };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GAME DETAILS PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function openGameDetailsPage(game) {
+    // 1. إعدادات الواجهة الأساسية
     document.querySelectorAll('.page-area').forEach(p => p.classList.remove('active'));
     document.getElementById('mainTopbar').style.display = 'none';
     document.getElementById('gameDetailsArea').classList.add('active');
@@ -83,28 +107,32 @@ export async function openGameDetailsPage(game) {
     const banner = document.getElementById('detailsBanner');
     const logoImg = document.getElementById('detailsLogo');
     const screenshotsGrid = document.getElementById('detailsScreenshotsGrid');
-
-    // عناصر التحكم في السايد بار والتخطيط
-    const sidebar = document.querySelector('.details-sidebar');
-    const detailsContentContainer = document.querySelector('.details-content');
-    let sidebarHasContent = false;
+    const descWrapper = document.getElementById('descWrapper');
+    const readMoreBtn = document.getElementById('readMoreBtn');
+    const descEl = document.getElementById('detailsDescription');
 
     document.getElementById('detailsGameTitle').innerText = game.name;
     state.currentGameExePath = game.path;
 
-    // ── دالة التحقق من صحة البيانات ──────────────────────────────────────────
-    const isValid = (val) => val && val !== 'N/A' && val !== 'Not Available' && val.trim() !== '' && val !== 'Loading...';
+    // 2. تصفير حالة الوصف (Read More) عند فتح لعبة جديدة
+    if (descWrapper) descWrapper.classList.remove('expanded');
+    if (readMoreBtn) {
+        readMoreBtn.style.display = 'none';
+        readMoreBtn.classList.remove('active');
+    }
 
-    // ── وقت اللعب ─────────────────────────────────────────────────────────────
+    // 3. حساب ووقت اللعب (Playtime)
     const totalMinutes = await window.api.getPlaytime(game.name);
     const playtimeDisplay = document.getElementById('totalPlaytimeValue');
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    const hLabel = userSettings.lang === 'ar' ? 'س' : 'h';
-    const mLabel = userSettings.lang === 'ar' ? 'د' : 'm';
-    if (playtimeDisplay) playtimeDisplay.innerText = `${hours}${hLabel} ${mins}${mLabel}`;
+    if (playtimeDisplay) {
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const hLabel = userSettings.lang === 'ar' ? 'س' : 'h';
+        const mLabel = userSettings.lang === 'ar' ? 'د' : 'm';
+        playtimeDisplay.innerText = `${hours}${hLabel} ${mins}${mLabel}`;
+    }
 
-    // ── حالة زر التشغيل ───────────────────────────────────────────────────────
+    // 4. حالة زر التشغيل (Play/Stop Button)
     const playBtn = document.getElementById('detailsPlayBtn');
     const timerContainer = document.getElementById('sessionTimerContainer');
 
@@ -124,10 +152,10 @@ export async function openGameDetailsPage(game) {
         }
     }
 
-    // ── جلب البيانات (Metadata) ───────────────────────────────────────────────
+    // 5. جلب البيانات من الـ API (إذا لم تكن مخزنة)
     const isCached = game.metadata?.description && game.metadata.description !== '';
     if (!isCached) {
-        document.getElementById('detailsDescription').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching details...';
+        descEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching details...';
         try {
             const freshData = await window.api.fetchGameDetails(game.name);
             if (freshData?.assets && freshData?.metadata) {
@@ -136,14 +164,14 @@ export async function openGameDetailsPage(game) {
                 await window.api.saveGameDetails(game.id, freshData);
             }
         } catch {
-            document.getElementById('detailsDescription').innerText = 'Failed to load details.';
+            descEl.innerText = userSettings.lang === 'ar' ? 'فشل تحميل البيانات.' : 'Failed to load details.';
         }
     }
 
     const assets = game.assets || {};
     const meta = game.metadata || {};
 
-    // ── البانر واللوجو ────────────────────────────────────────────────────────
+    // 6. الخلفية والشعار (Banner & Logo)
     const bgUrl = assets.background || assets.poster || '';
     banner.style.backgroundImage = `url('${bgUrl}')`;
 
@@ -154,53 +182,56 @@ export async function openGameDetailsPage(game) {
         logoImg.style.display = 'none';
     }
 
-    // ── الوصف (مع حالة الـ Placeholder) ───────────────────────────────────────
-    const descEl = document.getElementById('detailsDescription');
-    if (descEl) {
-        if (isValid(meta.description)) {
-            descEl.innerHTML = meta.description;
-            descEl.classList.remove('description-placeholder');
-            descEl.parentElement.style.display = 'block';
-        } else {
-            // تصميم Empty State في حال عدم وجود وصف
-            descEl.classList.add('description-placeholder');
-            descEl.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-muted); opacity: 0.6;">
-                    <i class="fa-solid fa-gamepad" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
-                    <p>${userSettings.lang === 'ar' ? 'لا يوجد وصف متاح لهذه اللعبة حالياً.' : 'No detailed description available for this game yet.'}</p>
-                </div>
-            `;
-            descEl.parentElement.style.display = 'block';
-        }
+    // 7. منطق الوصف و "إقرأ المزيد" (Description Logic)
+    if (isValid(meta.description)) {
+        descEl.innerHTML = meta.description;
+        // فحص الارتفاع لإظهار الزر (بعد تأخير بسيط لضمان الرسم)
+        setTimeout(() => {
+            if (descEl.scrollHeight > 165) { // 165 بكسل تعادل تقريباً 5 أسطر
+                readMoreBtn.style.display = 'flex';
+                readMoreBtn.querySelector('span').innerText = userSettings.lang === 'ar' ? 'إقرأ المزيد' : 'Read More';
+            } else {
+                readMoreBtn.style.display = 'none';
+            }
+        }, 200);
+    } else {
+        descEl.innerHTML = `
+            <div style="text-align:center; padding:40px; color:var(--text-muted); opacity:0.6;">
+                <i class="fa-solid fa-gamepad" style="font-size:48px; margin-bottom:15px; display:block;"></i>
+                <p>${userSettings.lang === 'ar' ? 'لا يوجد وصف متاح لهذه اللعبة حالياً.' : 'No detailed description available.'}</p>
+            </div>`;
     }
 
-    // ── السايد بار (المطور، الناشر، التاريخ) ───────────────────────────────────
-    const setMetaTextWithTrack = (id, value) => {
+    // 8. تحديث الـ Sidebar (إخفاء الـ N/A تماماً)
+    const sidebar = document.querySelector('.details-sidebar');
+    const detailsContentContainer = document.querySelector('.details-content');
+    let sidebarHasContent = false;
+
+    const updateMeta = (id, value) => {
         const el = document.getElementById(id);
         if (!el) return;
         if (isValid(value)) {
             el.parentElement.style.display = 'block';
             el.innerText = value;
-            sidebarHasContent = true; // وجدنا بيانات للسايد بار
+            sidebarHasContent = true;
         } else {
             el.parentElement.style.display = 'none';
         }
     };
 
-    setMetaTextWithTrack('detailsDev', meta.developer);
-    setMetaTextWithTrack('detailsPub', meta.publisher);
-    setMetaTextWithTrack('detailsRelease', meta.releaseDate);
+    updateMeta('detailsDev', meta.developer);
+    updateMeta('detailsPub', meta.publisher);
+    updateMeta('detailsRelease', meta.releaseDate);
 
-    // ── Metacritic ────────────────────────────────────────────────────────────
+    // Metacritic
     const metacriticEl = document.getElementById('detailsMetacritic');
     if (metacriticEl) {
-        const score = meta.metacritic?.toString();
-        if (!isValid(score)) {
+        if (!isValid(meta.metacritic)) {
             metacriticEl.parentElement.style.display = 'none';
         } else {
             metacriticEl.parentElement.style.display = 'block';
             metacriticEl.textContent = meta.metacritic;
-            metacriticEl.classList.remove('high', 'medium', 'low');
+            metacriticEl.className = 'metacritic-score'; // reset
             const n = parseInt(meta.metacritic);
             if (n >= 75) metacriticEl.classList.add('high');
             else if (n >= 50) metacriticEl.classList.add('medium');
@@ -209,60 +240,47 @@ export async function openGameDetailsPage(game) {
         }
     }
 
-    // ── Genres ────────────────────────────────────────────────────────────────
-    const genresContainer = document.getElementById('detailsGenres');
-    if (genresContainer) {
-        genresContainer.innerHTML = '';
-        if (!isValid(meta.genres)) {
-            genresContainer.parentElement.style.display = 'none';
-        } else {
-            genresContainer.parentElement.style.display = 'block';
-            meta.genres.split(',').map(g => g.trim()).forEach(genre => {
-                const tag = document.createElement('span');
-                tag.className = 'genre-tag';
-                tag.textContent = genre;
-                genresContainer.appendChild(tag);
+    // Genres & Tags
+    const updateTags = (id, value, tagClass) => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = '';
+        if (isValid(value)) {
+            value.split(',').map(v => v.trim()).forEach(text => {
+                const span = document.createElement('span');
+                span.className = tagClass;
+                span.textContent = text;
+                container.appendChild(span);
             });
+            container.parentElement.style.display = 'block';
             sidebarHasContent = true;
-        }
-    }
-
-    // ── Tags ──────────────────────────────────────────────────────────────────
-    const tagsContainer = document.getElementById('detailsTags');
-    if (tagsContainer) {
-        tagsContainer.innerHTML = '';
-        if (!isValid(meta.tags)) {
-            tagsContainer.parentElement.style.display = 'none';
         } else {
-            tagsContainer.parentElement.style.display = 'block';
-            meta.tags.split(',').map(t => t.trim()).forEach(tagText => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'feature-tag';
-                tagSpan.textContent = tagText;
-                tagsContainer.appendChild(tagSpan);
-            });
-            sidebarHasContent = true;
+            container.parentElement.style.display = 'none';
         }
-    }
+    };
 
-    // ── ضبط تخطيط السايد بار والوصف ───────────────────────────────────────────
+    updateTags('detailsGenres', meta.genres, 'genre-tag');
+    updateTags('detailsTags', meta.tags, 'feature-tag');
+
+    // ضبط شكل الصفحة بناءً على محتوى الـ Sidebar
     if (sidebar) {
-        if (sidebarHasContent) {
-            sidebar.style.display = 'block';
-            if (detailsContentContainer) detailsContentContainer.style.gridTemplateColumns = '3fr 1fr';
-        } else {
-            sidebar.style.display = 'none';
-            // جعل الوصف يملأ عرض الصفحة بالكامل 100%
-            if (detailsContentContainer) detailsContentContainer.style.gridTemplateColumns = '1fr';
+        sidebar.style.display = sidebarHasContent ? 'block' : 'none';
+        if (detailsContentContainer) {
+            detailsContentContainer.style.gridTemplateColumns = sidebarHasContent ? '3fr 1fr' : '1fr';
         }
     }
 
-    // ── الميديا (Screenshots) ──────────────────────────────────────────────────
+    // 9. التريلر (Trailer)
+    setupTrailerButton(meta.media, game.name);
+
+    // 10. الصور وقسم الوسائط (Screenshots & Media)
     const mediaSection = document.querySelector('.details-media-section');
+    const hasScreenshots = meta.media?.screenshots?.length > 0;
+    const hasTrailer = !!(meta.media?.trailerYouTubeId && meta.media?.trailerThumbnail);
+
     if (screenshotsGrid) {
         screenshotsGrid.innerHTML = '';
-        if (meta.media?.screenshots?.length > 0) {
-            if (mediaSection) mediaSection.style.display = 'block';
+        if (hasScreenshots) {
             state.currentScreenshotsList = meta.media.screenshots;
             meta.media.screenshots.forEach((imgUrl, index) => {
                 const img = document.createElement('img');
@@ -272,20 +290,22 @@ export async function openGameDetailsPage(game) {
                 img.onclick = () => openLightbox(index);
                 screenshotsGrid.appendChild(img);
             });
-        } else {
-            if (mediaSection) mediaSection.style.display = 'none';
         }
     }
 
-    // ── متطلبات النظام ─────────────────────────────────────────────────────────
+    // إخفاء قسم Media بالكامل إذا كان فارغاً (هادئ)
+    if (mediaSection) {
+        mediaSection.style.display = (hasScreenshots || hasTrailer) ? 'block' : 'none';
+    }
+
+    // 11. متطلبات النظام (System Requirements)
     const reqMin = meta.systemRequirements?.minimum;
     const reqRec = meta.systemRequirements?.recommended;
     const reqMinEl = document.getElementById('reqMin');
     const reqRecEl = document.getElementById('reqRec');
-    const fullReqSection = document.getElementById('systemRequirementsSection')
-        || reqMinEl?.closest('.details-req-section, section, [class*="req"]');
-
+    const fullReqSection = document.getElementById('systemRequirementsSection');
     let hasAnyReq = false;
+
     if (reqMinEl) {
         if (isValid(reqMin)) {
             reqMinEl.innerHTML = reqMin;
@@ -314,10 +334,7 @@ export async function openGameDetailsPage(game) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function initDetails() {
-
-    // ── Play / Stop button ────────────────────────────────────────────────────
     document.getElementById('detailsPlayBtn').onclick = async () => {
-
         if (state.isGameRunning) {
             const currentGame = state.allGamesData.find(g => g.path === state.currentGameExePath);
             if (!currentGame) return;
@@ -328,8 +345,6 @@ export function initDetails() {
                 playBtn.classList.add('play-btn-stopping');
                 playBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${userSettings.lang === 'ar' ? 'جاري الإيقاف...' : 'Stopping...'}`;
             }
-
-            // أمر الإيقاف فقط — الـ UI يُعاد من game:stopped
             window.api.forceStopGame(currentGame.id);
             return;
         }
@@ -349,15 +364,9 @@ export function initDetails() {
             playBtn.innerHTML = `<i class="fa-solid fa-stop"></i> ${userSettings.lang === 'ar' ? 'إيقاف' : 'Stop'}`;
         }
 
-        window.api.launchGame(
-            currentGame.path,
-            showFPS,
-            currentGame.arguments || '',
-            currentGame.id
-        );
+        window.api.launchGame(currentGame.path, showFPS, currentGame.arguments || '', currentGame.id);
 
         sessionStartTime = Date.now();
-
         const timerContainer = document.getElementById('sessionTimerContainer');
         if (timerContainer) timerContainer.style.display = 'flex';
 
@@ -368,7 +377,6 @@ export function initDetails() {
         }, 1000);
     };
 
-    // ── Backend events ────────────────────────────────────────────────────────
     if (window.api.removeGameStoppedListener) window.api.removeGameStoppedListener();
     if (window.api.removeGameErrorListener) window.api.removeGameErrorListener();
 
@@ -383,21 +391,30 @@ export function initDetails() {
         if (currentGame) handleGameStop(currentGame.name);
     });
 
-    // ── Folder button ─────────────────────────────────────────────────────────
     document.getElementById('detailsFolderBtn').onclick = () => {
         if (!state.currentGameExePath) return;
-
         const folderBtn = document.getElementById('detailsFolderBtn');
         folderBtn.disabled = true;
         folderBtn.style.opacity = '0.7';
         folderBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${userSettings.lang === 'ar' ? 'جاري الفتح...' : 'Opening...'}`;
-
         window.api.openFolder(state.currentGameExePath);
-
         setTimeout(() => {
             folderBtn.disabled = false;
             folderBtn.style.opacity = '1';
             folderBtn.innerHTML = `<i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">${userSettings.lang === 'ar' ? 'مجلد اللعبة' : 'Game Folder'}</span>`;
         }, 1200);
     };
+
+    const readMoreBtn = document.getElementById('readMoreBtn');
+    if (readMoreBtn) {
+        readMoreBtn.onclick = function () {
+            const wrapper = document.getElementById('descWrapper');
+            const isExpanded = wrapper.classList.toggle('expanded');
+            this.classList.toggle('active');
+
+            this.querySelector('span').innerText = isExpanded
+                ? (userSettings.lang === 'ar' ? 'عرض أقل' : 'Show Less')
+                : (userSettings.lang === 'ar' ? 'إقرأ المزيد' : 'Read More');
+        };
+    }
 }

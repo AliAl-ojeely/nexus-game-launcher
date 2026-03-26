@@ -9,19 +9,17 @@
         content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:;">
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
-
     <link rel="stylesheet" href="css/main.css">
 </head>
 
 <body>
 
     <div class="sidebar">
-        
-        <div class="logo"><i class="fa-solid fa-ghost"></i> 
+        <div class="logo">
+            <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v1.8.2</span>
+            <span class="version-badge">v1.8.3</span>
         </div>
-        
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
         </div>
@@ -31,7 +29,6 @@
         <div class="nav-item" data-target="settingsArea">
             <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
         </div>
-
         <div class="library-stats">
             <span data-i18n="total_games" style="font-size: 13px; font-weight:normal;">Total Installed Games</span>
             <span id="gameCountDisplay" style="font-size: 20px;">0</span>
@@ -46,8 +43,10 @@
                 <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder"
                     placeholder="Search your library...">
             </div>
-            <button id="addGameBtn" class="add-btn"><i class="fa-solid fa-folder-plus"></i> <span
-                    data-i18n="btn_add_game">Add Game</span></button>
+            <button id="addGameBtn" class="add-btn">
+                <i class="fa-solid fa-folder-plus"></i>
+                <span data-i18n="btn_add_game">Add Game</span>
+            </button>
         </div>
 
         <div id="libraryArea" class="page-area active">
@@ -55,8 +54,10 @@
         </div>
 
         <div id="favoritesArea" class="page-area">
-            <h2 style="margin-top:0; color: var(--text-main);"><i class="fa-solid fa-heart"
-                    style="color:var(--accent);"></i> <span data-i18n="title_favorites">My Favorites</span></h2>
+            <h2 style="margin-top:0; color: var(--text-main);">
+                <i class="fa-solid fa-heart" style="color:var(--accent);"></i>
+                <span data-i18n="title_favorites">My Favorites</span>
+            </h2>
             <div class="games-grid" id="favoritesContainer"></div>
         </div>
 
@@ -104,28 +105,35 @@
                     </div>
                 </div>
 
-                <button class="save-settings-btn" id="saveGeneralSettings"><i class="fa-solid fa-floppy-disk"></i> <span
-                        data-i18n="btn_save_settings">Save Settings</span></button>
+                <button class="save-settings-btn" id="saveGeneralSettings">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span data-i18n="btn_save_settings">Save Settings</span>
+                </button>
             </div>
         </div>
 
         <div id="gameDetailsArea" class="page-area" style="padding: 0;">
             <div class="details-banner" id="detailsBanner">
-                <button id="backToLibraryBtn" class="back-btn-top"><i class="fa-solid fa-arrow-left"></i> <span
-                        data-i18n="btn_back">Back</span></button>
+                <button id="backToLibraryBtn" class="back-btn-top">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span data-i18n="btn_back">Back</span>
+                </button>
 
                 <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
 
                 <div class="banner-overlay">
                     <h1 class="details-title" id="detailsGameTitle">Game Title</h1>
                     <div class="details-actions">
-                        <button id="detailsPlayBtn" class="play-btn-green"><i class="fa-solid fa-play"></i> <span
-                                data-i18n="btn_play">Play</span></button>
+                        <button id="detailsPlayBtn" class="play-btn-green">
+                            <i class="fa-solid fa-play"></i>
+                            <span data-i18n="btn_play">Play</span>
+                        </button>
                         <button id="detailsFolderBtn" class="folder-btn-blue">
-                            <i class="fa-solid fa-folder-open"></i> <span data-i18n="btn_folder">Game Folder</span>
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span data-i18n="btn_folder">Game Folder</span>
                         </button>
                     </div>
-                    
+
                     <div id="playtimeDisplayContainer" class="playtime-container">
                         <div class="playtime-info">
                             <i class="fa-solid fa-clock"></i>
@@ -142,26 +150,51 @@
 
             <div class="details-content">
                 <div class="details-main">
-                    <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="title_description">Description</span>
+                    <h2>
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span data-i18n="title_description">Description</span>
                     </h2>
-                    <p class="details-description" id="detailsDescription">Loading game information...</p>
-
+                
+                    <div class="description-wrapper" id="descWrapper">
+                        <p class="details-description" id="detailsDescription">Loading game information...</p>
+                    </div>
+                    <button id="readMoreBtn" class="read-more-btn" style="display: none;">
+                        <span data-i18n="read_more">Read More</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                
                     <div class="details-media-section">
-                        <h2><i class="fa-solid fa-image"></i> <span data-i18n="title_media">Media</span></h2>
+                        <div class="media-header">
+                            <h2 style="margin:0; border:none; padding:0;">
+                                <i class="fa-solid fa-image"></i>
+                                <span data-i18n="title_media">Media</span>
+                            </h2>
+                            <button id="watchTrailerBtn" class="trailer-btn">
+                                <div class="trailer-wrapper">
+                                    <img id="trailerThumbnail" class="trailer-img-bg" src="" alt="Trailer">
+                                    <div class="trailer-content-overlay">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                
                         <div class="screenshots-grid" id="detailsScreenshotsGrid"></div>
                     </div>
-
+                
                     <div class="details-req-section" id="systemRequirementsSection">
-                        <h2><i class="fa-solid fa-desktop"></i> <span data-i18n="title_requirements">System
-                                Requirements</span></h2>
+                        <h2>
+                            <i class="fa-solid fa-desktop"></i>
+                            <span data-i18n="title_requirements">System Requirements</span>
+                        </h2>
                         <div class="req-grid">
                             <div class="req-box">
                                 <h3>Minimum</h3>
-                                <div id="reqMin" class="req-text">Loading...</div>
+                                <div id="reqMin" class="req-text"></div>
                             </div>
                             <div class="req-box">
                                 <h3>Recommended</h3>
-                                <div id="reqRec" class="req-text">Loading...</div>
+                                <div id="reqRec" class="req-text"></div>
                             </div>
                         </div>
                     </div>
@@ -180,17 +213,14 @@
                         <span data-i18n="meta_release">Release Date</span>
                         <strong id="detailsRelease">...</strong>
                     </div>
-                
                     <div class="meta-item">
                         <span>Metacritic Score</span>
                         <div id="detailsMetacritic" class="metacritic-score">N/A</div>
                     </div>
-                
                     <div class="meta-item">
                         <span>Genres</span>
                         <div id="detailsGenres" class="genres-container">...</div>
                     </div>
-                
                     <div class="meta-item">
                         <span>Features & Tags</span>
                         <div id="detailsTags" class="tags-container">...</div>
@@ -198,8 +228,10 @@
                 </div>
             </div>
         </div>
+
     </div>
 
+    <!-- Modals -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
             <h2><i class="fa-solid fa-gamepad"></i> <span data-i18n="modal_title">Game Details</span></h2>
@@ -220,8 +252,10 @@
                 <label data-i18n="modal_game_path">Executable Path (.exe or .bat):</label>
                 <div class="input-with-btn">
                     <input type="text" id="gamePathInput" readonly>
-                    <button id="changePathBtn"><i class="fa-solid fa-folder"></i> <span
-                            data-i18n="modal_btn_change">Browse</span></button>
+                    <button id="changePathBtn">
+                        <i class="fa-solid fa-folder"></i>
+                        <span data-i18n="modal_btn_change">Browse</span>
+                    </button>
                 </div>
             </div>
 
@@ -270,8 +304,10 @@
             </div>
 
             <div class="modal-buttons">
-                <button id="saveGameModalBtn" class="save-btn"><i class="fa-solid fa-check"></i> <span
-                        data-i18n="modal_btn_save">Save & Search</span></button>
+                <button id="saveGameModalBtn" class="save-btn">
+                    <i class="fa-solid fa-check"></i>
+                    <span data-i18n="modal_btn_save">Save & Search</span>
+                </button>
                 <button id="cancelModalBtn" class="cancel-btn" data-i18n="modal_btn_cancel">Cancel</button>
             </div>
         </div>
@@ -293,13 +329,13 @@
                 <p style="color: var(--text-muted); margin: 5px 0;">alialojeely@gmail.com</p>
                 <p><a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
-                <p>version 1.8.2</p>
+                <p>version 1.8.3</p>
             </div>
         </div>
     </div>
+
     <script src="src/translations.js"></script>
     <script type="module" src="render/render-main.js"></script>
-    <!-- <script src="src/renderer.js"></script> -->
 </body>
 
 </html>

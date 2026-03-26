@@ -82,38 +82,33 @@
     flex-direction: column;
     justify-content: flex-end;
     box-sizing: border-box;
-    /* 🚨 السحر هنا: التدرج المتجه للأعلى صار هو الأول، وزدنا النسبة إلى 30% لدمج أنعم */
-    background: linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
+    background:
+        linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
         linear-gradient(to right, rgba(11, 19, 27, 0.9) 0%, rgba(11, 19, 27, 0.2) 60%, transparent 100%);
 }
 
 [dir="rtl"] .banner-overlay {
-    background: linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
+    background:
+        linear-gradient(to top, var(--bg-body) 0%, transparent 30%),
         linear-gradient(to left, rgba(11, 19, 27, 0.9) 0%, rgba(11, 19, 27, 0.2) 60%, transparent 100%);
 }
 
 /* =========================================
-   Title & Typography (التعديل الأساسي هنا)
+   Title & Logo
 ========================================= */
 .details-title {
-    /* حجم خط ذكي: لا يقل عن 28 ولا يزيد عن 40 */
     font-size: clamp(28px, 4vw, 40px);
     font-weight: 800;
-    /* خط أعرض قليلاً ليعطي فخامة */
     color: #ffffff;
     margin: 0 0 15px 0;
     line-height: 1.25;
-    /* مسافة مريحة بين السطور */
     max-width: 60%;
-    /* 🚨 السر هنا: منع النص من الدخول في مساحة اللوجو */
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.6), 0 5px 15px rgba(0, 0, 0, 0.8);
     letter-spacing: 0.5px;
 }
 
-/* اللوجو العائم (لجعله مرتب ولا يغطي الشاشة) */
 .game-logo-floating {
     position: absolute;
-    /* نزلنا اللوجو من 40px إلى 20px ليكون بمحاذاة الأزرار */
     bottom: 20px;
     right: 40px;
     max-width: 300px;
@@ -136,7 +131,6 @@
     gap: 15px;
     align-items: center;
     max-width: 60%;
-    /* محاذاة الأزرار مع حد النص الجديد */
     flex-wrap: wrap;
 }
 
@@ -164,15 +158,19 @@
 
 .play-btn-green.play-btn-running {
     background-color: #475569;
-    /* لون رمادي أنيق */
     box-shadow: 0 4px 15px rgba(71, 85, 105, 0.4);
 }
 
 .play-btn-green.play-btn-running:hover {
     background-color: #334155;
-    /* رمادي أغمق عند التمرير */
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(71, 85, 105, 0.6);
+}
+
+.play-btn-green.play-btn-stopping {
+    background-color: #92400e;
+    box-shadow: 0 4px 15px rgba(146, 64, 14, 0.4);
+    cursor: not-allowed;
 }
 
 .folder-btn-blue {
@@ -251,17 +249,6 @@
     text-align: center;
 }
 
-.description-placeholder i {
-    font-size: 50px;
-    margin-bottom: 15px;
-    opacity: 0.3;
-}
-
-.description-placeholder p {
-    font-size: 16px;
-    margin: 0;
-}
-
 .details-sidebar {
     background: var(--bg-sidebar);
     padding: 20px;
@@ -270,6 +257,9 @@
     height: fit-content;
 }
 
+/* =========================================
+   Metacritic / Genres / Tags / Meta Items
+========================================= */
 .metacritic-score {
     display: inline-block;
     padding: 6px 12px;
@@ -329,11 +319,169 @@
 }
 
 /* =========================================
-   Media & Requirements Section
+   Media Section
 ========================================= */
 .details-media-section,
 .details-req-section {
     margin-top: 40px;
+}
+
+/* =========================================
+   Description & Read More (Calm UI)
+========================================= */
+.description-wrapper {
+    position: relative;
+    max-height: 160px;
+    /* يعادل تقريباً 5 أسطر */
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.description-wrapper.expanded {
+    max-height: 2000px;
+    /* ارتفاع كبير كفاية للنصوص الطويلة */
+}
+
+/* تأثير التلاشي عند نهاية النص المقطوع */
+.description-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(to top, var(--bg-body), transparent);
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.description-wrapper.expanded::after {
+    opacity: 0;
+}
+
+.details-description {
+    color: var(--text-muted);
+    line-height: 1.8;
+    font-size: 16px;
+    margin: 0;
+    text-align: justify;
+}
+
+.read-more-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.read-more-btn:hover {
+    color: var(--text-main);
+}
+
+.read-more-btn i {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.read-more-btn.active i {
+    transform: rotate(180deg);
+}
+
+/* =========================================
+   Trailer - Fixed Alignment & Calm Design
+========================================= */
+.trailer-btn {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 16 / 9;
+    margin: 20px 0;
+    
+    padding: 0; /* إزالة أي حشوة داخلية للزر */
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: #000;
+    
+    overflow: hidden;
+    cursor: pointer;
+    display: block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    
+    /* إزالة حدود الزر الافتراضية في الويندوز */
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.trailer-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex; /* لضمان توسيط العناصر الداخلية */
+    align-items: center;
+    justify-content: center;
+}
+
+.trailer-img-bg {
+    width: 100%;
+    height: 100%;
+    
+    /* الحل السحري للمحاذاة: */
+    display: block; 
+    object-fit: cover;
+    object-position: center;
+    
+    opacity: 0.85;
+    filter: brightness(0.75);
+    transition: opacity 0.4s ease, filter 0.4s ease;
+}
+
+.trailer-content-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* تدرج هادئ جداً لعدم تشتيت العين */
+    background: rgba(0, 0, 0, 0.1); 
+    z-index: 2;
+    pointer-events: none; /* لكي لا تعيق الضغط */
+}
+
+/* أيقونة التشغيل الهادئة */
+.trailer-content-overlay i {
+    font-size: 55px;
+    color: rgba(255, 255, 255, 0.85);
+    filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* التفاعل عند التحويم (Hover) - هادئ واحترافي */
+.trailer-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.trailer-btn:hover .trailer-img-bg {
+    opacity: 1;
+    filter: brightness(0.85);
+}
+
+.trailer-btn:hover .trailer-content-overlay i {
+    transform: scale(1.1);
+    color: var(--accent); /* تغيير اللون للون تطبيقك الأساسي */
+}
+
+/* إخفاء النص نهائياً */
+.trailer-content-overlay span {
+    display: none;
 }
 
 /* =========================================
@@ -343,7 +491,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 15px;
-    margin-top: 20px;
+    margin-top: 0;
 }
 
 .screenshots-grid img {
@@ -396,17 +544,17 @@
     margin-top: 10px;
 }
 
-[dir="rtl"] .req-text ul {
-    padding-left: 0;
-    padding-right: 20px;
-}
-
 .req-text li {
     margin-bottom: 8px;
 }
 
 .req-text strong {
     color: var(--text-main);
+}
+
+[dir="rtl"] .req-text ul {
+    padding-left: 0;
+    padding-right: 20px;
 }
 
 @media (max-width: 900px) {
@@ -418,7 +566,7 @@
 }
 
 /* =========================================
-   Tags Styling
+   Tags
 ========================================= */
 .tags-container {
     display: flex;
@@ -437,6 +585,9 @@
     font-weight: 600;
 }
 
+/* =========================================
+   Playtime & Session Timer
+========================================= */
 .playtime-container {
     display: flex;
     align-items: center;
