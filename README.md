@@ -180,6 +180,7 @@ NEXUS-GAME-LAUNCHER/
 │   ├── rawg-api.js
 │   ├── steam-api.js
 │   └── steamGrid-api.js
+│   └── youtube-api.js
 ├── node_modules/
 ├── render/
 │   ├── details.js
