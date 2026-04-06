@@ -110,7 +110,10 @@ export function updateBackupSidebarUI(bInfo, gameName, lang) {
         return;
     }
 
+    const label = lang === 'ar' ? 'آخر نسخة' : 'Last Backup';
+    const countLabel = lang === 'ar' ? 'نسخة' : 'backups';
     const folderTip = lang === 'ar' ? 'افتح مجلد النسخ' : 'Show backup folder';
+
     const zipFolder = bInfo.config?.backupPath
         ? `${bInfo.config.backupPath}\\NexusBackups\\${gameName.replace(/[<>:"/\\|?*]/g, '_').trim()}`
         : null;
@@ -126,35 +129,65 @@ export function updateBackupSidebarUI(bInfo, gameName, lang) {
             const isLatest = backup === backupsList[0];
             const dateLabel = isLatest ? (lang === 'ar' ? ' (الأحدث)' : ' (latest)') : '';
             backupsHtml += `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <small style="font-size: 11px; color:var(--text-muted); word-break: break-all;">${backup.fileName}${dateLabel}</small>
-                    <button class="restore-backup-btn" data-zip="${backup.filePath}" data-game="${gameName}" style="
-                        background: none;
-                        border: 1px solid var(--accent);
-                        color: var(--accent);
-                        border-radius: 4px;
-                        padding: 2px 8px;
-                        font-size: 11px;
-                        cursor: pointer;
-                        transition: 0.2s;
-                    " onmouseover="this.style.background='var(--accent)';this.style.color='#fff';"
-                       onmouseout="this.style.background='transparent';this.style.color='var(--accent)';">
-                        ${lang === 'ar' ? 'استعادة' : 'Restore'}
-                    </button>
-                </div>
-            `;
+        <div class="backup-entry" style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            gap: 8px;
+            ">
+            <small style="
+                font-size: 11px;
+                color: var(--text-muted);
+                word-break: break-all;
+                flex: 1;
+                min-width: 120px;
+            ">${backup.fileName}${dateLabel}</small>
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <button class="restore-backup-btn" data-zip="${backup.filePath}" data-game="${gameName}" style="
+                    background: none;
+                    border: 1px solid var(--accent);
+                    color: var(--accent);
+                    border-radius: 4px;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: 0.2s;
+                " onmouseover="this.style.background='var(--accent)';this.style.color='#fff';"
+                    onmouseout="this.style.background='transparent';this.style.color='var(--accent)';">
+                    ${lang === 'ar' ? 'استعادة' : 'Restore'}
+                </button>
+                <button class="delete-backup-btn" data-zip="${backup.filePath}" data-game="${gameName}" style="
+                    background: none;
+                    border: 1px solid #ef4444;
+                    color: #ef4444;
+                    border-radius: 4px;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: 0.2s;
+                " onmouseover="this.style.background='#ef4444';this.style.color='#fff';"
+                    onmouseout="this.style.background='transparent';this.style.color='#ef4444';">
+                    ${lang === 'ar' ? 'حذف' : 'Delete'}
+                </button>
+            </div>
+            </div>
+        `;
         });
         backupsHtml += `</div></div>`;
     }
 
+    // 🔥 IMPORTANT: Include backupsHtml in the main HTML
     el.innerHTML = `
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <i class="fa-solid fa-circle-check" style="color:#10b981; font-size:12px;"></i>
             <small style="color:var(--text-muted);">
-                ${lang === 'ar' ? 'آخر نسخة' : 'Last Backup'}: 
-                <strong style="color:var(--text-main);">${bInfo.lastBackupDate}</strong>
+                ${label}: <strong style="color:var(--text-main);">${bInfo.lastBackupDate}</strong>
             </small>
-            <small style="color:var(--text-muted); opacity:0.6;">(${bInfo.backupCounter} ${lang === 'ar' ? 'نسخة' : 'backups'})</small>
+            <small style="color:var(--text-muted); opacity:0.6;">(${bInfo.backupCounter} ${countLabel})</small>
             ${zipFolder ? `
             <button id="openBackupFolderBtn" title="${folderTip}" style="
                 background: none;
@@ -173,10 +206,10 @@ export function updateBackupSidebarUI(bInfo, gameName, lang) {
                 <i class="fa-solid fa-folder-open"></i>
             </button>` : ''}
         </div>
-        ${backupsHtml}
+        ${backupsHtml}   <!-- ✅ This was missing -->
     `;
 
-    // Folder button listener
+    // Folder button listener (re-attach after innerHTML reset)
     const folderBtn = document.getElementById('openBackupFolderBtn');
     if (folderBtn) {
         folderBtn.onclick = () => {
@@ -185,18 +218,31 @@ export function updateBackupSidebarUI(bInfo, gameName, lang) {
         };
     }
 
-    // Attach restore button listeners
+    // Attach restore/delete listeners
     attachRestoreListeners(lang);
 }
 
 function attachRestoreListeners(lang) {
-    const confirmMessage = lang === 'ar'
-        ? '⚠️ تحذير: استعادة النسخة ستحل محل بيانات الحفظ الحالية.\nيجب إغلاق اللعبة قبل الاستعادة.\n\nهل تريد المتابعة؟'
-        : '⚠️ Warning: Restoring will overwrite your current save data.\nThe game must be closed before restoring.\n\nDo you want to proceed?';
+    // Fallback if lang is undefined
+    const safeLang = (lang === 'ar' || lang === 'en') ? lang : 'en';
 
+    const confirmRestore = safeLang === 'ar'
+        ? ' تحذير: استعادة النسخة ستحل محل بيانات الحفظ الحالية.\nيجب إغلاق اللعبة قبل الاستعادة.\n\nهل تريد المتابعة؟'
+        : ' Warning: Restoring will overwrite your current save data.\nThe game must be closed before restoring.\n\nDo you want to proceed?';
+
+    const confirmDelete = safeLang === 'ar'
+        ? ' هل أنت متأكد من حذف هذه النسخة الاحتياطية؟\nلا يمكن التراجع عن هذا الإجراء.'
+        : ' Are you sure you want to delete this backup? This action cannot be undone.';
+
+    // Remove existing listeners to avoid duplicates
     document.querySelectorAll('.restore-backup-btn').forEach(btn => {
         btn.removeEventListener('click', restoreHandler);
         btn.addEventListener('click', restoreHandler);
+    });
+
+    document.querySelectorAll('.delete-backup-btn').forEach(btn => {
+        btn.removeEventListener('click', deleteHandler);
+        btn.addEventListener('click', deleteHandler);
     });
 
     async function restoreHandler(event) {
@@ -204,7 +250,7 @@ function attachRestoreListeners(lang) {
         const zipPath = btn.dataset.zip;
         const gameName = btn.dataset.game;
 
-        if (!confirm(confirmMessage)) return;
+        if (!confirm(confirmRestore)) return;
 
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -215,20 +261,64 @@ function attachRestoreListeners(lang) {
             const result = await window.api.backup.restore(zipPath, gameName);
             if (result.success) {
                 showToast('success',
-                    lang === 'ar' ? 'تم الاستعادة بنجاح ✅' : 'Restored successfully ✅',
+                    safeLang === 'ar' ? 'تم الاستعادة بنجاح ✅' : 'Restored successfully ✅',
                     result.targetPath,
                     5000
                 );
+                const freshInfo = await window.api.backup.getInfo(gameName);
+                updateBackupSidebarUI(freshInfo, gameName, safeLang);
             } else {
                 showToast('error',
-                    lang === 'ar' ? 'فشل الاستعادة' : 'Restore failed',
+                    safeLang === 'ar' ? 'فشل الاستعادة' : 'Restore failed',
                     result.error || '',
                     5000
                 );
             }
         } catch (err) {
             showToast('error',
-                lang === 'ar' ? 'خطأ أثناء الاستعادة' : 'Restore error',
+                safeLang === 'ar' ? 'خطأ أثناء الاستعادة' : 'Restore error',
+                err.message,
+                5000
+            );
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            btn.style.opacity = '1';
+        }
+    }
+
+    async function deleteHandler(event) {
+        const btn = event.currentTarget;
+        const zipPath = btn.dataset.zip;
+        const gameName = btn.dataset.game;
+
+        if (!confirm(confirmDelete)) return;
+
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        btn.style.opacity = '0.7';
+
+        try {
+            const result = await window.api.backup.deleteBackup(gameName, zipPath);
+            if (result.success) {
+                showToast('success',
+                    safeLang === 'ar' ? 'تم حذف النسخة ✅' : 'Backup deleted ✅',
+                    '',
+                    3000
+                );
+                const freshInfo = await window.api.backup.getInfo(gameName);
+                updateBackupSidebarUI(freshInfo, gameName, safeLang);
+            } else {
+                showToast('error',
+                    safeLang === 'ar' ? 'فشل الحذف' : 'Delete failed',
+                    result.error || '',
+                    5000
+                );
+            }
+        } catch (err) {
+            showToast('error',
+                safeLang === 'ar' ? 'خطأ أثناء الحذف' : 'Delete error',
                 err.message,
                 5000
             );

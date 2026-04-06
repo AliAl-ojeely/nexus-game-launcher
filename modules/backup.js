@@ -500,9 +500,19 @@ function getGameBackupInfo(gameName) {
         const data = fs.existsSync(BACKUP_CONFIG)
             ? JSON.parse(fs.readFileSync(BACKUP_CONFIG, 'utf-8'))
             : {};
-        const config = data[gameName] || null;
+        let config = data[gameName] || null;
 
-        const backupList = config?.backupPath ? listBackups(gameName, config.backupPath) : [];
+        // Get global backup path from settings
+        const globalPath = getGlobalBackupPath();
+        console.log(`[Backup] getGameBackupInfo for "${gameName}" – globalPath: ${globalPath}`);
+
+        // Determine which backup path to use for listing backups
+        let backupPath = config?.backupPath || globalPath;
+        console.log(`[Backup] Using backupPath: ${backupPath}`);
+
+        const backupList = backupPath ? listBackups(gameName, backupPath) : [];
+        console.log(`[Backup] Found ${backupList.length} backups for "${gameName}"`);
+
         const lastBackup = backupList[0] || null;
         const lastBackupDate = lastBackup
             ? new Date(lastBackup.date).toLocaleString('en-GB', {
@@ -525,57 +535,11 @@ function getGameBackupInfo(gameName) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FIX 3 — performMirroring reads globalBackupPath from settings.json
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function performMirroring(gameName, installPath = null) {
-    console.log(`[Backup] 🔄 performMirroring: "${gameName}"`);
-
-    try {
-        const data = fs.existsSync(BACKUP_CONFIG)
-            ? JSON.parse(fs.readFileSync(BACKUP_CONFIG, 'utf-8'))
-            : {};
-        const config = data[gameName] || {};
-
-        // ── Resolve backup destination ─────────────────────────────────────
-        // Priority: per-game backupPath → global setting
-        const backupDir = config.backupPath || getGlobalBackupPath();
-
-        if (!backupDir) {
-            console.log(`[Backup] ⏭️  No backup path for "${gameName}" — skipping`);
-            return { success: false, reason: 'no_backup_path' };
-        }
-
-        // ── Resolve save source ────────────────────────────────────────────
-        // Priority: saved originPath → auto-discover (and persist result)
-        const savePath = config.originPath
-            || autoDiscoverSavePath(gameName, installPath, true);
-
-        if (!savePath) {
-            return { success: false, reason: 'no_save_path' };
-        }
-        if (!fs.existsSync(savePath)) {
-            return { success: false, reason: 'path_not_found', savePath };
-        }
-
-        const result = await backupGame({ name: gameName, path: installPath }, backupDir, savePath);
-        return result;
-
-    } catch (err) {
-        console.error(`[Backup] performMirroring exception: ${err.message}`);
-        return { success: false, reason: 'exception', error: err.message };
-    }
-}
-
 // ─── backupGame ───────────────────────────────────────────────────────────────
 
 /**
  * Creates a ZIP backup of the game's save folder.
- * ✅ FIX 6: Uses adm-zip (ZIP format) — no external tools needed for restore.
- *           ZIP files open natively in Windows Explorer since Windows 10.
- *           (If you see a .zip with WinRAR icon, that's just WinRAR claiming the
- *            extension — the file IS a valid ZIP, extractable without WinRAR.)
+ * ✅ Uses adm-zip (ZIP format) — no external tools needed for restore.
  */
 async function backupGame(game, backupDir, savePath = null, installPath = null) {
     if (!AdmZip) return { success: false, error: 'adm-zip not installed — run: npm install adm-zip' };
@@ -620,6 +584,49 @@ async function backupGame(game, backupDir, savePath = null, installPath = null) 
         return { success: true, zipPath, savePath, sizeKB: zipSizeKB };
     } catch (err) {
         return { success: false, error: `ZIP failed: ${err.message}` };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX 3 — performMirroring reads globalBackupPath from settings.json as fallback
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function performMirroring(gameName, installPath = null) {
+    console.log(`[Backup] 🔄 performMirroring: "${gameName}"`);
+
+    try {
+        const data = fs.existsSync(BACKUP_CONFIG)
+            ? JSON.parse(fs.readFileSync(BACKUP_CONFIG, 'utf-8'))
+            : {};
+        const config = data[gameName] || {};
+
+        // ── Resolve backup destination ─────────────────────────────────────
+        // Priority: per-game backupPath → global setting
+        const backupDir = config.backupPath || getGlobalBackupPath();
+
+        if (!backupDir) {
+            console.log(`[Backup] ⏭️  No backup path for "${gameName}" — skipping`);
+            return { success: false, reason: 'no_backup_path' };
+        }
+
+        // ── Resolve save source ────────────────────────────────────────────
+        // Priority: saved originPath → auto-discover (and persist result)
+        const savePath = config.originPath
+            || autoDiscoverSavePath(gameName, installPath, true);
+
+        if (!savePath) {
+            return { success: false, reason: 'no_save_path' };
+        }
+        if (!fs.existsSync(savePath)) {
+            return { success: false, reason: 'path_not_found', savePath };
+        }
+
+        const result = await backupGame({ name: gameName, path: installPath }, backupDir, savePath);
+        return result;
+
+    } catch (err) {
+        console.error(`[Backup] performMirroring exception: ${err.message}`);
+        return { success: false, reason: 'exception', error: err.message };
     }
 }
 
@@ -791,6 +798,30 @@ function cleanOldBackups(dir, maxKeep = 10) {
     } catch { /* ignore */ }
 }
 
+/**
+ * Deletes a specific backup ZIP file.
+ * @param {string} gameName - Name of the game
+ * @param {string} zipPath  - Full path to the ZIP file to delete
+ * @returns {object} { success: boolean, error?: string }
+ */
+function deleteBackup(gameName, zipPath) {
+    try {
+        if (!fs.existsSync(zipPath)) {
+            return { success: false, error: 'Backup file not found' };
+        }
+        fs.unlinkSync(zipPath);
+        console.log(`[Backup] Deleted: ${zipPath}`);
+
+        // Update the backup list in gamesBackSave.json (optional: remove from list, but it's auto-generated on next getInfo)
+        // No need to modify the config file because listBackups will rebuild from disk.
+
+        return { success: true };
+    } catch (err) {
+        console.error(`[Backup] Failed to delete backup: ${err.message}`);
+        return { success: false, error: err.message };
+    }
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -810,4 +841,5 @@ module.exports = {
     buildNameCandidates,
     normalizeForFuzzy,
     getGlobalBackupPath,
+    deleteBackup,
 };

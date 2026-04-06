@@ -76,5 +76,7 @@ contextBridge.exposeInMainWorld('api', {
 
         scanVault: (vaultPath) =>
             ipcRenderer.invoke('backup:scanVault', vaultPath),
+
+        deleteBackup: (gameName, zipPath) => ipcRenderer.invoke('backup:deleteBackup', gameName, zipPath),
     },
 });

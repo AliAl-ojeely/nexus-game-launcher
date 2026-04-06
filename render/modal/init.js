@@ -97,15 +97,24 @@ export function initModal() {
 
     document.getElementById('cancelModalBtn').addEventListener('click', () => {
         editModal.style.display = 'none';
-        document.getElementById('editGameOriginPath').value = ''; // clear
+        document.getElementById('editGameOriginPath').value = '';
+        document.getElementById('customPosterInput').value = '';
+        document.getElementById('customLogoInput').value = '';
+        document.getElementById('customBgInput').value = '';
+        document.getElementById('customIconInput').value = '';
     });
 
     editModal.addEventListener('click', (e) => {
         if (e.target === editModal) {
             editModal.style.display = 'none';
-            document.getElementById('editGameOriginPath').value = ''; // clear
+            document.getElementById('editGameOriginPath').value = '';
+            document.getElementById('customPosterInput').value = '';
+            document.getElementById('customLogoInput').value = '';
+            document.getElementById('customBgInput').value = '';
+            document.getElementById('customIconInput').value = '';
         }
     });
+    
     editModal.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();

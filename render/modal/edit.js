@@ -5,31 +5,30 @@ export async function openEditModal(game) {
     state.editingGameId = game.id;
     state.tempGamePath = game.path;
 
+    // Game name and path
     document.getElementById('gameNameInput').value = game.name;
     document.getElementById('gamePathInput').value = game.path;
     document.getElementById('launchArgsInput').value = game.arguments || '';
 
-    // Reset custom asset fields
-    document.getElementById('customPosterInput').value = game.assets?.poster?.startsWith('file:///')
-        ? game.assets.poster.replace('file:///', '').replace(/\//g, '\\') : '';
-    document.getElementById('customLogoInput').value = game.assets?.logo?.startsWith('file:///')
-        ? game.assets.logo.replace('file:///', '').replace(/\//g, '\\') : '';
-    document.getElementById('customBgInput').value = game.assets?.background?.startsWith('file:///')
-        ? game.assets.background.replace('file:///', '').replace(/\//g, '\\') : '';
-    document.getElementById('customIconInput').value = game.assets?.icon?.startsWith('file:///')
-        ? game.assets.icon.replace('file:///', '').replace(/\//g, '\\') : '';
+    // ── Clear all custom asset inputs first ──
+    document.getElementById('customPosterInput').value = '';
+    document.getElementById('customLogoInput').value = '';
+    document.getElementById('customBgInput').value = '';
+    document.getElementById('customIconInput').value = '';
 
-    // 🔥 CRITICAL: Clear origin path before loading
-    const originInput = document.getElementById('editGameOriginPath');
-    originInput.value = '';
-    originInput.placeholder = userSettings.lang === 'ar' ? 'جاري التحميل...' : 'Loading...';
-
-    const backupInput = document.getElementById('editGameBackupPath');
-    backupInput.value = '';
-    const globalPath = await window.api.backup.getGlobalPath();
-    backupInput.placeholder = globalPath
-        ? (userSettings.lang === 'ar' ? `المسار العام: ${globalPath}` : `Global default: ${globalPath}`)
-        : (userSettings.lang === 'ar' ? 'اتركه فارغاً للمسار العام' : 'Leave empty for global default');
+    // ── Then set from the current game ──
+    if (game.assets?.poster?.startsWith('file:///')) {
+        document.getElementById('customPosterInput').value = game.assets.poster.replace('file:///', '').replace(/\//g, '\\');
+    }
+    if (game.assets?.logo?.startsWith('file:///')) {
+        document.getElementById('customLogoInput').value = game.assets.logo.replace('file:///', '').replace(/\//g, '\\');
+    }
+    if (game.assets?.background?.startsWith('file:///')) {
+        document.getElementById('customBgInput').value = game.assets.background.replace('file:///', '').replace(/\//g, '\\');
+    }
+    if (game.assets?.icon?.startsWith('file:///')) {
+        document.getElementById('customIconInput').value = game.assets.icon.replace('file:///', '').replace(/\//g, '\\');
+    }
 
     document.getElementById('saveGameModalBtn').innerHTML =
         `<i class="fa-solid fa-check"></i> ${userSettings.lang === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}`;

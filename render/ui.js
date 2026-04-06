@@ -1,5 +1,6 @@
 // render/ui.js
 import { state, userSettings } from './state.js';
+import { showToast } from './details-components.js';
 
 function t(key, fallback = '') {
     const lang = userSettings.lang;
@@ -90,7 +91,7 @@ export function initUI() {
         document.documentElement.style.setProperty('--grid-size', newGrid);
         applyLanguage(newLang);
 
-        alert(newLang === 'ar' ? t('settings_saved', 'تم حفظ الإعدادات بنجاح!') : t('settings_saved', 'Settings saved successfully!'));
+        showToast('success', newLang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved', '', 3000);
     });
 
     // Navigation logic

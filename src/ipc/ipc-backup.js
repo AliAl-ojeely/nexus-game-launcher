@@ -32,6 +32,10 @@ function registerBackupIPC() {
         await backups.restoreBackup(zipPath, gameName)
     );
 
+    ipcMain.handle('backup:deleteBackup', async (_e, gameName, zipPath) => {
+        return await backups.deleteBackup(gameName, zipPath);
+    });
+
     ipcMain.handle('backup:setGlobalPath', (_e, folderPath) => {
         try {
             const settings = readSettings();
