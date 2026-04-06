@@ -1,34 +1,42 @@
-[
-  {
-    "id": 1773803729365,
-    "name": "Prince of Persia The Lost Crown",
-    "path": "D:\\Games\\Prince of Persia The Lost Crown\\TheLostCrown.exe",
+{
+    "id": 1775387888102,
+    "name": "Assassin's Creed 2007",
+    "path": "D:\\Games\\Sonic Origins\\build\\main\\projects\\exec\\SonicOrigins.exe",
     "arguments": "",
     "isFavorite": false,
     "assets": {
-      "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/library_600x900.jpg",
-      "background": "https://cdn2.steamgriddb.com/hero/82fd34f734dfb70f685134cbbd66876a.png",
-      "logo": "https://cdn2.steamgriddb.com/logo/54f83c905d32a810c7a5a2d224e290b4.png"
+      "poster": "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/poster.png",
+      "background": "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/background.jpg",
+      "logo": "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/logo.png",
+      "icon": "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/icon.ico"
     },
     "metadata": {
-      "description": "Dash into a stylish and thrilling action-adventure platformer set in a mythological Persian world where the boundaries of time and space are yours to manipulate.",
-      "developer": "Ubisoft Montpellier",
-      "publisher": "Ubisoft",
-      "releaseDate": "8 Aug, 2024",
+      "name": "Assassin's Creed 2007",
+      "description": "The game takes place in 1191. In the present time, 2012, bartender Desmond Miles, the main character, kidnapped by the Corporation \"Abstergo industries\", which with the help of a machine called \"Animus\" wants to find an artefact. He learns that he is a descendant of the assassin Altair, who discovered this artefact. They need Desmond to know the location of the treasure through him.\r\n\r\nThe game belongs to the category of open world projects. It means that the world can be explored by the player in a free manner there. All the game space is a simplified model of the Holy Land. The area is divided into seven main sections. \r\n\r\nThe player will have to climb on a lot of different buildings and towers. The architecture of the cities in Assassin's Creed is specially designed so that Altair can jump on any roof. Throughout the game, these skills will not just be used to perform additional tasks.\r\n\r\nAn essential part of the game is the investigation and the associated need to merge with the crowd. Each time, getting to the big city, Altair has to look around properly and find the office of assassins. The head of the Bureau will tell him about his future victim and will bring to some people who have useful information.",
+      "developer": "Ubisoft",
+      "publisher": "Ubisoft Entertainment",
+      "releaseDate": "2007-11-13",
       "systemRequirements": {
-        "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit only)<br></li><li><strong>Processor:</strong> Intel Core i5-4460 3.4 GHz, AMD Ryzen3 1200 3.1 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 950 (2GB VRAM) or AMD Radeon RX 5500 XT (4GB VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 30 GB available space</li></ul>",
-        "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit only)<br></li><li><strong>Processor:</strong> Intel Core i7-6700 3.4 GHz, AMD Ryzen5 1600 3.2 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 960 (4GB VRAM) or AMD Radeon RX 5500 XT (4GB VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 30 GB available space</li></ul>"
+        "minimum": "Supported OS: Windows XP / Vista (only)\r\nProcessor: Dual core processor 2.6 GHz Intel Pentium D or AMD Athlon 64 X2 3800+ (Intel Core 2 Duo 2.2 GHz or AMD Athlon 64 X2 4400+ or better recommended)\r\nRAM: 1 GB Windows XP / 2 GB Windows Vista\r\nVideo Card: 256 MB DirectX 10.0–compliant video card or DirectX 9.0–compliant card with Shader Model 3.0 or higher (see supported list)*\r\nSound Card: DirectX 9.0 or 10.0 compliant sound card (5.1 sound card recommended)\r\nDirectX Version: DirectX 10.0 libraries (included on disc)\r\nDVD-ROM: DVD-ROM dual-layer drive\r\nHard Drive Space: 8 GB\r\nPeripherals Supported: Keyboard, mouse, optional controller (Xbox 360 Controller for Windows recommended)\r\n\r\n*Supported Video Cards at Time of Release: \r\nATI RADEON X1600* / 1650*-1950 / HD 2000 / 3000 series\r\nNVIDIA GeForce 6800* / 7 / 8 / 9 series\r\n*PCI Express only supported\r\n \r\nLaptop versions of these cards may work but are NOT supported. These chipsets are the only ones that will run this game.\r\n\r\nNOTE: This game contains technology intended to prevent copying that may conflict with some disc and virtual drives.",
+        "recommended": ""
       },
+      "metacritic": 80,
+      "genres": "Action",
+      "tags": "Stealth, Space, Assassin, character, city, Investigation, future, Single player only",
       "media": {
-        "trailer": "",
         "screenshots": [
-          "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/ss_33461dd5d03ff17cb6f697cd0e5581179d2a79bb.1920x1080.jpg?t=1736259456",
-          "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/ss_501d258f3625fe03cb9bca175d5c98082470f742.1920x1080.jpg?t=1736259456",
-          "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/ss_11ba725868d030749cfea0aef6a832bcdc86808d.1920x1080.jpg?t=1736259456",
-          "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/ss_29386f461b838966bd9233339f58ceba75eff803.1920x1080.jpg?t=1736259456",
-          "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2751000/ss_c134fcbaf1b6f49a27b3e571b58ba1826fa57f37.1920x1080.jpg?t=1736259456"
-        ]
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_0.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_1.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_2.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_3.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_4.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_5.jpg",
+          "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/screenshot_6.jpg"
+        ],
+        "trailerYouTubeId": "RjQ6ZtyXoA0",
+        "trailerThumbnail": "local-resource:///C:/Users/Mr.Ghost/AppData/Roaming/Nexus Game Launcher/game-assets/assassins-creed-2007/trailer_thumb.jpg",
+        "trailerSearchUrl": "https://www.youtube.com/results?search_query=Assassin's%20Creed%20official%20trailer"
       }
-    }
-  }
-]
+    },
+    "playtime": 0
+  },

@@ -61,6 +61,83 @@
 }
 
 /* =========================================
+   Details Header Bar (Back + Game Name)
+========================================= */
+.details-header-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    /* spacing between back button and title group */
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.details-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    flex-shrink: 0;
+    /* prevent shrinking */
+}
+
+.details-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.details-header-title {
+    display: flex;
+    /* removed absolute positioning */
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    flex-shrink: 1;
+    min-width: 0;
+    /* allows text ellipsis to work */
+}
+
+.details-header-icon {
+    width: 40px;
+    /* increased from 26px */
+    height: 40px;
+    /* increased from 26px */
+    border-radius: 8px;
+    /* slightly larger radius for aesthetics */
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.details-header-title span {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+}
+
+[dir="rtl"] .details-back-btn i.fa-arrow-left {
+    transform: scaleX(-1);
+}
+
+/* =========================================
    Hero Banner & Overlay
 ========================================= */
 .details-banner {
@@ -97,6 +174,7 @@
    Title & Logo
 ========================================= */
 .details-title {
+    display: none; /* if you want the game title to be hidden */
     font-size: clamp(28px, 4vw, 40px);
     font-weight: 800;
     color: #ffffff;
@@ -192,26 +270,6 @@
     background-color: #2980b9;
 }
 
-.back-btn-top {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-    transition: 0.2s;
-}
-
-[dir="rtl"] .back-btn-top {
-    left: auto;
-    right: 20px;
-}
-
 /* =========================================
    Content Blocks
 ========================================= */
@@ -255,6 +313,49 @@
     border-radius: 12px;
     border: 1px solid var(--border-color);
     height: fit-content;
+}
+
+.backup-status-container {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.backup-status-container small {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.4;
+    display: block;
+}
+
+/* ── Backup Now button in sidebar ── */
+.backup-now-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.backup-now-btn:hover {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.backup-now-btn:hover i,
+.backup-now-btn:hover span {
+    color: #ffffff;
 }
 
 /* =========================================
@@ -327,22 +428,19 @@
 }
 
 /* =========================================
-   Description & Read More (Calm UI)
+   Description & Read More
 ========================================= */
 .description-wrapper {
     position: relative;
     max-height: 160px;
-    /* يعادل تقريباً 5 أسطر */
     overflow: hidden;
     transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .description-wrapper.expanded {
     max-height: 2000px;
-    /* ارتفاع كبير كفاية للنصوص الطويلة */
 }
 
-/* تأثير التلاشي عند نهاية النص المقطوع */
 .description-wrapper::after {
     content: '';
     position: absolute;
@@ -395,7 +493,7 @@
 }
 
 /* =========================================
-   Trailer - Fixed Alignment & Calm Design
+   Trailer
 ========================================= */
 .trailer-btn {
     position: relative;
@@ -403,18 +501,14 @@
     max-width: 640px;
     aspect-ratio: 16 / 9;
     margin: 20px 0;
-    
-    padding: 0; /* إزالة أي حشوة داخلية للزر */
+    padding: 0;
     border-radius: 12px;
     border: 1px solid var(--border-color);
     background: #000;
-    
     overflow: hidden;
     cursor: pointer;
     display: block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    
-    /* إزالة حدود الزر الافتراضية في الويندوز */
     outline: none;
     -webkit-appearance: none;
     appearance: none;
@@ -424,7 +518,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex; /* لضمان توسيط العناصر الداخلية */
+    display: flex;
     align-items: center;
     justify-content: center;
 }
@@ -432,12 +526,9 @@
 .trailer-img-bg {
     width: 100%;
     height: 100%;
-    
-    /* الحل السحري للمحاذاة: */
-    display: block; 
+    display: block;
     object-fit: cover;
     object-position: center;
-    
     opacity: 0.85;
     filter: brightness(0.75);
     transition: opacity 0.4s ease, filter 0.4s ease;
@@ -449,13 +540,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* تدرج هادئ جداً لعدم تشتيت العين */
-    background: rgba(0, 0, 0, 0.1); 
+    background: rgba(0, 0, 0, 0.1);
     z-index: 2;
-    pointer-events: none; /* لكي لا تعيق الضغط */
+    pointer-events: none;
 }
 
-/* أيقونة التشغيل الهادئة */
 .trailer-content-overlay i {
     font-size: 55px;
     color: rgba(255, 255, 255, 0.85);
@@ -463,7 +552,6 @@
     transition: transform 0.3s ease, color 0.3s ease;
 }
 
-/* التفاعل عند التحويم (Hover) - هادئ واحترافي */
 .trailer-btn:hover {
     border-color: var(--accent);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
@@ -476,10 +564,9 @@
 
 .trailer-btn:hover .trailer-content-overlay i {
     transform: scale(1.1);
-    color: var(--accent); /* تغيير اللون للون تطبيقك الأساسي */
+    color: var(--accent);
 }
 
-/* إخفاء النص نهائياً */
 .trailer-content-overlay span {
     display: none;
 }
@@ -510,9 +597,6 @@
     border-color: var(--accent);
 }
 
-/* =========================================
-   System Requirements
-========================================= */
 .req-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

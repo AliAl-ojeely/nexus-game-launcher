@@ -1,9 +1,9 @@
 <div align="center">
 
-# Nexus Game Launcher
+# 🎮 Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.8.3-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-1.9.0-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,29 +22,38 @@
 
 ---
 
-## What's New in `v1.8.3` - The "Creative Freedom" Update
+## What's New in `v1.9.0` – The "Total Control" Update
 
-Version `1.8.3` is a major milestone. We’ve moved beyond automated fetching to give you absolute control over your library's visual identity, backed by a highly optimized, modular codebase, advanced smart-search algorithms, and robust tracking.
+Version `1.9.0` introduces powerful manual controls, a complete visual overhaul of the edit modal, and a fully modular, maintainable codebase.
 
-### Personalization & Asset Management
+### Complete Asset Customization
 
-- **Custom Graphics Trio:** Manually set a **Custom Poster**, **Custom Logo**, and **Custom Background** for every game. Perfect for rare titles or high-quality fan art.
-- **Smart Reset System (API Fallback):** Each asset field features a "Remove" (X) button. Deleting a custom path intelligently triggers a fresh API request to find the best official assets.
-- **Dynamic UI:** A redesigned "Edit Game" modal with a custom unified scrollbar comfortably houses all the new options.
-- **"Pitch Black" Darker Theme:** Introduced a new OLED-friendly "Darker" theme alongside the standard Light and Dark modes.
+- **Custom Icon Support** – You can now set a custom icon (`.ico`, `.png`, `.jpg`) for each game. The icon is displayed prominently in the game details header.
+- **Smart Asset Fallback** – Removing a custom asset (poster, logo, background, or icon) automatically reverts to the best auto‑downloaded version from SteamGridDB or RAWG.
+- **Unified Asset Editor** – All four custom asset fields are now grouped together in the edit modal, each with its own **Select** and **Remove** button.
 
-### Advanced Playtime Tracking & UX Enhancements
+### Drag & Drop Reordering
 
-- **Smart Hybrid Process Monitor:** A custom-built tracking engine (Radar + Sniper approach) that intelligently differentiates between intermediary game launchers (like Rockstar/EA apps) and actual game executables. It ensures pinpoint accurate playtime logging and instantly stops the timer upon unexpected exits (`Alt+F4`).
-- **True Offline Capability:** All critical UI assets (Cairo & Poppins fonts, FontAwesome icons) are now bundled locally. The launcher maintains its premium cinematic look even without an active internet connection.
-- **Smart Conditional UI:** The interface intelligently hides missing metadata (like empty Metacritic scores or tags) for a cleaner, clutter-free sidebar.
+- **Reorder Mode** – Click the new cross‑arrow button next to the search bar to enter reorder mode. Game cards shake gently to indicate they can be moved.
+- **Intuitive Drag & Drop** – Drag any game poster to a new position. The new order is saved automatically to `order.json` (no changes to `games.json`).
+- **Reset Button** – While in reorder mode, a reset button appears. Click it to restore the original order (by date added).
+- **Persistent Order** – The custom order survives launcher restarts and is applied every time the library is rendered.
 
-### Technical & Architectural Overhaul
+### Complete Backup & Restore System
 
-- **Advanced Dual-API Engine:** - **Steam & RAWG Synergy:** Intelligently routes searches using either **Steam AppIDs** or **Release Years** to fetch exact versions of games (e.g., distinguishing between *Resident Evil 4 2005* and *Resident Evil 4 2023*).
-  - **SteamGridDB API:** Seamlessly pulls high-fidelity transparent logos and vertical posters.
-- **Optimized Data Structure:** Removed heavy, unused data properties to keep the `games.json` database incredibly fast and lightweight.
-- **Decoupled Localization (i18n):** All text strings are isolated into a dedicated `translations.js` file, supporting instant switches between **Arabic** and **English**.
+- **One‑Click Backup** – The “Backup Now” button in the game details sidebar creates a ZIP archive of the game’s save folder.
+- **Backup History** – All previous backups are listed directly in the sidebar. Each backup has its own **Restore** button.
+- **Safe Restore** – Before restoring, a confirmation dialog warns that the current save data will be overwritten and that the game must be closed.
+- **Global Backup Vault** – Set a default backup folder in Settings. Per‑game custom paths can override it.
+
+### Technical Overhauls
+
+- **Modular Frontend Code** – The massive `details.js` and `modal.js` files have been split into well‑organized subfolders (`render/details/` and `render/modal/`), each containing focused, single‑responsibility modules.
+- **Improved RAWG Matching** – The game matching logic now **requires all significant words** (e.g., “Resident Evil Requiem” will never match “Resident Evil: Village”). Year filtering and strict overlap thresholds ensure accurate results.
+- **Steam User Rating Fallback** – When RAWG lacks a Metacritic score, the launcher falls back to the Steam user rating percentage (0–100). The rating display (green/yellow/red) works perfectly with the fallback.
+- **Manual Save Path Override** – If auto‑discovery fails, you can now manually select the original save folder using a dedicated browse button in the edit modal.
+- **Toast Notifications** – All backup, restore, and error messages now use a themed toast system that adapts to dark, darker, and light modes.
+- **CSP Fix for SortableJS** – The Content Security Policy has been updated to allow the SortableJS CDN, enabling smooth drag & drop.
 
 ---
 
@@ -52,15 +61,25 @@ Version `1.8.3` is a major milestone. We’ve moved beyond automated fetching to
 
 ### Organize Your Library
 
-Effortlessly manage your collection with dedicated views for your **entire library** and **favorite games**.
+Effortlessly manage your collection with dedicated views for your **entire library** and **favorite games**.  
+**New:** Drag & drop to reorder your library exactly as you like.
 
 <p align="center">
   <img src="assets/favorites-view.png" alt="Favorites View" width="80%">
 </p>
 
+### Game Details View
+
+Immerse yourself in a cinematic game overview with dynamic banners, animated logos, screenshots, trailers, and system requirements – all beautifully laid out.
+
+<p align="center">
+  <img src="assets/game-details-cinematic.png" alt="Game Details Cinematic View" width="80%">
+</p>
+
 ### Full Customization & Localization
 
-Customize the experience with dark/light themes, adjustable grid layouts, and full **Arabic RTL support**.
+Customize the experience with dark/light/darker themes, adjustable grid layouts, and full **Arabic RTL support**.  
+**New:** Edit every visual asset (poster, logo, background, icon) – and remove them to revert to auto‑downloaded versions.
 
 <p align="center">
   <img src="assets/settings-page.png" alt="Settings Page" width="48%">
@@ -73,11 +92,12 @@ Customize the experience with dark/light themes, adjustable grid layouts, and fu
 
 - **Cross-Platform Execution:** Native support for **Windows** and specialized **Proton support for Linux** systems.
 - **Local Library Management:** Add and organize executable files (`.exe`, `.bat`, `.lnk`) effortlessly.
-- **Hybrid Cover System:** Retrieve covers automatically or manually select custom assets.
+- **Hybrid Asset System:** Retrieve posters, logos, backgrounds, and icons automatically (SteamGridDB + RAWG + Steam) or override them with your own images.
 - **Favorites & Search:** Quickly filter your library and pin your most-played games.
-- **Smart Launch & Playtime Tracking:** Prevents accidental double-launches while accurately logging total playtime (localized to H/M or س/د), backed by an intelligent process monitor.
-- **Persistent Local Storage:** A lightweight JSON-based database keeps all your data entirely local and private.
-- **Secure Execution Environment:** Built with Electron IPC communication and context isolation for secure desktop behavior.
+- **Smart Launch & Playtime Tracking:** Prevents accidental double‑launches while accurately logging total playtime (localised to H/M or س/د), backed by an intelligent process monitor.
+- **Automatic & Manual Backups:** Secure your game saves with one‑click backups and restore any previous backup directly from the launcher.
+- **Persistent Local Storage:** A lightweight JSON‑based database keeps all your data (including custom order) entirely local and private.
+- **Secure Execution Environment:** Built with Electron IPC communication and context isolation for secure desktop behaviour.
 
 ---
 
@@ -141,12 +161,15 @@ chmod +x Nexus_Game_Launcher_1.7.0.AppImage./Nexus_Game_Launcher_1.7.0.AppImage
 | **Runtime** | Electron JS (v41+) |
 | **Backend** | Node.js (Child Process, IPC, FS) |
 | **Frontend** | HTML5, CSS3 (Flexbox/Grid), JavaScript (ES6 Modules) |
+| **Drag & Drop** | SortableJS (CDN) |
+| **Modular Architecture** | Custom ES6 Modules (`render/details/`, `render/modal/`) |
 | **Compatibility** | Proton GE (Linux) / Native (Windows) / macOS |
-| **Data Fetching** | Axios (Steam, RAWG, SteamGridDB APIs) |
+| **Data Fetching** | Axios (Steam, RAWG, SteamGridDB, YouTube APIs) |
 | **Security & Secrets** | Bundled JSON Secrets (Injected via CI/CD Pipeline) |
-| **Persistence** | Local JSON Database (Games & Playtime) |
+| **Persistence** | Local JSON Database (`games.json`, `playTime.json`, `gamesBackSave.json`, `order.json`) |
+| **Backup System** | adm‑zip (ZIP compression) |
 | **Assets & UI** | Localized FontAwesome 6 & Google Fonts (100% Offline Support) |
-| **CI/CD & Build** | GitHub Actions Pipeline -> Electron Builder (NSIS, AppImage, DMG) |
+| **CI/CD & Build** | GitHub Actions Pipeline → Electron Builder (NSIS, AppImage, DMG) |
 
 # Project Structure
 
@@ -155,8 +178,8 @@ chmod +x Nexus_Game_Launcher_1.7.0.AppImage./Nexus_Game_Launcher_1.7.0.AppImage
 NEXUS-GAME-LAUNCHER/
 ├── .github/
 ├── assets/
-│   ├── fonts
-│   ├── fontawesome
+│   ├── fonts/
+│   ├── fontawesome/
 │   ├── favorites-view.png
 │   ├── game-details-cinematic.png
 │   ├── icon.ico
@@ -166,36 +189,65 @@ NEXUS-GAME-LAUNCHER/
 │   └── settings-page.png
 ├── css/
 │   ├── components.css
+│   ├── backup-ux.css
 │   ├── layout.css
 │   ├── main.css
 │   ├── modals.css
 │   ├── pages.css
+│   ├── reorder.css
 │   └── variables.css
 ├── dist/
 ├── modules/
+│   ├── app-settings.js       
+│   ├── assets.js             
+│   ├── backup.js
 │   ├── database.js
 │   ├── dialogs.js
 │   ├── game-launcher.js
-│   └── playtime.js
+│   ├── metadata.js           
+│   ├── playtime.js
 │   ├── rawg-api.js
 │   ├── steam-api.js
-│   └── steamGrid-api.js
+│   ├── steamGrid-api.js
 │   └── youtube-api.js
 ├── node_modules/
 ├── render/
-│   ├── details.js
+│   ├── details/                     ← modular details page
+│   │   ├── index.js
+│   │   ├── state.js
+│   │   ├── helpers.js
+│   │   ├── render.js
+│   │   ├── handlers.js
+│   │   ├── page.js
+│   │   └── init.js
+│   ├── modal/                       ← modular edit modal
+│   │   ├── index.js
+│   │   ├── helpers.js
+│   │   ├── backup-status.js
+│   │   ├── backup-fields.js
+│   │   ├── add-game.js
+│   │   ├── edit.js
+│   │   └── init.js
+│   ├── details.js                   ← re‑export
+│   ├── modal.js                     ← re‑export
+│   ├── backup-ui.js
+│   ├── details-utils.js
+│   ├── details-components.js
 │   ├── library.js
-│   ├── modal.js
+│   ├── reorder.js
 │   ├── render-main.js
 │   ├── shortcuts.js
 │   ├── state.js
 │   └── ui.js
 ├── src/
-│   ├── main.js
-│   ├── render.js
+│   ├── ipc/                 
+│   │   ├── ipc-api.js        
+│   │   ├── ipc-backup.js     
+│   │   └── ipc-database.js   
+│   ├── main.js               
 │   ├── preload.js
+│   ├── secrets.json
 │   └── translation.js
-│   └── secrets.json
 ├── .gitignore
 ├── games.json
 ├── games.json.example

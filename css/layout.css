@@ -69,6 +69,7 @@ body {
     color: var(--text-main);
     font-family: 'Poppins';
     cursor: pointer;
+    /* 🟢 ضروري ليعرف المستخدم أن الشعار قابل للضغط */
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -189,6 +190,7 @@ body {
     }
 }
 
+/* 🟢 تم الإبقاء على هذه الأقسام كما طلبت لضمان عدم نقص الأسطر */
 .details-banner {
     position: relative;
     height: 450px;

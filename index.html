@@ -6,7 +6,7 @@
     <title>Nexus Game Launcher</title>
 
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: local-resource:;">
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v1.8.3</span>
+            <span class="version-badge">v1.9.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -43,16 +43,23 @@
                 <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder"
                     placeholder="Search your library...">
             </div>
-            <button id="addGameBtn" class="add-btn">
-                <i class="fa-solid fa-folder-plus"></i>
-                <span data-i18n="btn_add_game">Add Game</span>
-            </button>
+            <div class="topbar-actions">
+                <button id="shortcutsBtn" class="shortcuts-btn" title="Keyboard Shortcuts">
+                    <i class="fa-regular fa-keyboard"></i>
+                </button>
+                <button id="addGameBtn" class="add-btn">
+                    <i class="fa-solid fa-folder-plus"></i>
+                    <span data-i18n="btn_add_game">Add Game</span>
+                </button>
+            </div>
         </div>
 
+        <!-- ── Library ── -->
         <div id="libraryArea" class="page-area active">
             <div class="games-grid" id="gamesContainer"></div>
         </div>
 
+        <!-- ── Favorites ── -->
         <div id="favoritesArea" class="page-area">
             <h2 style="margin-top:0; color: var(--text-main);">
                 <i class="fa-solid fa-heart" style="color:var(--accent);"></i>
@@ -61,14 +68,14 @@
             <div class="games-grid" id="favoritesContainer"></div>
         </div>
 
+        <!-- ── Settings ── -->
         <div id="settingsArea" class="page-area">
             <div class="settings-container">
                 <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
 
                 <div class="form-group">
                     <label data-i18n="set_app_name">Launcher Name (Logo):</label>
-                    <input type="text" id="appNameSetting" data-i18n-placeholder class="custom-input"
-                        placeholder="Nexus Launcher">
+                    <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
                 </div>
 
                 <div class="settings-grid">
@@ -100,8 +107,46 @@
                 <div class="form-group">
                     <label data-i18n="set_fps">Show Performance HUD:</label>
                     <div class="toggle-container">
-                        <input type="checkbox" id="fpsToggle" data-i18n-placeholder class="custom-toggle">
+                        <input type="checkbox" id="fpsToggle" class="custom-toggle">
                         <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
+                    </div>
+                </div>
+
+                <!-- Global Backup Vault -->
+                <div class="settings-section"
+                    style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <h3 style="margin-bottom: 15px; color: var(--text-main); font-size: 16px;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--accent);"></i>
+                        <span data-i18n="settings_backup_title">Global Backup Vault</span>
+                    </h3>
+                    <div class="form-group">
+                        <label data-i18n="settings_backup_desc">Default folder for save backups (Non-C drive
+                            recommended):</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="globalBackupPath" readonly
+                                placeholder="Select a safe backup location...">
+                            <button id="selectGlobalBackupBtn" class="folder-btn-blue">
+                                <i class="fa-solid fa-folder-open"></i>
+                            </button>
+                        </div>
+
+                        <div
+                            style="margin-top:15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                            <button id="scanVaultBtn" class="folder-btn-blue"
+                                style="gap:7px; font-size:12px; padding: 8px 15px;">
+                                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                <span>Scan Vault & Re-link Backups</span>
+                            </button>
+                            <small
+                                style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px; line-height: 1.4;">
+                                <i class="fa-solid fa-circle-info"></i>
+                                Use this after reinstalling Windows or moving your games to automatically link existing
+                                backup files to your current library.
+                            </small>
+                            <div id="scanVaultResult"
+                                style="display:none; margin-top:10px; padding: 8px; border-radius: 5px; font-size: 12px; background: rgba(0,0,0,0.2);">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -112,12 +157,21 @@
             </div>
         </div>
 
+        <!-- ── Game Details ── -->
         <div id="gameDetailsArea" class="page-area" style="padding: 0;">
+
             <div class="details-banner" id="detailsBanner">
-                <button id="backToLibraryBtn" class="back-btn-top">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span data-i18n="btn_back">Back</span>
-                </button>
+
+                <!-- ── Details Header Bar ── -->
+                <div class="details-header-bar">
+                    <button id="backToLibraryBtn" class="details-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div class="details-header-title">
+                        <img id="detailsHeaderIcon" class="details-header-icon" src="" alt="" style="display:none;">
+                        <span id="detailsHeaderName"></span>
+                    </div>
+                </div>
 
                 <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
 
@@ -154,7 +208,7 @@
                         <i class="fa-solid fa-circle-info"></i>
                         <span data-i18n="title_description">Description</span>
                     </h2>
-                
+
                     <div class="description-wrapper" id="descWrapper">
                         <p class="details-description" id="detailsDescription">Loading game information...</p>
                     </div>
@@ -162,7 +216,7 @@
                         <span data-i18n="read_more">Read More</span>
                         <i class="fa-solid fa-chevron-down"></i>
                     </button>
-                
+
                     <div class="details-media-section">
                         <div class="media-header">
                             <h2 style="margin:0; border:none; padding:0;">
@@ -178,10 +232,9 @@
                                 </div>
                             </button>
                         </div>
-                
                         <div class="screenshots-grid" id="detailsScreenshotsGrid"></div>
                     </div>
-                
+
                     <div class="details-req-section" id="systemRequirementsSection">
                         <h2>
                             <i class="fa-solid fa-desktop"></i>
@@ -200,6 +253,7 @@
                     </div>
                 </div>
 
+                <!-- ── Sidebar ── -->
                 <div class="details-sidebar">
                     <div class="meta-item">
                         <span data-i18n="meta_developer">Developer</span>
@@ -225,13 +279,30 @@
                         <span>Features & Tags</span>
                         <div id="detailsTags" class="tags-container">...</div>
                     </div>
+
+                    <!-- ── Backup Section ── -->
+                    <div class="meta-item"
+                        style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <span data-i18n="meta_backup_status">Backup Status</span>
+
+                        <div id="backupStatusValue" class="backup-status-container">
+                            <small style="opacity:0.5;">No backups yet.</small>
+                        </div>
+
+                        <button id="backupNowBtn" class="backup-now-btn">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span data-i18n="btn_backup_now">Backup Now</span>
+                        </button>
+
+                        <div id="backupListContainer" style="display:none; margin-top:12px;"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Modals -->
+    <!-- ── Edit Game Modal ── -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
             <h2><i class="fa-solid fa-gamepad"></i> <span data-i18n="modal_title">Game Details</span></h2>
@@ -259,6 +330,36 @@
                 </div>
             </div>
 
+            <!-- Save Path (auto-discovered) -->
+            <div class="form-group" style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                <label>
+                    <i class="fa-solid fa-map-pin"></i>
+                    <span data-i18n="modal_save_origin">Original Save Path:</span>
+                </label>
+                <div class="input-with-btn">
+                    <input type="text" id="editGameOriginPath" placeholder="Auto‑discovered or manual path"
+                        style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-muted); font-family:inherit; font-size:13px; box-sizing:border-box;">
+                    <button id="browseOriginPathBtn" class="folder-btn-blue" title="Select save folder">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </button>
+                </div>
+                <div id="savePathStatus" style="display:none; margin-top:6px;"></div>
+            </div>
+
+            <!-- Custom Backup Location -->
+            <div class="form-group">
+                <label>
+                    <i class="fa-solid fa-copy"></i>
+                    <span data-i18n="modal_custom_backup">Custom Backup Location:</span>
+                </label>
+                <div class="input-with-btn">
+                    <input type="text" id="editGameBackupPath" placeholder="Leave empty for global default">
+                    <button id="selectCustomBackupBtn" class="folder-btn-blue">
+                        <i class="fa-solid fa-folder-tree"></i>
+                    </button>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label data-i18n="modal_launch_args">Launch Arguments (Optional):</label>
                 <div class="input-with-btn">
@@ -270,10 +371,9 @@
             <div class="form-group">
                 <label data-i18n="modal_custom_poster">Custom Poster (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="customPosterInput" readonly data-i18n-placeholder="modal_leave_empty"
-                        placeholder="Leave empty for auto search">
+                    <input type="text" id="customPosterInput" readonly placeholder="Leave empty for auto search">
                     <button id="customImageBtn" title="Select Poster"><i class="fa-solid fa-image"></i></button>
-                    <button id="removePosterBtn" class="action-btn delete-btn" title="Remove Current Poster">
+                    <button id="removePosterBtn" class="action-btn delete-btn" title="Remove Poster">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -282,10 +382,9 @@
             <div class="form-group">
                 <label data-i18n="modal_custom_logo">Custom Logo (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="customLogoInput" readonly data-i18n-placeholder="modal_leave_empty"
-                        placeholder="Leave empty for auto search">
+                    <input type="text" id="customLogoInput" readonly placeholder="Leave empty for auto search">
                     <button id="customLogoBtn" title="Select Logo"><i class="fa-solid fa-image"></i></button>
-                    <button id="removeLogoBtn" class="action-btn delete-btn" title="Remove Current Logo">
+                    <button id="removeLogoBtn" class="action-btn delete-btn" title="Remove Logo">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -294,10 +393,20 @@
             <div class="form-group">
                 <label data-i18n="modal_custom_bg">Custom Background (Optional):</label>
                 <div class="input-with-btn">
-                    <input type="text" id="customBgInput" readonly data-i18n-placeholder="modal_leave_empty"
-                        placeholder="Leave empty for auto search">
+                    <input type="text" id="customBgInput" readonly placeholder="Leave empty for auto search">
                     <button id="customBgBtn" title="Select Background"><i class="fa-solid fa-image"></i></button>
-                    <button id="removeBgBtn" class="action-btn delete-btn" title="Remove Current Background">
+                    <button id="removeBgBtn" class="action-btn delete-btn" title="Remove Background">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="modal_custom_icon">Custom Icon (Optional):</label>
+                <div class="input-with-btn">
+                    <input type="text" id="customIconInput" readonly placeholder="Leave empty for auto search">
+                    <button id="customIconBtn" title="Select Icon"><i class="fa-solid fa-image"></i></button>
+                    <button id="removeIconBtn" class="action-btn delete-btn" title="Remove Icon">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -313,6 +422,7 @@
         </div>
     </div>
 
+    <!-- ── Image Lightbox ── -->
     <div id="imageLightbox" class="lightbox">
         <span class="close-lightbox" id="closeLightbox">&times;</span>
         <img class="lightbox-content" id="lightboxImage">
@@ -320,20 +430,69 @@
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
 
+    <!-- ── Dev Modal ── -->
     <div class="modal-overlay" id="devModal">
-        <div class="modal-content" style="text-align: center;">
+        <div class="modal-content"
+            style="text-align: center; display: flex; flex-direction: column; align-items: center;">
             <i class="fa-solid fa-ghost" style="font-size: 60px; color: var(--accent); margin-bottom: 20px;"></i>
             <h2 data-i18n="dev_title">Developer Info</h2>
-            <div style="margin: 25px 0; line-height: 1.8;">
-                <h3 style="margin: 0; color: var(--text-main);">Ali Al-ojeely (Mr.Ghost)</h3>
-                <p style="color: var(--text-muted); margin: 5px 0;">alialojeely@gmail.com</p>
-                <p><a href="https://github.com/AliAl-ojeely" target="_blank"
-                        style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a></p>
-                <p>version 1.8.3</p>
+            <div
+                style="margin: 25px 0; line-height: 1.8; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <h3 style="margin: 0; color: var(--text-main); text-align: center; width: 100%;">Ali Al-ojeely
+                    (Mr.Ghost)</h3>
+                <p style="color: var(--text-muted); margin: 5px 0; text-align: center;">alialojeely@gmail.com</p>
+                <p style="text-align: center;">
+                    <a href="https://github.com/AliAl-ojeely" target="_blank"
+                        style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
+                </p>
+                <p style="text-align: center;">version 1.9.0</p>
             </div>
         </div>
     </div>
 
+    <!-- ── Keyboard Shortcuts Modal ── -->
+    <div id="shortcutsModal" class="modal-overlay">
+        <div class="modal-content shortcuts-modal">
+            <h2><i class="fa-regular fa-keyboard"></i> <span data-i18n="shortcuts_title">Keyboard Shortcuts</span></h2>
+            <div class="shortcuts-grid">
+                <div class="shortcut-item">
+                    <kbd>←</kbd> / <kbd>→</kbd>
+                    <span data-i18n="shortcut_navigate_images">Navigate screenshots (lightbox)</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Esc</kbd>
+                    <span data-i18n="shortcut_esc">Close modal / Go back / Blur search</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Backspace</kbd>
+                    <span data-i18n="shortcut_backspace">Go back to library</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Enter</kbd>
+                    <span data-i18n="shortcut_enter">Play game (when in details page)</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>+</kbd>
+                    <span data-i18n="shortcut_add">Open Add Game dialog</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>S</kbd>
+                    <span data-i18n="shortcut_search">Focus search bar</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Mouse wheel</kbd>
+                    <span data-i18n="shortcut_wheel">Next/previous screenshot (lightbox)</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Mouse back button</kbd>
+                    <span data-i18n="shortcut_mouse_back">Go back (or close lightbox)</span>
+                </div>
+            </div>
+            <button class="close-shortcuts-btn" data-i18n="shortcuts_close">Close</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="src/translations.js"></script>
     <script type="module" src="render/render-main.js"></script>
 </body>

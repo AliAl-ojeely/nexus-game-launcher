@@ -1,5 +1,5 @@
 /* =========================================
-   General Modals (Edit/Add Game)
+    General Modals (Edit/Add Game)
 ========================================= */
 .modal-overlay {
     display: none;
@@ -12,7 +12,9 @@
     z-index: 9999;
 }
 
-.modal-overlay.show {
+/* دعم كلا الكلاسين لضمان عمل المودال */
+.modal-overlay.show,
+.modal-overlay.active {
     display: flex;
 }
 
@@ -53,6 +55,17 @@
     outline: none;
     text-overflow: ellipsis;
     overflow: hidden;
+    min-width: 0;
+    /* منع الحقل من دفع الأزرار للخارج */
+}
+
+/* تنسيق الحقول التي تظهر تلقائياً (Original Path) */
+.readonly-input {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed var(--border-color) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed;
+    opacity: 0.8;
 }
 
 .input-with-btn button {
@@ -60,17 +73,58 @@
     color: var(--text-main);
     border: 1px solid var(--border-color);
     padding: 0 15px;
+    /* مساحة جانبية للنص */
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: 0.2s;
     white-space: nowrap;
+    /* يمنع نزول الكلمة لسطر جديد */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: fit-content;
+    /* الزر يتوسع حسب الكلمة */
+    height: 45px;
+    flex-shrink: 0;
+    /* يمنع انضغاط الزر */
 }
 
 .input-with-btn button:hover {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+
+/* الألوان الخاصة بالأزرار الجديدة */
+.folder-btn-blue {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.input-with-btn .delete-btn {
+    width: 45px;
+    /* أزرار الحذف تبقى مربعة لأنها أيقونة فقط */
+    height: 45px;
+    min-width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ef4444;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-inline-start: 2px;
+}
+
+.input-with-btn .delete-btn:hover {
+    background-color: #dc2626;
+    transform: scale(1.05);
 }
 
 .modal-buttons {
@@ -114,7 +168,7 @@
 }
 
 /* =========================================
-   Lightbox (Image Viewer)
+    Lightbox (Image Viewer)
 ========================================= */
 .lightbox {
     display: none;
@@ -188,14 +242,8 @@
     right: 20px;
 }
 
-.prev-lightbox:hover,
-.next-lightbox:hover {
-    background: rgba(0, 0, 0, 0.8);
-    color: var(--accent);
-}
-
 /* =========================================
-   Error Handling Modal
+    Error Handling Modal
 ========================================= */
 .custom-error-modal {
     position: fixed;
@@ -234,43 +282,106 @@
     cursor: pointer;
 }
 
-/* =========================================
-   Delete Button Styling (X Button)
-========================================= */
-.input-with-btn .delete-btn {
-    width: 45px;
-    height: 45px;
-    min-width: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #ef4444;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-inline-start: 2px;
-}
-
-.input-with-btn .delete-btn:hover {
-    background-color: #dc2626;
-    transform: scale(1.05);
-}
-
-.input-with-btn .delete-btn:active {
-    transform: scale(0.95);
-}
-
 .input-error {
     border-color: #ef4444 !important;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.4) !important;
-    transition: all 0.3s ease;
 }
 
-.input-error::placeholder {
-    color: #ef4444;
-    opacity: 0.8;
+/* =========================================
+   Shortcuts Modal
+========================================= */
+.shortcuts-modal {
+    max-width: 500px;
+    text-align: left;
+}
+
+[dir="rtl"] .shortcuts-modal {
+    text-align: right;
+}
+
+.shortcuts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 25px 0;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.shortcut-item kbd {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+}
+
+.shortcut-item span {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.close-shortcuts-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+
+.close-shortcuts-btn:hover {
+    background: var(--accent-hover);
+}
+
+/* RTL adjustments */
+[dir="rtl"] .shortcut-item {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .shortcut-item kbd {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.topbar-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.shortcuts-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.2s;
+}
+
+.shortcuts-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }

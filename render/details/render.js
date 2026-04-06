@@ -1,0 +1,153 @@
+import { state, userSettings } from '../state.js';
+import { openLightbox } from '../shortcuts.js';
+import { toSafeUrl, isValid } from '../details-utils.js';
+import { setupTrailerButton } from '../details-components.js';
+import { t } from './helpers.js';
+
+export function renderGameDetails(game) {
+    const assets = game.assets || {};
+    const meta = game.metadata || {};
+
+    const banner = document.getElementById('detailsBanner');
+    const logoImg = document.getElementById('detailsLogo');
+    const headerIcon = document.getElementById('detailsHeaderIcon');
+    const screenshotsGrid = document.getElementById('detailsScreenshotsGrid');
+    const descEl = document.getElementById('detailsDescription');
+    const readMoreBtn = document.getElementById('readMoreBtn');
+
+    // Banner
+    const bgUrl = toSafeUrl(assets.background || assets.poster || '');
+    if (banner) banner.style.backgroundImage = bgUrl ? `url("${bgUrl}")` : '';
+
+    // Logo
+    if (logoImg) {
+        if (assets.logo) {
+            logoImg.src = toSafeUrl(assets.logo);
+            logoImg.style.display = 'block';
+        } else {
+            logoImg.style.display = 'none';
+        }
+    }
+
+    // Header Icon
+    if (headerIcon) {
+        if (assets.icon) {
+            headerIcon.src = toSafeUrl(assets.icon);
+            headerIcon.style.display = 'block';
+            headerIcon.onerror = () => { headerIcon.style.display = 'none'; };
+        } else {
+            headerIcon.style.display = 'none';
+        }
+    }
+
+    // Description
+    if (isValid(meta.description)) {
+        descEl.innerHTML = meta.description;
+        setTimeout(() => {
+            if (readMoreBtn && descEl.scrollHeight > 165) {
+                readMoreBtn.style.display = 'flex';
+                readMoreBtn.querySelector('span').innerText = t('read_more', userSettings.lang === 'ar' ? 'إقرأ المزيد' : 'Read More');
+            } else if (readMoreBtn) {
+                readMoreBtn.style.display = 'none';
+            }
+        }, 200);
+    } else {
+        descEl.innerHTML = `<p>${t('fetching_description', userSettings.lang === 'ar' ? 'جاري جلب الوصف...' : 'Fetching description...')}</p>`;
+    }
+
+    // Sidebar metadata
+    const updateMeta = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && isValid(value)) {
+            el.parentElement.style.display = 'block';
+            el.innerText = value;
+        } else if (el) {
+            el.parentElement.style.display = 'none';
+        }
+    };
+    updateMeta('detailsDev', meta.developer);
+    updateMeta('detailsPub', meta.publisher);
+    updateMeta('detailsRelease', meta.releaseDate);
+
+    // Metacritic
+    const metacriticEl = document.getElementById('detailsMetacritic');
+    if (metacriticEl) {
+        if (!isValid(meta.metacritic)) {
+            metacriticEl.parentElement.style.display = 'none';
+        } else {
+            metacriticEl.parentElement.style.display = 'block';
+            metacriticEl.textContent = meta.metacritic;
+            metacriticEl.className = 'metacritic-score';
+            const n = parseInt(meta.metacritic);
+            if (n >= 75) metacriticEl.classList.add('high');
+            else if (n >= 50) metacriticEl.classList.add('medium');
+            else metacriticEl.classList.add('low');
+        }
+    }
+
+    // Genres & Tags
+    const updateTags = (id, value, tagClass) => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = '';
+        if (isValid(value)) {
+            value.split(',').map(v => v.trim()).filter(Boolean).forEach(text => {
+                const span = document.createElement('span');
+                span.className = tagClass;
+                span.textContent = text;
+                container.appendChild(span);
+            });
+            container.parentElement.style.display = 'block';
+        } else {
+            container.parentElement.style.display = 'none';
+        }
+    };
+    updateTags('detailsGenres', meta.genres, 'genre-tag');
+    updateTags('detailsTags', meta.tags, 'feature-tag');
+
+    // System Requirements
+    const reqMinEl = document.getElementById('reqMin');
+    const reqRecEl = document.getElementById('reqRec');
+    const fullReqSection = document.getElementById('systemRequirementsSection');
+    let hasAnyReq = false;
+    const sysReqs = meta.systemRequirements || null;
+
+    if (reqMinEl) {
+        if (sysReqs && isValid(sysReqs.minimum)) {
+            reqMinEl.innerHTML = sysReqs.minimum;
+            reqMinEl.parentElement.style.display = 'block';
+            hasAnyReq = true;
+        } else {
+            reqMinEl.parentElement.style.display = 'none';
+        }
+    }
+    if (reqRecEl) {
+        if (sysReqs && isValid(sysReqs.recommended)) {
+            reqRecEl.innerHTML = sysReqs.recommended;
+            reqRecEl.parentElement.style.display = 'block';
+            hasAnyReq = true;
+        } else {
+            reqRecEl.parentElement.style.display = 'none';
+        }
+    }
+    if (fullReqSection) fullReqSection.style.display = hasAnyReq ? 'block' : 'none';
+
+    // Screenshots
+    if (screenshotsGrid) {
+        screenshotsGrid.innerHTML = '';
+        if (meta.media?.screenshots?.length > 0) {
+            state.currentScreenshotsList = meta.media.screenshots;
+            meta.media.screenshots.forEach((imgUrl, index) => {
+                const img = document.createElement('img');
+                img.src = toSafeUrl(imgUrl);
+                img.className = 'screenshot-item';
+                img.loading = 'lazy';
+                img.onclick = () => openLightbox(index);
+                screenshotsGrid.appendChild(img);
+            });
+        }
+    }
+
+    // Trailer button
+    setupTrailerButton(meta.media, game.name);
+}

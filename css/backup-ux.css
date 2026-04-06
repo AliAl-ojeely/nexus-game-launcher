@@ -1,0 +1,149 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   BACKUP UX — Works with Dark, Darker, and Light themes
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Play button: "Securing Save..." state ─────────────────────────────────── */
+.play-btn-securing {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
+    cursor: not-allowed !important;
+    opacity: 0.95;
+    animation: securing-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes securing-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+    }
+}
+
+/* ── Play button: "Saved!" success flash ───────────────────────────────────── */
+.play-btn-saved {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border-color: #10b981 !important;
+    color: #fff !important;
+    cursor: not-allowed !important;
+}
+
+/* ── Toast animations ───────────────────────────────────────────────────────── */
+@keyframes toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toast-slide-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+/* ── Backup status pulse (green flash) ─────────────────────────────────────── */
+@keyframes backup-success-pulse {
+    0% {
+        background: rgba(16, 185, 129, 0);
+    }
+
+    30% {
+        background: rgba(16, 185, 129, 0.15);
+    }
+
+    100% {
+        background: rgba(16, 185, 129, 0);
+    }
+}
+
+.backup-status-success-flash {
+    animation: backup-success-pulse 2s ease-out forwards;
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+/* ── Backup status container layout ────────────────────────────────────────── */
+.backup-status-container {
+    margin-top: 6px;
+    min-height: 22px;
+    line-height: 1.5;
+}
+
+/* ── Open backup folder button (inline in sidebar) ─────────────────────────── */
+#openBackupFolderBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+    vertical-align: middle;
+}
+
+#openBackupFolderBtn:hover {
+    opacity: 1;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
+}
+
+/* =========================================
+   Light theme specific overrides
+   ========================================= */
+body.light-mode .backup-status-container small,
+body.light-mode .backup-status-container .backup-status-value {
+    color: #334155;
+    /* darker gray for light mode readability */
+}
+
+body.light-mode .backup-status-success-flash {
+    background: rgba(16, 185, 129, 0.2);
+    /* slightly more visible in light mode */
+}
+
+body.light-mode #openBackupFolderBtn {
+    color: #64748b;
+    /* slate-500 – better contrast on light background */
+}
+
+body.light-mode #openBackupFolderBtn:hover {
+    background: rgba(99, 102, 241, 0.12);
+    /* slightly stronger accent for light mode */
+    color: #4f46e5;
+    /* indigo-600 for better visibility */
+}
+
+/* =========================================
+   Darker theme specific overrides (optional)
+   ========================================= */
+body.darker-mode .backup-status-container small,
+body.darker-mode .backup-status-container .backup-status-value {
+    color: #94a3b8;
+    /* lighter gray for darker background */
+}
+
+body.darker-mode #openBackupFolderBtn {
+    color: #94a3b8;
+}
+
+body.darker-mode #openBackupFolderBtn:hover {
+    background: rgba(99, 102, 241, 0.15);
+}

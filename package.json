@@ -1,8 +1,8 @@
 {
   "name": "mygamelauncher",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "description": "A sleek game launcher for managing PC titles",
-  "author": "ali al-ojeely <alialojeely@gmail.com>",
+  "author": "Ali Al-ojeely <alialojeely@gmail.com>",
   "main": "src/main.js",
   "productName": "Nexus Game Launcher",
   "scripts": {
@@ -16,13 +16,20 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "axios": "^1.13.6"
+    "adm-zip": "^0.5.16",
+    "axios": "^1.14.0",
+    "fs-extra": "^11.3.4",
+    "js-yaml": "^4.1.1",
+    "node-fetch": "^2.7.0"
   },
   "build": {
     "appId": "com.nexus.launcher",
-    "directories": {
-      "output": "dist"
-    },
+    "extraResources": [
+      {
+        "from": "gameSavePaths.json",
+        "to": "gameSavePaths.json"
+      }
+    ],
     "files": [
       "src/**/*",
       "render/**/*",
@@ -30,8 +37,7 @@
       "modules/**/*",
       "assets/**/*",
       "index.html",
-      "package.json",
-      "node_modules/**/*"
+      "package.json"
     ],
     "linux": {
       "icon": "assets/icon.png",

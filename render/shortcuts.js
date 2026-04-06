@@ -10,6 +10,7 @@ export function openLightbox(index) {
 }
 
 export function initShortcuts() {
+    // Lightbox close
     document.getElementById('closeLightbox').addEventListener('click', () => document.getElementById('imageLightbox').classList.remove('show'));
 
     document.getElementById('prevLightbox').addEventListener('click', (e) => {
@@ -28,38 +29,39 @@ export function initShortcuts() {
         if (e.target.id === 'imageLightbox') document.getElementById('imageLightbox').classList.remove('show');
     });
 
+    // Global keydown handlers
     document.addEventListener('keydown', (event) => {
+        // Ignore if Ctrl or Alt is pressed (allow browser shortcuts like zoom)
+        if (event.ctrlKey || event.altKey) return;
 
-        // 1. معالجة زر Esc بشكل منفصل ليعمل حتى لو كان المؤشر داخل حقل نصي
         if (event.key === 'Escape') {
             const searchInput = document.getElementById('searchInput');
             if (document.activeElement === searchInput) {
                 searchInput.blur();
                 return;
             }
-
-            // إغلاق المودال إذا كان مفتوحاً
             const editModal = document.getElementById('editModal');
             if (editModal && editModal.style.display === 'flex') {
                 editModal.style.display = 'none';
                 return;
             }
-
-            // إغلاق عارض الصور
             const lightbox = document.getElementById('imageLightbox');
             if (lightbox && lightbox.classList.contains('show')) {
                 document.getElementById('closeLightbox').click();
                 return;
             }
-
-            // إذا لم يكن المؤشر داخل حقل نصي، قم بالرجوع للخلف
+            // Close shortcuts modal if open
+            const shortcutsModal = document.getElementById('shortcutsModal');
+            if (shortcutsModal && shortcutsModal.classList.contains('active')) {
+                shortcutsModal.classList.remove('active');
+                return;
+            }
             if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
                 handleGoBack();
             }
             return;
         }
 
-        // 2. إيقاف باقي الاختصارات إذا كان المستخدم يكتب نصاً (تجنباً للتداخل)
         if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
 
         const lightbox = document.getElementById('imageLightbox');
@@ -74,8 +76,7 @@ export function initShortcuts() {
                 if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) document.getElementById('detailsPlayBtn').click();
                 break;
             }
-            case '+':
-            case '=': {
+            case '+': {
                 event.preventDefault();
                 const addBtn = document.getElementById('addGameBtn');
                 if (addBtn) addBtn.click();
@@ -91,6 +92,7 @@ export function initShortcuts() {
         }
     });
 
+    // Mouse back button
     document.addEventListener('mouseup', (event) => {
         if (event.button === 3) {
             event.preventDefault();
@@ -100,6 +102,7 @@ export function initShortcuts() {
         }
     });
 
+    // Wheel for lightbox
     document.addEventListener('wheel', (event) => {
         const lightbox = document.getElementById('imageLightbox');
         if (lightbox && lightbox.classList.contains('show')) {
@@ -107,4 +110,21 @@ export function initShortcuts() {
             else if (event.deltaY < 0) document.getElementById('prevLightbox').click();
         }
     });
+
+    // ── Shortcuts Info Modal ─────────────────────────────────────────────
+    const shortcutsBtn = document.getElementById('shortcutsBtn');
+    const shortcutsModal = document.getElementById('shortcutsModal');
+    const closeShortcutsBtn = document.querySelector('.close-shortcuts-btn');
+
+    if (shortcutsBtn && shortcutsModal) {
+        shortcutsBtn.addEventListener('click', () => {
+            shortcutsModal.classList.add('active');
+        });
+
+        const closeModal = () => shortcutsModal.classList.remove('active');
+        if (closeShortcutsBtn) closeShortcutsBtn.addEventListener('click', closeModal);
+        shortcutsModal.addEventListener('click', (e) => {
+            if (e.target === shortcutsModal) closeModal();
+        });
+    }
 }

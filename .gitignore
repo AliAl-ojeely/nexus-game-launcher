@@ -14,12 +14,17 @@ src/secrets.json
 # Local Database (User specific data)
 games.json
 playtime.json
+manifest.yaml
+convert-manifest.js
+renderer.js
+build-save-paths-db.js
 
 # Logs and Debugging
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.vscode
 
 # OS Generated Files
 .DS_Store

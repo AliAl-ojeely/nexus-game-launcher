@@ -1,0 +1,43 @@
+/* Shake animation for reorder mode */
+.shake-animation {
+    animation: shake 0.5s ease-in-out infinite;
+    cursor: grab;
+}
+
+.shake-animation {
+    animation: shake 0.5s ease-in-out infinite;
+    cursor: grab;
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(0px, 0px) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(5px, 2px) rotate(1.5deg);
+    }
+
+    50% {
+        transform: translate(-3px, -2px) rotate(-1.2deg);
+    }
+
+    75% {
+        transform: translate(3px, 1px) rotate(0.8deg);
+    }
+
+    100% {
+        transform: translate(0px, 0px) rotate(0deg);
+    }
+}
+
+/* Optional: smooth transition when dropping */
+.sortable-drag {
+    opacity: 0.6;
+    box-shadow: 0 0 10px var(--accent);
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: var(--accent);
+}

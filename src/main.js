@@ -1,19 +1,24 @@
 const path = require('path');
-const { app, BrowserWindow, ipcMain, protocol, Menu, shell } = require('electron');
+const fs = require('fs');
+const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
 
-// استيراد الموديلات الخاصة بك
 const db = require('../modules/database');
-const steam = require('../modules/steam-api');
-const steamGrid = require('../modules/steamGrid-api');
-const rawg = require('../modules/rawg-api');
+const playtimeDB = require('../modules/playtime');
+const backups = require('../modules/backup');
 const dialogs = require('../modules/dialogs');
 const launcher = require('../modules/game-launcher');
-const playtimeDB = require('../modules/playtime');
-// الموديل الجديد للبحث في يوتيوب
-const youtube = require('../modules/youtube-api');
 
+const { initAppData } = require('../modules/app-settings');
+const { registerDatabaseIPC } = require('./ipc/ipc-database');
+const { registerApiIPC } = require('./ipc/ipc-api');
+const { registerBackupIPC } = require('./ipc/ipc-backup');
+
+initAppData();
 db.initDB();
 playtimeDB.initPlaytimeDB();
+backups.initBackupDB();
+
+// ─── Window ─────────────────────────────────
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -26,8 +31,8 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
-            webSecurity: true
-        }
+            webSecurity: true,
+        },
     });
 
     win.setMenuBarVisibility(false);
@@ -35,181 +40,113 @@ function createWindow() {
 
     win.webContents.on('context-menu', async () => {
         let lang = 'en';
-        try { lang = await win.webContents.executeJavaScript('localStorage.getItem("lang")'); } catch { }
+        try {
+            lang = await win.webContents.executeJavaScript('localStorage.getItem("lang")');
+        } catch { }
 
-        const labels = {
-            copy: lang === 'ar' ? 'نسخ' : 'Copy',
-            paste: lang === 'ar' ? 'لصق' : 'Paste',
-            cut: lang === 'ar' ? 'قص' : 'Cut',
-            inspect: lang === 'ar' ? 'فحص العنصر' : 'Inspect Element'
-        };
+        const L = (ar, en) => (lang === 'ar' ? ar : en);
 
-        const menu = Menu.buildFromTemplate([
-            { role: 'copy', label: labels.copy },
-            { role: 'paste', label: labels.paste },
-            { role: 'cut', label: labels.cut },
+        Menu.buildFromTemplate([
+            { role: 'copy', label: L('نسخ', 'Copy') },
+            { role: 'paste', label: L('لصق', 'Paste') },
+            { role: 'cut', label: L('قص', 'Cut') },
             { type: 'separator' },
-            { role: 'inspectElement', label: labels.inspect }
-        ]);
-
-        menu.popup({ window: win });
+            { role: 'inspectElement', label: L('فحص العنصر', 'Inspect Element') },
+        ]).popup({ window: win });
     });
 }
 
+// ─── Custom protocol ─────────────────────────
+
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'local-resource',
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            bypassCSP: true,
+            stream: true,
+        },
+    },
+]);
+
 app.whenReady().then(() => {
-    protocol.registerFileProtocol('local-resource', (request, callback) => {
-        const url = request.url.replace(/^local-resource:\/\//, '');
-        try { callback(decodeURI(url)); }
-        catch (error) { console.error('Protocol Error:', error); }
+
+    protocol.handle('local-resource', async (request) => {
+        const raw = request.url.replace(/^local-resource:\/\//, '');
+        const decoded = decodeURI(raw);
+
+        // ── تحويل forward slashes لـ backslashes على Windows ─────────────────
+        let filePath = decoded.replace(/\//g, path.sep);
+        filePath = path.normalize(filePath);
+
+        // Fix drive-letter path on Windows (C\Users → C:\Users)
+        if (process.platform === 'win32') {
+            const m = filePath.match(/^([a-zA-Z])\\(.*)$/);
+            if (m) filePath = m[1].toUpperCase() + ':\\' + m[2];
+        }
+
+        console.log('[Protocol] Loading:', filePath);
+
+        try {
+            const stat = await fs.promises.stat(filePath);
+            if (!stat.isFile()) throw new Error('Not a file');
+
+            const data = await fs.promises.readFile(filePath);
+            const ext = path.extname(filePath).toLowerCase();
+            const mime = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.svg': 'image/svg+xml',
+                '.ico': 'image/x-icon',  // ← أضفنا ico
+            };
+
+            return new Response(data, {
+                status: 200,
+                headers: { 'Content-Type': mime[ext] || 'application/octet-stream' },
+            });
+        } catch (err) {
+            console.error('[Protocol Error]:', err.message, '| Path:', filePath);
+            return new Response('File not found', { status: 404 });
+        }
     });
 
     createWindow();
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    });
 });
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GAME LAUNCHER IPC
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── IPC ─────────────────────────────────────
 
-ipcMain.on('game:launch', (event, gamePath, showFPS, args, id) => {
-    launcher.launchGame(event, gamePath, showFPS, args, id);
-});
+// Game launcher
+ipcMain.on('game:launch', (event, gamePath, showFPS, args, id, name) =>
+    launcher.launchGame(event, gamePath, showFPS, args, id, name)
+);
 
-ipcMain.on('game:force-stop', (_event, gameId) => {
-    launcher.forceStopGame(gameId);
-});
+ipcMain.on('game:force-stop', (_e, gameId) =>
+    launcher.forceStopGame(gameId)
+);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DATABASE IPC
-// ─────────────────────────────────────────────────────────────────────────────
-
-ipcMain.handle('db:getGames', () => db.getGames());
-ipcMain.handle('db:saveGame', (_e, game) => db.saveGame(game));
-ipcMain.handle('db:deleteGame', (_e, id) => db.deleteGame(id));
-
-ipcMain.handle('db:updateGame', (_e, game) => {
-    console.log(`\n[MAIN IPC] Saving playtime for: ${game.name} | ${game.playtime} mins`);
-    const result = db.updateGame(game);
-    console.log(`[MAIN IPC] Result: ${result ? 'SUCCESS' : 'FAILED'}\n`);
-    return result;
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// API IPC (تم تحديث جزء التريلر هنا)
-// ─────────────────────────────────────────────────────────────────────────────
-
-ipcMain.handle('api:fetchGameInfo', async (_e, name) => {
-    try {
-        console.log('\n[Nexus] Fetch Poster For:', name);
-        const sgAssets = await steamGrid.fetchGameAssets(name);
-        return { name, poster: sgAssets?.poster || '' };
-    } catch (err) {
-        console.error('Poster Fetch Error:', err);
-        return { name, poster: '' };
-    }
-});
-
-ipcMain.handle('api:fetchGameDetails', async (_e, name) => {
-    console.log('\n==============================');
-    console.log('Fetching details for:', name);
-
-    const [steamData, rawgData] = await Promise.all([
-        steam.fetchGameDetails(name).catch(err => { console.warn('[Steam] Failed:', err.message); return null; }),
-        rawg.fetchGameDetails(name).catch(err => { console.warn('[RAWG] Failed:', err.message); return null; })
-    ]);
-
-    const sgAssets = await steamGrid.fetchGameAssets(name, steamData?.appid).catch(err => {
-        console.warn('[SteamGrid] Failed:', err.message);
-        return null;
-    });
-
-    // 1. تحديد الاسم الرسمي (الأدق للبحث)
-    const officialName = rawgData?.name || steamData?.name || name;
-
-    // 2. محاولة جلب التريلر من YouTube API الخاص بنا لضمان الدقة
-    let trailerYouTubeId = rawgData?.media?.trailerYouTubeId || null;
-    let trailerThumbnail = rawgData?.media?.trailerThumbnail || null;
-
-    if (!trailerYouTubeId) {
-        console.log(`[Nexus] RAWG failed for trailer, searching YouTube for: ${officialName}`);
-        const ytData = await youtube.getTrailerData(officialName);
-        if (ytData) {
-            trailerYouTubeId = ytData.videoId;
-            trailerThumbnail = ytData?.thumbnail || null;
-        }
-    }
-
-    const trailerSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(officialName + ' official trailer')}`;
-
-    if (!steamData && !rawgData && !sgAssets) {
-        return {
-            assets: { poster: '', background: '', logo: '' },
-            metadata: {
-                description: 'No information found for this game.',
-                developer: 'N/A', publisher: 'N/A', releaseDate: 'N/A',
-                systemRequirements: { minimum: 'N/A', recommended: 'N/A' },
-                metacritic: 'N/A', genres: 'N/A', tags: 'N/A',
-                media: { screenshots: [], trailerYouTubeId, trailerThumbnail, trailerSearchUrl }
-            }
-        };
-    }
-
-    let description = 'No description available.';
-    if (rawgData?.description && rawgData.description.length > 200) description = rawgData.description;
-    else if (steamData?.description) description = steamData.description;
-
-    const screenshots = sgAssets?.screenshots?.length > 0 ? sgAssets.screenshots :
-        steamData?.media?.screenshots?.length > 0 ? steamData.media.screenshots :
-            rawgData?.media?.screenshots || [];
-
-    console.log('==============================\n');
-
-    return {
-        assets: {
-            poster: sgAssets?.poster || steamData?.poster || rawgData?.poster || '',
-            background: sgAssets?.background || steamData?.background || rawgData?.background || '',
-            logo: sgAssets?.logo || ''
-        },
-        metadata: {
-            description,
-            developer: steamData?.developer || rawgData?.developer || 'N/A',
-            publisher: steamData?.publisher || rawgData?.publisher || 'N/A',
-            releaseDate: steamData?.releaseDate || rawgData?.releaseDate || 'N/A',
-            systemRequirements: steamData?.systemRequirements || rawgData?.systemRequirements || { minimum: 'N/A', recommended: 'N/A' },
-            metacritic: rawgData?.metacritic || 'N/A',
-            genres: rawgData?.genres || 'N/A',
-            tags: rawgData?.tags || 'N/A',
-            media: {
-                screenshots,
-                trailerYouTubeId,
-                trailerThumbnail,
-                trailerSearchUrl
-            }
-        }
-    };
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DIALOGS / SHELL IPC
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Dialogs
 ipcMain.handle('dialog:selectGame', () => dialogs.selectGame());
 ipcMain.handle('dialog:selectImage', () => dialogs.selectImage());
-ipcMain.on('shell:openFolder', (event, filePath) => dialogs.openFolder(event, filePath));
-ipcMain.on('shell:openExternal', (_e, url) => {
-    if (url) shell.openExternal(url);
-});
+ipcMain.handle('dialog:selectFolder', () => dialogs.selectFolder());
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PLAYTIME IPC
-// ─────────────────────────────────────────────────────────────────────────────
+ipcMain.on('shell:openFolder', (_e, p) =>
+    dialogs.openFolder(null, p)
+);
 
-ipcMain.handle('db:getPlaytime', (_e, gameName) => playtimeDB.getPlaytime(gameName));
-ipcMain.handle('db:addPlaytime', (_e, gameName, minutes) => playtimeDB.addPlaytime(gameName, minutes));
+ipcMain.on('shell:openExternal', (_e, url) =>
+    dialogs.openExternal(url)
+);
+
+// Feature modules
+registerDatabaseIPC();
+registerApiIPC();
+registerBackupIPC();

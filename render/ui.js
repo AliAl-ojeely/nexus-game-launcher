@@ -1,4 +1,10 @@
+// render/ui.js
 import { state, userSettings } from './state.js';
+
+function t(key, fallback = '') {
+    const lang = userSettings.lang;
+    return (dictionary[lang] && dictionary[lang][key]) || fallback;
+}
 
 export function applyLanguage(lang) {
     document.getElementById('htmlRoot').dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -23,58 +29,71 @@ export function handleGoBack() {
     }
 }
 
-// دالة مساعدة لتطبيق الثيم على البودي
 function applyThemeClass(theme) {
-    document.body.classList.remove('light-mode', 'darker-mode'); // إزالة الثيمات الإضافية أولاً
+    document.body.classList.remove('light-mode', 'darker-mode');
     if (theme === 'light') {
         document.body.classList.add('light-mode');
     } else if (theme === 'darker') {
         document.body.classList.add('darker-mode');
     }
-    // إذا كان dark، لا نضيف شيء لأنه الثيم الافتراضي (:root)
 }
 
+/**
+ * Initializes all UI components and event listeners.
+ * Updated to support Global Backup Vault and restore Developer Modal functionality.
+ */
 export function initUI() {
+    // Load initial settings into UI fields
     document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
     document.getElementById('sidebarLogoName').innerText = userSettings.appName;
     document.getElementById('appNameSetting').value = userSettings.appName;
 
-    // تطبيق الثيم المحفوظ عند فتح اللانشر
+    // 🟢 Load saved backup vault path into input field
+    if (document.getElementById('globalBackupPath')) {
+        document.getElementById('globalBackupPath').value = userSettings.globalBackupVault;
+    }
+
     document.getElementById('themeSetting').value = userSettings.theme;
     applyThemeClass(userSettings.theme);
 
     document.getElementById('langSetting').value = userSettings.lang;
     applyLanguage(userSettings.lang);
+
     document.getElementById('gridSizeSetting').value = userSettings.gridSize;
     document.documentElement.style.setProperty('--grid-size', userSettings.gridSize);
 
+    // Save General Settings
     document.getElementById('saveGeneralSettings').addEventListener('click', () => {
         const newName = document.getElementById('appNameSetting').value;
         const newTheme = document.getElementById('themeSetting').value;
         const newLang = document.getElementById('langSetting').value;
         const newGrid = document.getElementById('gridSizeSetting').value;
+        // 🟢 Get backup path from input
+        const newVault = document.getElementById('globalBackupPath').value;
 
         userSettings.lang = newLang;
         userSettings.appName = newName;
         userSettings.theme = newTheme;
         userSettings.gridSize = newGrid;
+        userSettings.globalBackupVault = newVault;
 
         localStorage.setItem('showFPS', document.getElementById('fpsToggle').checked);
         localStorage.setItem('appName', newName);
         localStorage.setItem('theme', newTheme);
         localStorage.setItem('lang', newLang);
         localStorage.setItem('gridSize', newGrid);
+        // 🟢 Store backup vault path
+        localStorage.setItem('globalBackupVault', newVault);
 
         document.getElementById('sidebarLogoName').innerText = newName;
-
-        // تطبيق الثيم الجديد عند الحفظ
         applyThemeClass(newTheme);
-
         document.documentElement.style.setProperty('--grid-size', newGrid);
         applyLanguage(newLang);
-        alert(newLang === 'ar' ? "تم حفظ الإعدادات بنجاح!" : "Settings saved successfully!");
+
+        alert(newLang === 'ar' ? t('settings_saved', 'تم حفظ الإعدادات بنجاح!') : t('settings_saved', 'Settings saved successfully!'));
     });
 
+    // Navigation logic
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function () {
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -93,13 +112,20 @@ export function initUI() {
         if (state.currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
     });
 
-    // Developer Modal logic
-    const logo = document.querySelector('.logo');
+    // 🟢 Restored: Developer Modal logic (clicking the logo)
+    const logoContainer = document.querySelector('.sidebar .logo');
     const devModal = document.getElementById('devModal');
-    if (logo && devModal) {
-        logo.addEventListener('click', () => devModal.classList.add('show'));
-        devModal.addEventListener('click', (e) => { if (e.target === devModal) devModal.classList.remove('show'); });
+    if (logoContainer && devModal) {
+        logoContainer.style.cursor = 'pointer'; // Visual hint
+        logoContainer.addEventListener('click', () => {
+            devModal.classList.add('active'); // Changed from 'show' to 'active' to match global standard
+        });
+
+        devModal.addEventListener('click', (e) => {
+            if (e.target === devModal) devModal.classList.remove('active');
+        });
     }
+
     document.querySelectorAll('#devModal a').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();

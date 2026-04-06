@@ -6,7 +6,8 @@ const { app } = require('electron');
 
 const gameMonitors = new Map();  // gameId → setInterval (process polling)
 const gameTimers = new Map();  // gameId → setInterval (playtime tick)
-const runningGames = new Map();  // gameId → { pid, exeName, proc, startTime, event }
+const runningGames = new Map();  // gameId → { pid, exeName, gameName, installPath, proc, startTime, event }
+const backups = require('./backup');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -27,31 +28,41 @@ function stopTimer(gameId) {
 }
 
 /**
- * ✅ Full teardown — clears monitor + timer + notifies renderer.
- *    Uses the event stored in runningGames (no param needed).
+ * ✅ Full teardown — clears monitor + timer + triggers backup + notifies renderer.
+ *
+ * Backup trigger happens HERE, right before the game:stopped event is sent.
+ * This guarantees:
+ *   1. Game is fully closed before we read its save files
+ *   2. The renderer receives game:stopped AFTER backup completes
+ *   3. gameName + installPath are always passed to performMirroring
  */
-function stopMonitor(gameId) {
-    // 1. Stop process-polling interval
+async function stopMonitor(gameId) {
+    const game = runningGames.get(gameId);
+    if (!game) return; // already stopped or never existed
+
     const monitor = gameMonitors.get(gameId);
     if (monitor) {
         clearInterval(monitor);
         gameMonitors.delete(gameId);
     }
-
-    // 2. Stop playtime ticker
     stopTimer(gameId);
 
-    // 3. Grab event from the stored game record BEFORE deleting it
-    const game = runningGames.get(gameId);
     const elapsed = getElapsedSeconds(gameId);
+
+    if (game.gameName) {
+        console.log(`[BACKEND] 📂 Starting backup for: "${game.gameName}"`);
+        try {
+            await backups.performMirroring(game.gameName, game.installPath || null);
+        } catch (err) {
+            console.error('[BACKEND] Backup error:', err);
+        }
+    }
+
     runningGames.delete(gameId);
 
-    // 4. Notify renderer
-    if (game?.event && !game.event.sender.isDestroyed()) {
+    if (game.event && !game.event.sender.isDestroyed()) {
         game.event.sender.send('game:stopped', { gameId, elapsed });
         console.log(`[BACKEND] ✅ game:stopped sent → gameId: ${gameId}, elapsed: ${elapsed}s`);
-    } else {
-        console.warn(`[BACKEND] ⚠️ Could not send game:stopped — event missing or window destroyed`);
     }
 }
 
@@ -119,6 +130,7 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
             const launcherAlive = processes.some(p => p.pid === trackedPid);
 
             if (!realGameDetected) {
+                // Look for a child process spawned from the game directory
                 const candidate = processes.find(p => {
                     const procPath = p.path.toLowerCase();
                     return (
@@ -133,11 +145,13 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
                     console.log(`[BACKEND] Real game detected → PID ${trackedPid}`);
                 }
 
+                // Launcher died and no real game found → game never launched properly
                 if (!launcherAlive && !realGameDetected) {
-                    console.log(`[BACKEND] Launcher closed, no game detected.`);
+                    console.log(`[BACKEND] Launcher closed, no game process detected.`);
                     stopMonitor(gameId);
                 }
             } else {
+                // Track the real game process
                 const alive = processes.some(p => p.pid === trackedPid);
                 if (!alive) {
                     console.log(`[BACKEND] Game process ended naturally.`);
@@ -154,7 +168,17 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
 // LAUNCH
 // ─────────────────────────────────────────────────────────────────────────────
 
-function launchGame(event, gamePath, showFPS, launchArgs, gameId) {
+/**
+ * Launches the game and initializes monitoring/timer systems.
+ *
+ * @param {Object}        event       - IPC event for communication with renderer
+ * @param {string}        gamePath    - Absolute path to the executable (.exe / .bat)
+ * @param {boolean}       showFPS     - Toggle for DXVK HUD (Linux / Proton)
+ * @param {string}        launchArgs  - Custom launch arguments string
+ * @param {string|number} gameId      - Database ID of the game
+ * @param {string}        gameName    - Display name — used as backup key
+ */
+function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
     if (!gamePath) return;
 
     const isLinux = process.platform === 'linux';
@@ -168,10 +192,11 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId) {
         : [];
 
     try {
-        console.log(`[BACKEND] Launching: ${exeName}`);
+        console.log(`[BACKEND] Launching: ${exeName} (game: "${gameName}")`);
 
         let proc;
 
+        // ── Linux / Proton ──────────────────────────────────────────────────
         if (isLinux && isExe) {
             const protonVersion = 'GE-Proton10-32';
             const userHome = os.homedir();
@@ -190,7 +215,9 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId) {
             proc = spawn(protonPath, ['run', gamePath, ...argsArray], {
                 cwd: gameDir, env, detached: true
             });
+
         } else {
+            // ── Windows / Generic ───────────────────────────────────────────
             const lower = gamePath.toLowerCase();
             const isBatOrLnk = lower.endsWith('.bat') || lower.endsWith('.lnk');
 
@@ -205,24 +232,35 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId) {
             console.log(`[BACKEND] PID: ${proc.pid}`);
         });
 
+        // proc.on('exit', () => {
+        //     // proc.on('exit') fires when the launcher/wrapper exits.
+        //     // stopMonitor handles the real game process via the smart monitor.
+        //     // Guard: only trigger if we haven't already cleaned up.
+        //     if (runningGames.has(gameId)) {
+        //         console.log('[BACKEND] Game exited via proc.on(exit)');
+        //         stopMonitor(gameId);
+        //     }
+        // });
+
         proc.on('exit', () => {
-            if (runningGames.has(gameId)) {
-                console.log('[BACKEND] Game exited via proc.on(exit)');
-                stopMonitor(gameId);
-            }
+            console.log('[BACKEND] Launcher/wrapper process exited (game may still be running)');
         });
 
-        // ✅ Store event here so every function can reach it without passing it around
+        // ── Store game record ───────────────────────────────────────────────
+        // installPath is stored separately so backup.js can resolve {{p|game}}
         runningGames.set(gameId, {
             pid: proc.pid,
             exeName,
+            gameName,       // 🔑 key for gamesBackSave.json lookup
+            installPath: gamePath,  // 🔑 full .exe path for {{p|game}} resolution
             proc,
             startTime: Date.now(),
-            event               // ← single source of truth for IPC back to renderer
+            event          // IPC channel back to renderer
         });
 
         proc.unref();
 
+        // Start polling + playtime ticker
         startSmartMonitor(gameDir, proc.pid, exeName, gameId);
         startTimer(gameId);
 
@@ -240,28 +278,29 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FORCE STOP
-// ✅ No event param needed — reads it from runningGames internally
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Forcefully terminates the game process.
+ * stopMonitor (called internally) will handle backup + game:stopped notification.
+ */
 function forceStopGame(gameId) {
     const game = runningGames.get(gameId);
     if (!game) {
-        console.warn(`[BACKEND] forceStopGame: no running game found for id ${gameId}`);
+        console.warn(`[BACKEND] forceStopGame: no running game for id ${gameId}`);
         return;
     }
 
     console.log(`[BACKEND] 💀 Force stopping: ${game.exeName}`);
 
     if (process.platform === 'win32') {
-        exec(
-            `taskkill /IM "${game.exeName}" /T /F`,
-            { windowsHide: true },
-            (err) => {
-                if (err) console.warn(`[BACKEND] taskkill warning: ${err.message}`);
-                stopMonitor(gameId);  // ✅ sends game:stopped with correct event
-            }
-        );
-    } else {
+        exec(`taskkill /PID ${game.pid} /T /F`, { windowsHide: true }, (err) => {
+            if (err) console.warn(`[BACKEND] taskkill warning: ${err.message}`);
+            stopMonitor(gameId);
+        });
+    }
+    
+    else {
         try { game.proc.kill('SIGKILL'); } catch (_) { /* already gone */ }
         stopMonitor(gameId);
     }
