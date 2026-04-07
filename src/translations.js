@@ -65,6 +65,8 @@ const dictionary = {
         shortcut_mouse_back: "زر الرجوع في الماوس (رجوع / إغلاق)",
         shortcuts_close: "إغلاق",
         modal_custom_icon: "أيقونة مخصصة (اختياري):",
+        achievements_title: "الإنجازات",
+        achievements_button: "عرض الإنجازات",
 
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
@@ -175,6 +177,8 @@ const dictionary = {
         shortcut_wheel: "Scroll between screenshots (lightbox)",
         shortcut_mouse_back: "Mouse back button (go back / close lightbox)",
         shortcuts_close: "Close",
+        achievements_title: "Achievements",
+        achievements_button: "View Achievements",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",

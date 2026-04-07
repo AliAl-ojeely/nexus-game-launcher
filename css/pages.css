@@ -745,3 +745,46 @@
         align-self: flex-end;
     }
 }
+
+/* Achievements link button - Enhanced */
+.achievements-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 70, 85, 0.08);
+    border: 1px solid rgba(255, 70, 85, 0.3);
+    color: var(--accent);
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    margin-top: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+    backdrop-filter: blur(2px);
+}
+
+.achievements-link-btn i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.achievements-link-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(255, 70, 85, 0.2);
+}
+
+.achievements-link-btn:hover i {
+    transform: scale(1.1);
+}
+
+.achievements-link-btn:active {
+    transform: translateY(1px);
+}

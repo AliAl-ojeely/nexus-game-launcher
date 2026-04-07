@@ -105,6 +105,32 @@ export function renderGameDetails(game) {
     updateTags('detailsGenres', meta.genres, 'genre-tag');
     updateTags('detailsTags', meta.tags, 'feature-tag');
 
+    // Achievements link (Steam only)
+    const achievementsContainer = document.getElementById('detailsAchievements');
+    if (achievementsContainer) {
+        const steamId = meta.steamAppId;
+        if (steamId && steamId !== '') {
+            const link = `https://steamcommunity.com/stats/${steamId}/achievements`;
+            achievementsContainer.innerHTML = `
+            <div class="meta-item">
+                <span data-i18n="achievements_title">Achievements</span>
+                <button class="achievements-link-btn" data-url="${link}">
+                    <i class="fa-solid fa-trophy"></i> ${userSettings.lang === 'ar' ? 'عرض الإنجازات' : 'View Achievements'}
+                </button>
+            </div>
+        `;
+            achievementsContainer.style.display = 'block';
+
+            // Attach click event to open in external browser
+            const btn = achievementsContainer.querySelector('.achievements-link-btn');
+            btn.addEventListener('click', () => {
+                window.api.openExternal(link);
+            });
+        } else {
+            achievementsContainer.style.display = 'none';
+        }
+    }
+
     // System Requirements
     const reqMinEl = document.getElementById('reqMin');
     const reqRecEl = document.getElementById('reqRec');

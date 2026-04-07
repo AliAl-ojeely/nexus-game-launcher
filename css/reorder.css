@@ -41,3 +41,8 @@
     opacity: 0.4;
     background: var(--accent);
 }
+
+/* Hide action buttons when reorder mode is active */
+body.reorder-mode .game-actions {
+    display: none !important;
+}

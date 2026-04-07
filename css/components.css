@@ -430,3 +430,59 @@ body.darker-mode .toast {
     gap: 8px;
     align-items: center;
 }
+
+/* Favorite button – refined hover effect */
+.action-btn.fav-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn.fav-btn:hover {
+    background: rgba(255, 70, 85, 0.15) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 8px rgba(255, 70, 85, 0.3);
+}
+
+.action-btn.fav-btn:hover i {
+    color: var(--accent) !important;
+}
+
+/* When game is already favorited (active-fav) */
+.action-btn.fav-btn.active-fav {
+    background: rgba(255, 70, 85, 0.2);
+    color: #ffffff;
+}
+
+.action-btn.fav-btn.active-fav i {
+    color: #ffffff;
+}
+
+.action-btn.fav-btn.active-fav:hover {
+    background: rgba(255, 70, 85, 0.35) !important;
+    transform: scale(1.05) !important;
+}
+
+.action-btn.fav-btn.active-fav:hover i {
+    color: #ffffff !important;
+}
+
+/* Edit button – glassy hover effect */
+.action-btn.edit-btn:hover {
+    background: rgba(255, 70, 85, 0.15) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 8px rgba(255, 70, 85, 0.3);
+}
+
+.action-btn.edit-btn:hover i {
+    color: var(--accent) !important;
+}
+
+/* Delete button – glassy hover effect (red tint) */
+.action-btn.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.action-btn.delete-btn:hover i {
+    color: #ef4444 !important;
+}

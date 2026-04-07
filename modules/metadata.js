@@ -3,26 +3,6 @@ const steamApi = require('./steam-api');
 const steamGridApi = require('./steamGrid-api');
 const youtubeApi = require('./youtube-api');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// metadata.js — fetches sequentially and merges RAWG + Steam + SteamGrid + YT
-//
-// Priority rules:
-//   description        RAWG (long/raw)  › Steam (short)
-//   developer          Steam            › RAWG
-//   publisher          Steam            › RAWG
-//   releaseDate        Steam            › RAWG
-//   systemRequirements Steam (HTML)     › RAWG
-//   screenshots        Steam            › RAWG
-//   metacritic         RAWG (or fallback to Steam user rating %)
-//   genres             RAWG             › Steam
-//   tags               RAWG only
-//   poster             SteamGrid        › RAWG › Steam
-//   background         SteamGrid        › RAWG › Steam
-//   logo               SteamGrid only
-//   icon               SteamGrid only   (null = not found, no fallback)
-//   trailer            RAWG clip        › YouTube
-// ─────────────────────────────────────────────────────────────────────────────
-
 function mergeMetadata({
     name,
     rawgData,
@@ -73,17 +53,21 @@ function mergeMetadata({
         icon: sgAssets?.icon || '',
     };
 
+    // ── Steam AppID for achievements link ─────────────────────────────────────
+    const steamAppId = rawgData?.steamAppId || steamData?.appid || null;
+
     // ── Final metadata ────────────────────────────────────────────────────────
     const metadata = {
-        name,           // always the original game name
+        name,
         description,
         developer,
         publisher,
         releaseDate,
         systemRequirements,
-        metacritic,     // now can be Steam rating percentage if Metacritic missing
+        metacritic,
         genres,
         tags,
+        steamAppId,                 // ← added
         media: {
             screenshots,
             trailerYouTubeId,
@@ -95,27 +79,21 @@ function mergeMetadata({
     return { metadata, rawAssets };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ORCHESTRATOR: The Sequential Pipeline
-// ─────────────────────────────────────────────────────────────────────────────
 async function fetchAllMetadata(gameName) {
     console.log(`\n--- Starting Metadata Fetch Pipeline for: "${gameName}" ---`);
 
-    // 1. RAWG First
     const rawgData = await rawgApi.fetchGameDetails(gameName);
 
     let steamData = null;
     let sgAssets = null;
     let steamAppId = rawgData?.steamAppId || null;
 
-    // 2. If RAWG gave a Steam AppID, use it. Otherwise, try to find Steam AppID by name.
     if (!steamAppId) {
         console.log(`[Pipeline] No Steam AppID from RAWG, searching Steam by name...`);
         steamAppId = await steamApi.searchAppId(gameName);
         if (steamAppId) console.log(`[Pipeline] Found Steam AppID via name search: ${steamAppId}`);
     }
 
-    // 3. Fetch Steam details and SteamGrid assets (if we have an AppID)
     if (steamAppId) {
         console.log(`[Pipeline] Fetching Steam data for AppID ${steamAppId}...`);
         [steamData, sgAssets] = await Promise.all([
@@ -123,12 +101,10 @@ async function fetchAllMetadata(gameName) {
             steamGridApi.fetchGameAssets(steamAppId)
         ]);
     } else {
-        // No AppID at all – fallback to SteamGrid search by name only
         console.log(`[Pipeline] No Steam AppID found, fetching SteamGrid assets by name...`);
         sgAssets = await steamGridApi.fetchGameAssets(gameName);
     }
 
-    // 4. YouTube trailer (same as before)
     let trailerYouTubeId = rawgData?.media?.trailerYouTubeId || null;
     let trailerThumbnail = rawgData?.media?.trailerThumbnail || null;
     if (!trailerYouTubeId) {
@@ -140,7 +116,6 @@ async function fetchAllMetadata(gameName) {
         }
     }
 
-    // 5. Merge
     const finalResult = mergeMetadata({
         name: gameName,
         rawgData,

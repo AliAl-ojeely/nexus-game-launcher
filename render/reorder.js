@@ -36,6 +36,8 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
     }
     isReorderMode = true;
 
+    document.body.classList.add('reorder-mode');
+
     document.querySelectorAll('.game-card').forEach(card => {
         card.classList.add('shake-animation');
     });
@@ -71,6 +73,7 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
 export function disableReorderMode() {
     if (!isReorderMode) return;
     isReorderMode = false;
+    document.body.classList.remove('reorder-mode');
     if (sortableMain) { sortableMain.destroy(); sortableMain = null; }
     if (sortableFav) { sortableFav.destroy(); sortableFav = null; }
     document.querySelectorAll('.game-card').forEach(card => card.classList.remove('shake-animation'));
