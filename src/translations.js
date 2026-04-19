@@ -67,6 +67,7 @@ const dictionary = {
         modal_custom_icon: "أيقونة مخصصة (اختياري):",
         achievements_title: "الإنجازات",
         achievements_button: "عرض الإنجازات",
+        last_played: "آخر تشغيل",
 
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
@@ -110,6 +111,8 @@ const dictionary = {
         backup_zip_missing: "ملف ZIP غير موجود",
         backup_invalid_path: "مسار غير صالح",
         backup_save_path_not_exist: "مسار الحفظ غير موجود على القرص",
+        auto_backup_title: "النسخ الاحتياطي التلقائي عند إغلاق اللعبة",
+        auto_backup_desc: "إنشاء نسخة احتياطية تلقائياً لحفظ اللعبة عند الإغلاق",
     },
     en: {
         nav_library: "Game Library",
@@ -179,6 +182,7 @@ const dictionary = {
         shortcuts_close: "Close",
         achievements_title: "Achievements",
         achievements_button: "View Achievements",
+        last_played: "Last Played",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",
@@ -222,5 +226,7 @@ const dictionary = {
         backup_zip_missing: "ZIP file not found",
         backup_invalid_path: "Invalid path",
         backup_save_path_not_exist: "Save path does not exist on disk",
+        auto_backup_title: "Auto Backup on Game Close",
+        auto_backup_desc: "Automatically backup save data when a game closes",
     }
 };

@@ -788,3 +788,19 @@
 .achievements-link-btn:active {
     transform: translateY(1px);
 }
+
+.last-played-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 15px;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.last-played-container strong {
+    color: var(--text-main);
+}

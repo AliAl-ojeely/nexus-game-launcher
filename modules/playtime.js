@@ -55,6 +55,21 @@ function getPlaytime(gameName) {
     return 0;
 }
 
+function getPlaytimeInfo(gameName) {
+    const data = readDB();
+    const entry = data[gameName];
+    if (!entry) return { minutes: 0, seconds: 0, lastPlayed: null };
+    // entry can be a number (old format) or object
+    if (typeof entry === 'number') {
+        return { minutes: entry, seconds: 0, lastPlayed: null };
+    }
+    return {
+        minutes: entry.minutes || 0,
+        seconds: entry.seconds || 0,
+        lastPlayed: entry.lastPlayed || null
+    };
+}
+
 /**
  * Adds a play session (raw seconds) to the game's total.
  * The 'minutes' parameter is ignored (kept for backward compatibility).
@@ -64,41 +79,38 @@ function getPlaytime(gameName) {
  * @returns {number|false} New total minutes, or false on error
  */
 function addPlaytime(gameName, minutes, totalSeconds = 0) {
-    if (!gameName || totalSeconds < 30) {
-        console.log(`[Playtime DB] ⏭️ Session too short for "${gameName}" (${totalSeconds}s) — skipping`);
-        return 0;
-    }
+    if (!gameName) return false;
 
     const data = readDB();
 
     // Ensure entry exists with correct structure
     if (!data[gameName] || typeof data[gameName] !== 'object') {
-        // Migrate old number format to object
         const oldMinutes = (typeof data[gameName] === 'number') ? data[gameName] : 0;
         data[gameName] = { minutes: oldMinutes, seconds: 0 };
     }
 
     const entry = data[gameName];
 
-    // Convert existing minutes+seconds into total seconds
-    let totalSecs = (entry.minutes || 0) * 60 + (entry.seconds || 0);
-
-    // Add the new session seconds
-    totalSecs += totalSeconds;
-
-    // Convert back to minutes and seconds
-    const newMinutes = Math.floor(totalSecs / 60);
-    const newSeconds = totalSecs % 60;
-
-    entry.minutes = newMinutes;
-    entry.seconds = newSeconds;
+    // ✅ Always update lastPlayed (even for short sessions)
     entry.lastPlayed = new Date().toISOString();
+
+    // Only add playtime if session is long enough (>= 60 seconds)
+    if (totalSeconds >= 60) {
+        let totalSecs = (entry.minutes || 0) * 60 + (entry.seconds || 0);
+        totalSecs += totalSeconds;
+        const newMinutes = Math.floor(totalSecs / 60);
+        const newSeconds = totalSecs % 60;
+        entry.minutes = newMinutes;
+        entry.seconds = newSeconds;
+        console.log(`✅ [Playtime DB] "${gameName}" → ${newMinutes} min ${newSeconds} sec (+${totalSeconds}s)`);
+    } else {
+        console.log(`[Playtime DB] ⏭️ Session too short (${totalSeconds}s) – playtime not added, but lastPlayed updated for "${gameName}"`);
+    }
 
     const success = writeDB(data);
     if (!success) return false;
 
-    console.log(`✅ [Playtime DB] "${gameName}" → ${newMinutes} min ${newSeconds} sec (+${totalSeconds}s)`);
-    return newMinutes + (newSeconds / 60);
+    return entry.minutes + (entry.seconds / 60);
 }
 
 function resetPlaytime(gameName) {
@@ -110,4 +122,4 @@ function resetPlaytime(gameName) {
     }
 }
 
-module.exports = { initPlaytimeDB, getPlaytime, addPlaytime, resetPlaytime };
+module.exports = { initPlaytimeDB, getPlaytime, addPlaytime, resetPlaytime, getPlaytimeInfo };

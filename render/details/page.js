@@ -34,6 +34,24 @@ export async function openGameDetailsPage(game) {
     const playtimeDisplay = document.getElementById('totalPlaytimeValue');
     if (playtimeDisplay) playtimeDisplay.innerText = formatPlaytime(totalMinutes || 0, userSettings.lang);
 
+    // Last Played (below playtime container)
+    const lastPlayedContainer = document.getElementById('lastPlayedContainer');
+    const lastPlayedValueSpan = document.getElementById('lastPlayedValue');
+    if (lastPlayedContainer && lastPlayedValueSpan) {
+        const playtimeInfo = await window.api.getPlaytimeInfo(game.name);
+        if (playtimeInfo.lastPlayed) {
+            const date = new Date(playtimeInfo.lastPlayed);
+            const formatted = date.toLocaleString(userSettings.lang === 'ar' ? 'ar-EG' : 'en-US', {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            lastPlayedValueSpan.innerText = formatted;
+            lastPlayedContainer.style.display = 'flex';
+        } else {
+            lastPlayedContainer.style.display = 'none';
+        }
+    }
+
     const bInfo = await window.api.backup.getInfo(game.name);
     updateBackupSidebarUI(bInfo, game.name, userSettings.lang);
 

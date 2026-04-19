@@ -74,12 +74,25 @@ function registerBackupIPC() {
         return backups.scanVaultForExistingBackups(vaultPath, gameNames);
     });
 
-    ipcMain.on('game:stopped', async (event, { gameId, gameName, gamePath }) => {
-        console.log(`[Backup] "${gameName}" stopped — auto-backup...`);
-        const globalPath = readSettings().globalBackupPath || '';
-        const result = await backups.backupGame({ name: gameName, path: gamePath }, globalPath);
-        if (result.success) event.reply('backup:auto-completed', { success: true, gameName });
+    ipcMain.handle('backup:getAutoBackup', () => {
+        const settings = readSettings();
+        return settings.autoBackup !== undefined ? settings.autoBackup : true; // default true
     });
+
+    ipcMain.handle('backup:setAutoBackup', (_, value) => {
+        const settings = readSettings();
+        settings.autoBackup = value;
+        writeSettings(settings);
+        console.log(`[Backup] Auto backup set to: ${value}`);
+        return true;
+    });
+
+    // ipcMain.on('game:stopped', async (event, { gameId, gameName, gamePath }) => {
+    //     console.log(`[Backup] "${gameName}" stopped — auto-backup...`);
+    //     const globalPath = readSettings().globalBackupPath || '';
+    //     const result = await backups.backupGame({ name: gameName, path: gamePath }, globalPath);
+    //     if (result.success) event.reply('backup:auto-completed', { success: true, gameName });
+    // });
 }
 
 module.exports = { registerBackupIPC };

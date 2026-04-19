@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v1.9.5</span>
+            <span class="version-badge">v2.0.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -101,6 +101,14 @@
                             <option value="260px" data-i18n="grid_medium" selected>Medium</option>
                             <option value="320px" data-i18n="grid_large">Large</option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="auto_backup_title">Auto Backup on Game Close:</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="autoBackupToggle" class="custom-toggle">
+                        <span class="toggle-label" data-i18n="auto_backup_desc">Automatically backup save data when a game closes</span>
                     </div>
                 </div>
 
@@ -198,6 +206,12 @@
                             <span class="pulse-dot"></span>
                             <span id="sessionTimerValue">00:00:00</span>
                         </div>
+                    </div>
+
+                    <div id="lastPlayedContainer" class="last-played-container" style="display: none; margin-top: 8px;">
+                        <i class="fa-regular fa-clock"></i>
+                        <span data-i18n="last_played">Last Played:</span>
+                        <strong id="lastPlayedValue">—</strong>
                     </div>
                 </div>
             </div>
@@ -447,7 +461,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 1.9.5</p>
+                <p style="text-align: center;">version 2.0.0</p>
             </div>
         </div>
     </div>

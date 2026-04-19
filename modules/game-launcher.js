@@ -8,6 +8,7 @@ const gameMonitors = new Map();  // gameId → setInterval (process polling)
 const gameTimers = new Map();  // gameId → setInterval (playtime tick)
 const runningGames = new Map();  // gameId → { pid, exeName, gameName, installPath, proc, startTime, event }
 const backups = require('./backup');
+const { readSettings } = require('./app-settings'); // ← ADDED
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -28,17 +29,14 @@ function stopTimer(gameId) {
 }
 
 /**
- * ✅ Full teardown — clears monitor + timer + triggers backup + notifies renderer.
- *
- * Backup trigger happens HERE, right before the game:stopped event is sent.
- * This guarantees:
- *   1. Game is fully closed before we read its save files
- *   2. The renderer receives game:stopped AFTER backup completes
- *   3. gameName + installPath are always passed to performMirroring
+ * ✅ Full teardown — clears monitor + timer + triggers backup (if enabled) + notifies renderer.
  */
 async function stopMonitor(gameId) {
     const game = runningGames.get(gameId);
-    if (!game) return; // already stopped or never existed
+    if (!game) {
+        console.error('[BACKEND] stopMonitor: game not found');
+        return;
+    }
 
     const monitor = gameMonitors.get(gameId);
     if (monitor) {
@@ -49,20 +47,41 @@ async function stopMonitor(gameId) {
 
     const elapsed = getElapsedSeconds(gameId);
 
-    if (game.gameName) {
-        console.log(`[BACKEND] 📂 Starting backup for: "${game.gameName}"`);
+    // ── Force read autoBackup directly from settings.json ──
+    let autoBackup = true;
+    try {
+        const userData = app.getPath('userData');
+        const settingsPath = path.join(userData, 'settings.json');
+        console.error(`[BACKEND] Reading settings from: ${settingsPath}`);
+        if (fs.existsSync(settingsPath)) {
+            const raw = fs.readFileSync(settingsPath, 'utf-8');
+            console.error(`[BACKEND] settings.json content: ${raw}`);
+            const settings = JSON.parse(raw);
+            autoBackup = settings.autoBackup === false ? false : true;
+            console.error(`[BACKEND] autoBackup resolved to: ${autoBackup}`);
+        } else {
+            console.error('[BACKEND] settings.json not found, using default true');
+        }
+    } catch (err) {
+        console.error('[BACKEND] Failed to read autoBackup:', err);
+    }
+
+    if (autoBackup && game.gameName) {
+        console.error(`[BACKEND] 📂 Starting backup for: "${game.gameName}"`);
         try {
             await backups.performMirroring(game.gameName, game.installPath || null);
         } catch (err) {
             console.error('[BACKEND] Backup error:', err);
         }
+    } else if (!autoBackup && game.gameName) {
+        console.error(`[BACKEND] ⏭️ Auto backup disabled for: "${game.gameName}"`);
     }
 
     runningGames.delete(gameId);
 
     if (game.event && !game.event.sender.isDestroyed()) {
         game.event.sender.send('game:stopped', { gameId, elapsed });
-        console.log(`[BACKEND] ✅ game:stopped sent → gameId: ${gameId}, elapsed: ${elapsed}s`);
+        console.error(`[BACKEND] ✅ game:stopped sent → gameId: ${gameId}, elapsed: ${elapsed}s`);
     }
 }
 
@@ -168,16 +187,6 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
 // LAUNCH
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Launches the game and initializes monitoring/timer systems.
- *
- * @param {Object}        event       - IPC event for communication with renderer
- * @param {string}        gamePath    - Absolute path to the executable (.exe / .bat)
- * @param {boolean}       showFPS     - Toggle for DXVK HUD (Linux / Proton)
- * @param {string}        launchArgs  - Custom launch arguments string
- * @param {string|number} gameId      - Database ID of the game
- * @param {string}        gameName    - Display name — used as backup key
- */
 function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
     if (!gamePath) return;
 
@@ -232,30 +241,19 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
             console.log(`[BACKEND] PID: ${proc.pid}`);
         });
 
-        // proc.on('exit', () => {
-        //     // proc.on('exit') fires when the launcher/wrapper exits.
-        //     // stopMonitor handles the real game process via the smart monitor.
-        //     // Guard: only trigger if we haven't already cleaned up.
-        //     if (runningGames.has(gameId)) {
-        //         console.log('[BACKEND] Game exited via proc.on(exit)');
-        //         stopMonitor(gameId);
-        //     }
-        // });
-
         proc.on('exit', () => {
             console.log('[BACKEND] Launcher/wrapper process exited (game may still be running)');
         });
 
         // ── Store game record ───────────────────────────────────────────────
-        // installPath is stored separately so backup.js can resolve {{p|game}}
         runningGames.set(gameId, {
             pid: proc.pid,
             exeName,
-            gameName,       // 🔑 key for gamesBackSave.json lookup
-            installPath: gamePath,  // 🔑 full .exe path for {{p|game}} resolution
+            gameName,
+            installPath: gamePath,
             proc,
             startTime: Date.now(),
-            event          // IPC channel back to renderer
+            event
         });
 
         proc.unref();
@@ -280,10 +278,6 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
 // FORCE STOP
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Forcefully terminates the game process.
- * stopMonitor (called internally) will handle backup + game:stopped notification.
- */
 function forceStopGame(gameId) {
     const game = runningGames.get(gameId);
     if (!game) {
@@ -298,9 +292,7 @@ function forceStopGame(gameId) {
             if (err) console.warn(`[BACKEND] taskkill warning: ${err.message}`);
             stopMonitor(gameId);
         });
-    }
-    
-    else {
+    } else {
         try { game.proc.kill('SIGKILL'); } catch (_) { /* already gone */ }
         stopMonitor(gameId);
     }

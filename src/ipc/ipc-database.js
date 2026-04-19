@@ -103,6 +103,10 @@ function registerDatabaseIPC() {
     ipcMain.handle('db:addPlaytime', (_e, gameName, minutes, totalSeconds) =>
         playtimeDB.addPlaytime(gameName, minutes, totalSeconds || 0)
     );
+
+    ipcMain.handle('db:getPlaytimeInfo', (_e, gameName) => {
+        return playtimeDB.getPlaytimeInfo(gameName);
+    });
 }
 
 module.exports = { registerDatabaseIPC };

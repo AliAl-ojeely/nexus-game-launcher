@@ -46,6 +46,8 @@ contextBridge.exposeInMainWorld('api', {
     getPlaytime: (gameName) => ipcRenderer.invoke('db:getPlaytime', gameName),
     addPlaytime: (gameName, minutes, seconds) => ipcRenderer.invoke('db:addPlaytime', gameName, minutes, seconds || 0),
 
+    getPlaytimeInfo: (gameName) => ipcRenderer.invoke('db:getPlaytimeInfo', gameName),
+
     getIconDataURL: (path) => ipcRenderer.invoke('get-icon-dataurl', path),
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {
@@ -76,6 +78,9 @@ contextBridge.exposeInMainWorld('api', {
 
         scanVault: (vaultPath) =>
             ipcRenderer.invoke('backup:scanVault', vaultPath),
+
+        getAutoBackup: () => ipcRenderer.invoke('backup:getAutoBackup'),
+        setAutoBackup: (value) => ipcRenderer.invoke('backup:setAutoBackup', value),
 
         deleteBackup: (gameName, zipPath) => ipcRenderer.invoke('backup:deleteBackup', gameName, zipPath),
     },

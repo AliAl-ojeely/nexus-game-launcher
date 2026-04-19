@@ -46,6 +46,69 @@ async function initSettingsPage() {
         if (savedPath) globalBackupInput.value = savedPath;
     }
 
+    // ── Linux compatibility settings ──────────────────────────────────────
+    if (window.api.platform === 'linux') {
+        const linuxSection = document.getElementById('linuxSettingsSection');
+        if (linuxSection) linuxSection.style.display = 'block';
+
+        const toolSelect = document.getElementById('linuxToolSelect');
+        if (toolSelect) {
+            const tools = await window.api.linux.getAvailableTools();
+            toolSelect.innerHTML = tools.map(t => `<option value="${t.name}">${t.name} (${t.type})</option>`).join('');
+            const settings = await window.api.linux.getSettings();
+            if (settings.selectedTool && tools.some(t => t.name === settings.selectedTool)) {
+                toolSelect.value = settings.selectedTool;
+            }
+            document.getElementById('linuxEnvVars').value = settings.envVars || '';
+            document.getElementById('linuxDllOverrides').value = settings.dllOverrides || '';
+        }
+
+        // Proton download UI (optional)
+        const versionSelect = document.getElementById('protonVersionToDownload');
+        const downloadBtn = document.getElementById('downloadProtonBtn');
+        if (versionSelect && downloadBtn) {
+            versionSelect.innerHTML = '<option>Loading versions...</option>';
+            downloadBtn.disabled = true;
+            const releases = await window.api.linux.getProtonReleases();
+            if (releases.length) {
+                versionSelect.innerHTML = releases.map(r => `<option value="${r.tag}" data-url="${r.url}">${r.tag}</option>`).join('');
+                downloadBtn.disabled = false;
+            } else {
+                versionSelect.innerHTML = '<option>Failed to load releases</option>';
+                downloadBtn.disabled = true;
+            }
+
+            downloadBtn.onclick = async () => {
+                const selectedOption = versionSelect.options[versionSelect.selectedIndex];
+                const versionTag = selectedOption.value;
+                const downloadUrl = selectedOption.dataset.url;
+                if (!versionTag || !downloadUrl) return;
+
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Downloading...';
+                const result = await window.api.linux.downloadProton(versionTag, downloadUrl);
+                if (result.success) {
+                    const tools = await window.api.linux.getAvailableTools();
+                    toolSelect.innerHTML = tools.map(t => `<option value="${t.name}">${t.name} (${t.type})</option>`).join('');
+                    const newTool = tools.find(t => t.name.includes(versionTag));
+                    if (newTool) toolSelect.value = newTool.name;
+                    alert(`✅ ${versionTag} installed successfully!`);
+                } else {
+                    alert(`❌ Installation failed: ${result.error}`);
+                }
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download';
+            };
+        }
+    }
+
+    // ── Auto backup toggle (load setting) ────────────────────────────────────
+    const autoBackupToggle = document.getElementById('autoBackupToggle');
+    if (autoBackupToggle) {
+        const autoBackup = await window.api.backup.getAutoBackup();
+        autoBackupToggle.checked = autoBackup;
+    }
+
     // ── Select Global Backup Folder button ───────────────────────────────────
     const selectGlobalBackupBtn = document.getElementById('selectGlobalBackupBtn');
     if (selectGlobalBackupBtn) {
@@ -55,7 +118,7 @@ async function initSettingsPage() {
         });
     }
 
-    // ── Save Settings button — includes global backup path ───────────────────
+    // ── Save Settings button — includes global backup path and auto backup ───
     const saveSettingsBtn = document.getElementById('saveGeneralSettings');
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', async () => {
@@ -83,7 +146,6 @@ async function initSettingsPage() {
                 const result = await window.api.backup.setGlobalPath(globalPath);
                 if (result.success) {
                     console.log('[SETTINGS] Global backup path saved:', globalPath);
-                    // Show confirmation toast if available
                     if (typeof window._showToast === 'function') {
                         window._showToast('success',
                             lang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved',
@@ -92,6 +154,20 @@ async function initSettingsPage() {
                         );
                     }
                 }
+            }
+
+            // ── Save auto backup setting ──────────────────────────────────────
+            if (autoBackupToggle) {
+                await window.api.backup.setAutoBackup(autoBackupToggle.checked);
+            }
+
+            // ── Save Linux settings ───────────────────────────────────────────
+            if (window.api.platform === 'linux') {
+                await window.api.linux.setSettings({
+                    selectedTool: document.getElementById('linuxToolSelect').value,
+                    envVars: document.getElementById('linuxEnvVars').value,
+                    dllOverrides: document.getElementById('linuxDllOverrides').value
+                });
             }
 
             console.log('[SETTINGS] Settings saved');
