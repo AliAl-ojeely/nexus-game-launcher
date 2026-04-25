@@ -12,7 +12,6 @@ const { initAppData } = require('../modules/app-settings');
 const { registerDatabaseIPC } = require('./ipc/ipc-database');
 const { registerApiIPC } = require('./ipc/ipc-api');
 const { registerBackupIPC } = require('./ipc/ipc-backup');
-
 initAppData();
 db.initDB();
 playtimeDB.initPlaytimeDB();
@@ -73,15 +72,14 @@ protocol.registerSchemesAsPrivileged([
 
 app.whenReady().then(() => {
 
+    
     protocol.handle('local-resource', async (request) => {
         const raw = request.url.replace(/^local-resource:\/\//, '');
         const decoded = decodeURI(raw);
 
-        // ── تحويل forward slashes لـ backslashes على Windows ─────────────────
         let filePath = decoded.replace(/\//g, path.sep);
         filePath = path.normalize(filePath);
 
-        // Fix drive-letter path on Windows (C\Users → C:\Users)
         if (process.platform === 'win32') {
             const m = filePath.match(/^([a-zA-Z])\\(.*)$/);
             if (m) filePath = m[1].toUpperCase() + ':\\' + m[2];
@@ -102,7 +100,7 @@ app.whenReady().then(() => {
                 '.gif': 'image/gif',
                 '.webp': 'image/webp',
                 '.svg': 'image/svg+xml',
-                '.ico': 'image/x-icon',  // ← أضفنا ico
+                '.ico': 'image/x-icon',
             };
 
             return new Response(data, {

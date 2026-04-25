@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.0.0</span>
+            <span class="version-badge">v2.0.5</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -138,23 +138,15 @@
                             </button>
                         </div>
 
-                        <div
-                            style="margin-top:15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
-                            <button id="scanVaultBtn" class="folder-btn-blue"
-                                style="gap:7px; font-size:12px; padding: 8px 15px;">
-                                <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                <span>Scan Vault & Re-link Backups</span>
-                            </button>
-                            <small
-                                style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px; line-height: 1.4;">
-                                <i class="fa-solid fa-circle-info"></i>
-                                Use this after reinstalling Windows or moving your games to automatically link existing
-                                backup files to your current library.
-                            </small>
-                            <div id="scanVaultResult"
-                                style="display:none; margin-top:10px; padding: 8px; border-radius: 5px; font-size: 12px; background: rgba(0,0,0,0.2);">
-                            </div>
-                        </div>
+                        <button id="scanVaultBtn" class="folder-btn-blue" style="gap:7px; font-size:12px; padding: 8px 15px;">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            <span data-i18n="scan_vault_title">Scan Vault & Re-link Backups</span>
+                        </button>
+                        <small style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px; line-height: 1.4;">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span data-i18n="scan_vault_desc">Use this after reinstalling Windows or moving your games to automatically link
+                                existing backup files to your current library.</span>
+                        </small>
                     </div>
                 </div>
 
@@ -218,18 +210,19 @@
 
             <div class="details-content">
                 <div class="details-main">
-                    <h2>
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span data-i18n="title_description">Description</span>
-                    </h2>
-
-                    <div class="description-wrapper" id="descWrapper">
-                        <p class="details-description" id="detailsDescription">Loading game information...</p>
+                    <div id="descriptionArea">
+                        <h2>
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span data-i18n="title_description">Description</span>
+                        </h2>
+                        <div class="description-wrapper" id="descWrapper">
+                            <p class="details-description" id="detailsDescription">Loading game information...</p>
+                        </div>
+                        <button id="readMoreBtn" class="read-more-btn" style="display: none;">
+                            <span data-i18n="read_more">Read More</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
                     </div>
-                    <button id="readMoreBtn" class="read-more-btn" style="display: none;">
-                        <span data-i18n="read_more">Read More</span>
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </button>
 
                     <div class="details-media-section">
                         <div class="media-header">
@@ -461,7 +454,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.0.0</p>
+                <p style="text-align: center;">version 2.0.5</p>
             </div>
         </div>
     </div>
@@ -504,7 +497,7 @@
                     <span data-i18n="shortcut_mouse_back">Go back (or close lightbox)</span>
                 </div>
             </div>
-            <button class="close-shortcuts-btn" data-i18n="shortcuts_close">Close</button>
+            <!-- <button class="close-shortcuts-btn" data-i18n="shortcuts_close">Close</button> -->
         </div>
     </div>
 

@@ -14,6 +14,7 @@ export function renderGameDetails(game) {
     const screenshotsGrid = document.getElementById('detailsScreenshotsGrid');
     const descEl = document.getElementById('detailsDescription');
     const readMoreBtn = document.getElementById('readMoreBtn');
+    const descriptionArea = document.getElementById('descriptionArea');
 
     // Banner
     const bgUrl = toSafeUrl(assets.background || assets.poster || '');
@@ -40,19 +41,24 @@ export function renderGameDetails(game) {
         }
     }
 
-    // Description
-    if (isValid(meta.description)) {
+    // Description section – hide entirely if no description
+    if (isValid(meta.description) && meta.description.trim() !== '') {
+        if (descriptionArea) descriptionArea.style.display = 'block';
         descEl.innerHTML = meta.description;
         setTimeout(() => {
+            const wrapper = document.getElementById('descWrapper');
             if (readMoreBtn && descEl.scrollHeight > 165) {
                 readMoreBtn.style.display = 'flex';
+                wrapper.classList.remove('no-shadow'); // show shadow for long text
                 readMoreBtn.querySelector('span').innerText = t('read_more', userSettings.lang === 'ar' ? 'إقرأ المزيد' : 'Read More');
             } else if (readMoreBtn) {
                 readMoreBtn.style.display = 'none';
+                if (wrapper) wrapper.classList.add('no-shadow'); // hide shadow for short text
             }
         }, 200);
     } else {
-        descEl.innerHTML = `<p>${t('fetching_description', userSettings.lang === 'ar' ? 'جاري جلب الوصف...' : 'Fetching description...')}</p>`;
+        if (descriptionArea) descriptionArea.style.display = 'none';
+        if (readMoreBtn) readMoreBtn.style.display = 'none';
     }
 
     // Sidebar metadata

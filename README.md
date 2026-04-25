@@ -1,9 +1,9 @@
 <div align="center">
 
-# 🎮 Nexus Game Launcher
+# Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.0.0-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-2.0.5-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,9 +22,9 @@
 
 ---
 
-## What's New in `v2.0.0` – The "Total Control" Update
+## What's New in `v2.0.5` – The "Total Control" Update
 
-Version `2.0.0` introduces powerful manual controls, a complete visual overhaul of the edit modal, and a fully modular, maintainable codebase.
+Version `2.0.5` introduces powerful manual controls, a complete visual overhaul of the edit modal, and a fully modular, maintainable codebase.
 
 ### Complete Asset Customization
 

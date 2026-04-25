@@ -5,6 +5,7 @@ import { initDetails } from './details.js';
 import { initModal } from './modal.js';
 import { initShortcuts } from './shortcuts.js';
 import { initReorderButton } from './library.js';
+import { showToast } from './details-components.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT

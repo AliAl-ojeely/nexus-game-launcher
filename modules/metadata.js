@@ -3,6 +3,35 @@ const steamApi = require('./steam-api');
 const steamGridApi = require('./steamGrid-api');
 const youtubeApi = require('./youtube-api');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITY: Clean description from markdown and special symbols
+// ─────────────────────────────────────────────────────────────────────────────
+
+function cleanDescription(text) {
+    if (!text || typeof text !== 'string') return '';
+    let cleaned = text
+        // Remove ###, ##, # anywhere (including attached to words)
+        .replace(/#{1,3}/g, '')
+        // Remove ***, ___, --- anywhere
+        .replace(/\*{3,}/g, '')
+        .replace(/_{3,}/g, '')
+        .replace(/-{3,}/g, '')
+        // Remove special symbol groups
+        .replace(/\$\$+/g, '')
+        .replace(/@@+/g, '')
+        .replace(/!!+/g, '')
+        // Collapse multiple spaces and trim
+        .replace(/\s+/g, ' ')
+        .trim();
+    // Restore single spaces after punctuation (keeps readability)
+    cleaned = cleaned.replace(/\.\s+\./g, '. .'); // optional
+    return cleaned;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MERGE METADATA
+// ─────────────────────────────────────────────────────────────────────────────
+
 function mergeMetadata({
     name,
     rawgData,
@@ -13,8 +42,9 @@ function mergeMetadata({
 }) {
     const trailerSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' official trailer')}`;
 
-    // ── Text fields ───────────────────────────────────────────────────────────
-    const description = rawgData?.description || steamData?.description || '';
+    // ── Text fields (description cleaned) ─────────────────────────────────────
+    const rawDescription = rawgData?.description || steamData?.description || '';
+    const description = cleanDescription(rawDescription);
     const developer = steamData?.developer || rawgData?.developer || '';
     const publisher = steamData?.publisher || rawgData?.publisher || '';
     const releaseDate = steamData?.releaseDate || rawgData?.releaseDate || '';
@@ -67,7 +97,7 @@ function mergeMetadata({
         metacritic,
         genres,
         tags,
-        steamAppId,                 // ← added
+        steamAppId,
         media: {
             screenshots,
             trailerYouTubeId,
@@ -78,6 +108,10 @@ function mergeMetadata({
 
     return { metadata, rawAssets };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORCHESTRATOR
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchAllMetadata(gameName) {
     console.log(`\n--- Starting Metadata Fetch Pipeline for: "${gameName}" ---`);

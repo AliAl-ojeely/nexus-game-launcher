@@ -457,6 +457,10 @@
     opacity: 0;
 }
 
+.description-wrapper.no-shadow::after {
+    display: none;
+}
+
 .details-description {
     color: var(--text-muted);
     line-height: 1.8;
@@ -804,3 +808,4 @@
 .last-played-container strong {
     color: var(--text-main);
 }
+

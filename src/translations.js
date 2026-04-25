@@ -68,7 +68,9 @@ const dictionary = {
         achievements_title: "الإنجازات",
         achievements_button: "عرض الإنجازات",
         last_played: "آخر تشغيل",
-
+        scan_vault_title: "مسح الخزنة وإعادة الربط",
+        scan_vault_desc: "استخدم هذا بعد إعادة تثبيت Windows أو نقل ألعابك لربط ملفات النسخ الاحتياطي الموجودة تلقائياً بمكتبتك الحالية.",
+        
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
         settings_backup_desc: "المجلد الافتراضي لنسخ حفظ الألعاب (يُفضل عدم استخدام محرك الأقراص C):",
@@ -183,6 +185,8 @@ const dictionary = {
         achievements_title: "Achievements",
         achievements_button: "View Achievements",
         last_played: "Last Played",
+        scan_vault_title: "Scan Vault & Re-link Backups",
+        scan_vault_desc: "Use this after reinstalling Windows or moving your games to automatically link existing backup files to your current library.",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",

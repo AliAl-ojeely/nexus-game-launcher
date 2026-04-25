@@ -191,11 +191,18 @@ export function initReorderButton() {
 // INITIALISE SEARCH
 // ─────────────────────────────────────────────────────────────────────────────
 
+let searchTimeout;
 export function initLibrary() {
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.game-card');
-        cards.forEach(card => card.style.display = card.getAttribute('data-title').includes(searchTerm) ? 'block' : 'none');
+    const input = document.getElementById('searchInput');
+    input.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.game-card');
+            cards.forEach(card => {
+                card.style.display = card.getAttribute('data-title').includes(searchTerm) ? 'block' : 'none';
+            });
+        }, 150);
     });
 }
 

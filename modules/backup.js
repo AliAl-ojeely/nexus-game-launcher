@@ -95,19 +95,18 @@ function initBackupDB() {
  *   - Removes accents/diacritics
  *   - Strips common noise words and punctuation
  */
+const normCache = new Map();
 function normalizeForFuzzy(str) {
-    return str
+    if (normCache.has(str)) return normCache.get(str);
+    const result = str
         .toLowerCase()
-        // Normalize all dash/hyphen variants → plain hyphen
         .replace(/[\u2013\u2014\u2012\u2212\ufe58\ufe63\uff0d]/g, '-')
-        // Normalize quotes/apostrophes
         .replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC]/g, "'")
-        // Decompose accented characters then strip the accent marks
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        // Remove trailing edition noise
         .replace(/\s*[:\-–]\s*(the\s+)?(definitive|complete|ultimate|deluxe|enhanced|remastered|gold|goty|anniversary)\s+edition\s*$/i, '')
-        // Trim
         .trim();
+    normCache.set(str, result);
+    return result;
 }
 
 /**
