@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.0.5</span>
+            <span class="version-badge">v2.1.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -97,11 +97,21 @@
                     <div class="form-group">
                         <label data-i18n="set_grid">Grid Size:</label>
                         <select id="gridSizeSetting" class="custom-select">
+                            <option value="150px" data-i18n="grid_very_small">Very Small</option>
                             <option value="200px" data-i18n="grid_small">Small</option>
                             <option value="260px" data-i18n="grid_medium" selected>Medium</option>
                             <option value="320px" data-i18n="grid_large">Large</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="show_titles_label">Show Game Titles on Cards</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="showTitlesToggle" class="custom-toggle" checked>
+                        <span class="toggle-label" data-i18n="show_titles_desc">Display game names under posters</span>
+                    </div>
+                    <small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
                 </div>
 
                 <div class="form-group">
@@ -198,6 +208,11 @@
                             <span class="pulse-dot"></span>
                             <span id="sessionTimerValue">00:00:00</span>
                         </div>
+
+                        <button id="pauseTimerBtn" class="pause-timer-btn"
+                            style="display: none; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; margin-left: 10px;">
+                            <i class="fa-regular fa-circle-pause"></i>
+                        </button>
                     </div>
 
                     <div id="lastPlayedContainer" class="last-played-container" style="display: none; margin-top: 8px;">
@@ -454,7 +469,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.0.5</p>
+                <p style="text-align: center;">version 2.1.0</p>
             </div>
         </div>
     </div>
@@ -495,6 +510,10 @@
                 <div class="shortcut-item">
                     <kbd>Mouse back button</kbd>
                     <span data-i18n="shortcut_mouse_back">Go back (or close lightbox)</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>P</kbd>
+                    <span data-i18n="shortcut_pause">Pause / Resume playtime timer</span>
                 </div>
             </div>
             <!-- <button class="close-shortcuts-btn" data-i18n="shortcuts_close">Close</button> -->

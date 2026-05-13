@@ -76,6 +76,18 @@ export function initShortcuts() {
                 if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) document.getElementById('detailsPlayBtn').click();
                 break;
             }
+            case 'p':
+            case 'P': {
+                event.preventDefault();
+                // Only trigger if a game is running (pause button is visible then)
+                if (state.isGameRunning) {
+                    const pauseBtn = document.getElementById('pauseTimerBtn');
+                    if (pauseBtn && pauseBtn.style.display !== 'none') {
+                        pauseBtn.click();
+                    }
+                }
+                break;
+            }
             case '+': {
                 event.preventDefault();
                 const addBtn = document.getElementById('addGameBtn');

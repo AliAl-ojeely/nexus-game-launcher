@@ -48,6 +48,14 @@ contextBridge.exposeInMainWorld('api', {
 
     getPlaytimeInfo: (gameName) => ipcRenderer.invoke('db:getPlaytimeInfo', gameName),
 
+    pauseTimer: () => ipcRenderer.invoke('timer:pause'),
+    resumeTimer: () => ipcRenderer.invoke('timer:resume'),
+
+    onGameStarted: (cb) => ipcRenderer.on('game:started', (_e, data) => cb(data)),
+
+    onGameTick: (cb) => ipcRenderer.on('game:tick', (_e, data) => cb(data)),
+    removeGameTickListener: () => ipcRenderer.removeAllListeners('game:tick'),
+
     getIconDataURL: (path) => ipcRenderer.invoke('get-icon-dataurl', path),
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {

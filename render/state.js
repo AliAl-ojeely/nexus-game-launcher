@@ -7,7 +7,11 @@ export const state = {
     currentTab: 'libraryArea',
     currentGameExePath: "",
     currentGameId: null,
-    isGameRunning: false
+    isGameRunning: false,
+    startTime: 0,
+    timerInterval: null,
+    isHandlingStop: false,
+    isPaused: false
 };
 
 export const userSettings = {

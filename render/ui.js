@@ -39,17 +39,12 @@ function applyThemeClass(theme) {
     }
 }
 
-/**
- * Initializes all UI components and event listeners.
- * Updated to support Global Backup Vault and restore Developer Modal functionality.
- */
 export function initUI() {
     // Load initial settings into UI fields
     document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
     document.getElementById('sidebarLogoName').innerText = userSettings.appName;
     document.getElementById('appNameSetting').value = userSettings.appName;
 
-    // 🟢 Load saved backup vault path into input field
     if (document.getElementById('globalBackupPath')) {
         document.getElementById('globalBackupPath').value = userSettings.globalBackupVault;
     }
@@ -63,13 +58,39 @@ export function initUI() {
     document.getElementById('gridSizeSetting').value = userSettings.gridSize;
     document.documentElement.style.setProperty('--grid-size', userSettings.gridSize);
 
+    // --- Show titles toggle and visibility control ---
+    const showTitlesToggle = document.getElementById('showTitlesToggle');
+    let showTitles = true;
+    if (showTitlesToggle) {
+        showTitles = localStorage.getItem('showTitles') !== 'false';
+        showTitlesToggle.checked = showTitles;
+    }
+    // Get ALL game grids (main library and favorites)
+    const gamesGrids = document.querySelectorAll('.games-grid');
+    function updateTitleVisibility(gridSize) {
+        gamesGrids.forEach(grid => {
+            if (gridSize === '150px') {
+                grid.classList.add('force-hide-titles');
+                grid.classList.remove('hide-titles');
+            } else {
+                grid.classList.remove('force-hide-titles');
+                if (showTitlesToggle && !showTitlesToggle.checked) {
+                    grid.classList.add('hide-titles');
+                } else {
+                    grid.classList.remove('hide-titles');
+                }
+            }
+        });
+    }
+    updateTitleVisibility(userSettings.gridSize);
+    // --- end ---
+
     // Save General Settings
     document.getElementById('saveGeneralSettings').addEventListener('click', () => {
         const newName = document.getElementById('appNameSetting').value;
         const newTheme = document.getElementById('themeSetting').value;
         const newLang = document.getElementById('langSetting').value;
         const newGrid = document.getElementById('gridSizeSetting').value;
-        // 🟢 Get backup path from input
         const newVault = document.getElementById('globalBackupPath').value;
 
         userSettings.lang = newLang;
@@ -83,12 +104,15 @@ export function initUI() {
         localStorage.setItem('theme', newTheme);
         localStorage.setItem('lang', newLang);
         localStorage.setItem('gridSize', newGrid);
-        // 🟢 Store backup vault path
         localStorage.setItem('globalBackupVault', newVault);
+        if (showTitlesToggle) {
+            localStorage.setItem('showTitles', showTitlesToggle.checked);
+        }
 
         document.getElementById('sidebarLogoName').innerText = newName;
         applyThemeClass(newTheme);
         document.documentElement.style.setProperty('--grid-size', newGrid);
+        updateTitleVisibility(newGrid);
         applyLanguage(newLang);
 
         showToast('success', newLang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved', '', 3000);
@@ -113,15 +137,14 @@ export function initUI() {
         if (state.currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
     });
 
-    // 🟢 Restored: Developer Modal logic (clicking the logo)
+    // Developer Modal logic
     const logoContainer = document.querySelector('.sidebar .logo');
     const devModal = document.getElementById('devModal');
     if (logoContainer && devModal) {
-        logoContainer.style.cursor = 'pointer'; // Visual hint
+        logoContainer.style.cursor = 'pointer';
         logoContainer.addEventListener('click', () => {
-            devModal.classList.add('active'); // Changed from 'show' to 'active' to match global standard
+            devModal.classList.add('active');
         });
-
         devModal.addEventListener('click', (e) => {
             if (e.target === devModal) devModal.classList.remove('active');
         });

@@ -26,7 +26,7 @@ export function initDetails() {
         if (!currentGame) return;
 
         console.log(`[FRONTEND] ▶️ Launching: ${currentGame.name}`);
-        session.startTime = Date.now();
+        session.startTime = Date.now();        // ← needed for playtime calculation
         state.isGameRunning = true;
         session.isHandlingStop = false;
 
@@ -44,14 +44,7 @@ export function initDetails() {
 
         const timerContainer = document.getElementById('sessionTimerContainer');
         if (timerContainer) timerContainer.style.display = 'flex';
-
-        if (session.timerInterval) clearInterval(session.timerInterval);
-        session.timerInterval = setInterval(() => {
-            if (!state.isGameRunning) { clearInterval(session.timerInterval); return; }
-            const elapsed = Math.floor((Date.now() - session.startTime) / 1000);
-            const timerValue = document.getElementById('sessionTimerValue');
-            if (timerValue) timerValue.innerText = formatTime(elapsed);
-        }, 1000);
+        // No local interval – display is updated by backend 'game:tick' events
     };
 
     // Game events
@@ -123,6 +116,43 @@ export function initDetails() {
             backupNowBtn.disabled = false;
             backupNowBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span data-i18n="btn_backup_now">${t('btn_backup_now', userSettings.lang === 'ar' ? 'حفظ الآن' : 'Backup Now')}</span>`;
         };
+    }
+
+    // Pause and Resume Timer
+    const pauseBtn = document.getElementById('pauseTimerBtn');
+    let timerPaused = false;
+
+    window.api.onGameStarted(() => {
+        pauseBtn.style.display = 'flex';
+        timerPaused = false;
+        pauseBtn.innerHTML = '<i class="fa-regular fa-circle-pause"></i>';
+    });
+
+    window.api.onGameStopped(() => {
+        pauseBtn.style.display = 'none';
+    });
+
+    pauseBtn.onclick = async () => {
+        timerPaused = !timerPaused;
+        if (timerPaused) {
+            pauseBtn.innerHTML = '<i class="fa-regular fa-circle-play"></i>';
+            await window.api.pauseTimer();
+        } else {
+            pauseBtn.innerHTML = '<i class="fa-regular fa-circle-pause"></i>';
+            await window.api.resumeTimer();
+        }
+    };
+
+    // Listen to backend ticks to update timer display
+    if (window.api.onGameTick) {
+        window.api.onGameTick((data) => {
+            const timerValue = document.getElementById('sessionTimerValue');
+            if (timerValue && data.elapsed !== undefined) {
+                timerValue.innerText = formatTime(data.elapsed);
+            }
+        });
+    } else {
+        console.warn('[FRONTEND] onGameTick not available');
     }
 
     // Read More button

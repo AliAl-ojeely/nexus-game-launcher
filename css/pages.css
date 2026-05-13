@@ -809,3 +809,18 @@
     color: var(--text-main);
 }
 
+.pause-timer-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.pause-timer-btn:hover {
+    background: var(--accent);
+    color: white;
+}

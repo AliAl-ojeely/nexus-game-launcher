@@ -27,7 +27,6 @@ export async function handleGameStop(gameName) {
     console.log(`[FRONTEND] ⏱️ Session: ${elapsedSeconds}s = ${elapsedMinutes}min`);
 
     const newTotalPlaytime = await window.api.addPlaytime(gameName, elapsedMinutes, elapsedSeconds);
-    // Only update display if the session was at least 60 seconds (so it actually changed playtime)
     if (elapsedSeconds >= 60 && newTotalPlaytime !== false && newTotalPlaytime !== undefined) {
         const playtimeDisplay = document.getElementById('totalPlaytimeValue');
         const currentGame = state.allGamesData.find(g => g.name === gameName);
@@ -35,7 +34,6 @@ export async function handleGameStop(gameName) {
             playtimeDisplay.innerText = formatPlaytime(newTotalPlaytime, userSettings.lang);
         }
     } else if (elapsedSeconds < 60) {
-        // Session too short – re-fetch the existing total from database to ensure display is correct
         const existingTotal = await window.api.getPlaytime(gameName);
         const playtimeDisplay = document.getElementById('totalPlaytimeValue');
         const currentGame = state.allGamesData.find(g => g.name === gameName);
@@ -44,7 +42,7 @@ export async function handleGameStop(gameName) {
         }
     }
 
-    // ✅ Refresh Last Played display (always, even for short sessions)
+    // Refresh Last Played
     const updatedInfo = await window.api.getPlaytimeInfo(gameName);
     const lastPlayedContainer = document.getElementById('lastPlayedContainer');
     const lastPlayedValueSpan = document.getElementById('lastPlayedValue');
@@ -60,7 +58,7 @@ export async function handleGameStop(gameName) {
         lastPlayedContainer.style.display = 'none';
     }
 
-    // --- Check auto backup setting BEFORE any UI changes ---
+    // Check auto backup setting
     let autoBackup = true;
     try {
         autoBackup = await window.api.backup.getAutoBackup();
@@ -73,17 +71,10 @@ export async function handleGameStop(gameName) {
     let backupResult = { success: false };
 
     if (!autoBackup) {
-        // Auto backup disabled: skip all backup UI and immediately reset button
         console.log(`[FRONTEND] ⏭️ Auto backup disabled, skipping backup for "${gameName}"`);
-        if (playBtn) {
-            playBtn.disabled = false;
-            playBtn.style.cssText = '';
-            playBtn.classList.remove('play-btn-running', 'play-btn-stopping', 'play-btn-securing');
-            const playLabel = t('btn_play', userSettings.lang === 'ar' ? 'إلعب الآن' : 'Play');
-            playBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${playLabel}</span>`;
-        }
+        // No backup UI; we will reset button after final cleanup
     } else {
-        // Auto backup enabled: show securing UI and perform backup
+        // Show securing UI
         if (playBtn) {
             playBtn.disabled = true;
             playBtn.classList.remove('play-btn-running', 'play-btn-stopping');
@@ -107,7 +98,6 @@ export async function handleGameStop(gameName) {
             const currentGame = state.allGamesData.find(g => g.name === gameName);
             const bInfo = await window.api.backup.getInfo(gameName);
             const backupDir = bInfo.config?.backupPath || '';
-
             if (backupDir) {
                 backupResult = await window.api.backup.now(gameName, backupDir, currentGame?.path || null);
             } else {
@@ -134,13 +124,11 @@ export async function handleGameStop(gameName) {
                 const savedLabel = t('backup_saved', userSettings.lang === 'ar' ? 'تم الحفظ! ✓' : 'Saved! ✓');
                 playBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${savedLabel}`;
             }
-
             const successMsg = userSettings.lang === 'ar'
                 ? `${t('backup_success_msg', 'تم تأمين نسخة احتياطية لـ')} "${gameName}" ✅`
                 : `${t('backup_success_msg', 'Save secured for')} "${gameName}" ✅`;
             const subMsg = backupResult.zipPath ? backupResult.zipPath.split('\\').pop() : '';
             showToast('success', successMsg, subMsg, 5000);
-
             pulseBackupSuccess();
             const freshInfo = await window.api.backup.getInfo(gameName);
             const currentGame = state.allGamesData.find(g => g.name === gameName);
@@ -166,16 +154,16 @@ export async function handleGameStop(gameName) {
     const timerValue = document.getElementById('sessionTimerValue');
     if (timerValue) timerValue.innerText = '00:00:00';
 
-    // Only schedule button reset if backup was performed (autoBackup true)
-    if (autoBackup) {
-        setTimeout(() => {
-            if (playBtn) {
-                playBtn.disabled = false;
-                playBtn.style.cssText = '';
-                playBtn.classList.remove('play-btn-running', 'play-btn-stopping', 'play-btn-securing');
-                const playLabel = t('btn_play', userSettings.lang === 'ar' ? 'إلعب الآن' : 'Play');
-                playBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${playLabel}</span>`;
-            }
-        }, 3000);
-    }
+    // ✅ Always reset the play button to green after a short delay (0.5s if no backup, else 3s)
+    const resetDelay = (autoBackup && backupResult.success) ? 3000 : 500;
+    setTimeout(() => {
+        const btn = document.getElementById('detailsPlayBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.style.cssText = '';
+            btn.classList.remove('play-btn-running', 'play-btn-stopping', 'play-btn-securing');
+            const playLabel = t('btn_play', userSettings.lang === 'ar' ? 'إلعب الآن' : 'Play');
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${playLabel}</span>`;
+        }
+    }, resetDelay);
 }

@@ -14,6 +14,7 @@ const dictionary = {
         theme_light: "فاتح",
         set_lang: "اللغة (Language):",
         set_grid: "حجم البطاقات:",
+        grid_very_small: "صغير جداً",
         grid_small: "صغير",
         grid_medium: "متوسط",
         grid_large: "كبير",
@@ -70,7 +71,11 @@ const dictionary = {
         last_played: "آخر تشغيل",
         scan_vault_title: "مسح الخزنة وإعادة الربط",
         scan_vault_desc: "استخدم هذا بعد إعادة تثبيت Windows أو نقل ألعابك لربط ملفات النسخ الاحتياطي الموجودة تلقائياً بمكتبتك الحالية.",
-        
+        show_titles_label: "إظهار أسماء الألعاب على البطاقات",
+        show_titles_desc: "عرض اسم اللعبة أسفل الصورة",
+        show_titles_note: "تختفي الأسماء تلقائياً في وضع الشبكة الصغير جداً.",
+        shortcut_pause: "إيقاف / استئناف مؤقت وقت اللعب",
+
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
         settings_backup_desc: "المجلد الافتراضي لنسخ حفظ الألعاب (يُفضل عدم استخدام محرك الأقراص C):",
@@ -131,6 +136,7 @@ const dictionary = {
         theme_light: "Light",
         set_lang: "Language:",
         set_grid: "Grid Size:",
+        grid_very_small: "Very Small",
         grid_small: "Small",
         grid_medium: "Medium",
         grid_large: "Large",
@@ -171,7 +177,6 @@ const dictionary = {
         total_playtime: "Total Playtime:",
         theme_darker: "Darker",
         modal_custom_icon: "Custom Icon (Optional):",
-
         shortcuts_title: "Keyboard Shortcuts",
         shortcut_navigate_images: "Navigate screenshots (lightbox)",
         shortcut_esc: "Close modal / Go back / Blur search",
@@ -187,6 +192,10 @@ const dictionary = {
         last_played: "Last Played",
         scan_vault_title: "Scan Vault & Re-link Backups",
         scan_vault_desc: "Use this after reinstalling Windows or moving your games to automatically link existing backup files to your current library.",
+        show_titles_label: "Show Game Titles on Cards",
+        show_titles_desc: "Display game names under posters",
+        show_titles_note: "Titles are always hidden in “Very Small” grid mode.",
+        shortcut_pause: "Pause / Resume playtime timer",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",

@@ -111,6 +111,21 @@
     gap: 30px;
 }
 
+/* Hide game title when very small grid is active */
+.very-small-grid .game-title {
+    display: none;
+}
+
+/* Hide titles when the user disables them (for normal grids) */
+.hide-titles .game-title {
+    display: none;
+}
+
+/* Force hide titles in very small grid mode – overrides any setting */
+.force-hide-titles .game-title {
+    display: none !important;
+}
+
 .game-card {
     background-color: var(--bg-card);
     border-radius: 12px;

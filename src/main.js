@@ -144,6 +144,14 @@ ipcMain.on('shell:openExternal', (_e, url) =>
     dialogs.openExternal(url)
 );
 
+ipcMain.handle('timer:pause', () => {
+    return launcher.pauseTimer();
+});
+
+ipcMain.handle('timer:resume', () => {
+    return launcher.resumeTimer();
+});
+
 // Feature modules
 registerDatabaseIPC();
 registerApiIPC();
