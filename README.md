@@ -203,6 +203,7 @@ NEXUS-GAME-LAUNCHER/
 │   ├── backup.js
 │   ├── database.js
 │   ├── dialogs.js
+│   ├── updater.js
 │   ├── game-launcher.js
 │   ├── metadata.js           
 │   ├── playtime.js
