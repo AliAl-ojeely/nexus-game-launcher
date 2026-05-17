@@ -14,7 +14,7 @@ import { showToast } from './details-components.js';
 document.addEventListener('DOMContentLoaded', async () => {
     initUI();
     initLibrary();
-    initDetails();   // registers game:stopped + game:error listeners internally
+    initDetails();
     initModal();
     initShortcuts();
 
@@ -23,16 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGames();
     initReorderButton();
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NOTE: game:stopped and game:error are handled ONLY in details.js (initDetails).
-//
-// The old listeners that were here caused a double-call bug:
-//   1. details.js → handleGameStop() → saves playtime + runs backup
-//   2. render-main.js → reset play button (overwrote the "Securing Save..." state)
-//
-// Solution: remove them from here entirely. details.js owns all game event logic.
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SETTINGS PAGE
@@ -119,7 +109,25 @@ async function initSettingsPage() {
         });
     }
 
-    // ── Save Settings button — includes global backup path and auto backup ───
+    // ── Window size inputs (load current size) ───────────────────────────────
+    const widthInput = document.getElementById('windowWidthInput');
+    const heightInput = document.getElementById('windowHeightInput');
+    if (widthInput && heightInput) {
+        const currentSize = await window.api.getWindowSize();
+        widthInput.value = currentSize.width;
+        heightInput.value = currentSize.height;
+    }
+
+    // ── Open AppData folder button ───────────────────────────────────────────
+    const openAppDataBtn = document.getElementById('openAppDataBtn');
+    if (openAppDataBtn) {
+        openAppDataBtn.addEventListener('click', async () => {
+            const userDataPath = await window.api.getUserDataPath();
+            window.api.openFolder(userDataPath);
+        });
+    }
+
+    // ── Save Settings button ─────────────────────────────────────────────────
     const saveSettingsBtn = document.getElementById('saveGeneralSettings');
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', async () => {
@@ -137,8 +145,6 @@ async function initSettingsPage() {
             localStorage.setItem('showFPS', showFPS);
 
             document.getElementById('sidebarLogoName').innerText = appName;
-
-            // Apply theme
             document.documentElement.setAttribute('data-theme', theme);
 
             // ── Save global backup path ───────────────────────────────────────
@@ -147,13 +153,6 @@ async function initSettingsPage() {
                 const result = await window.api.backup.setGlobalPath(globalPath);
                 if (result.success) {
                     console.log('[SETTINGS] Global backup path saved:', globalPath);
-                    if (typeof window._showToast === 'function') {
-                        window._showToast('success',
-                            lang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved',
-                            globalPath,
-                            3000
-                        );
-                    }
                 }
             }
 
@@ -171,7 +170,17 @@ async function initSettingsPage() {
                 });
             }
 
+            // ── Save window size (apply live) ─────────────────────────────────
+            if (widthInput && heightInput) {
+                const newWidth = parseInt(widthInput.value, 10);
+                const newHeight = parseInt(heightInput.value, 10);
+                if (!isNaN(newWidth) && !isNaN(newHeight) && newWidth >= 800 && newHeight >= 600) {
+                    await window.api.setWindowSize(newWidth, newHeight);
+                }
+            }
+
             console.log('[SETTINGS] Settings saved');
+            // Removed showToast to prevent duplicate messages
         });
     }
 
@@ -228,4 +237,12 @@ async function initSettingsPage() {
             }
         });
     }
+
+    // ── Ctrl+S shortcut to save settings ─────────────────────────────────────
+    document.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+            event.preventDefault();
+            if (saveSettingsBtn) saveSettingsBtn.click();
+        }
+    });
 }

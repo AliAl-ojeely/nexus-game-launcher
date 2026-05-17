@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.1.0</span>
+            <span class="version-badge">v2.2.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -105,6 +105,32 @@
                     </div>
                 </div>
 
+                <!-- Window Size Settings -->
+                <div class="form-group">
+                    <label data-i18n="window_size_title">Window Size (Manual)</label>
+                    <br>
+                    <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label data-i18n="window_width">Width (px):</label>
+                            <input type="number" id="windowWidthInput" class="custom-input" min="800" step="10" value="1100">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label data-i18n="window_height">Height (px):</label>
+                            <input type="number" id="windowHeightInput" class="custom-input" min="600" step="10" value="750">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="open_appdata_label">Application Data Folder</label>
+                    <button id="openAppDataBtn" class="folder-btn-blue">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span data-i18n="open_appdata_btn">Open AppData Folder</span>
+                    </button>
+                    <small data-i18n="open_appdata_desc">Contains games.json, settings.json, playTime.json, backups configuration,
+                        etc.</small>
+                </div>
+
                 <div class="form-group">
                     <label data-i18n="show_titles_label">Show Game Titles on Cards</label>
                     <div class="toggle-container">
@@ -120,6 +146,15 @@
                         <input type="checkbox" id="autoBackupToggle" class="custom-toggle">
                         <span class="toggle-label" data-i18n="auto_backup_desc">Automatically backup save data when a game closes</span>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label data-i18n="check_updates_title">Application Updates</label>
+                    <button id="checkForUpdatesBtn" class="folder-btn-blue"
+                        style="background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span data-i18n="btn_check_updates">Check for Updates</span>
+                    </button>
                 </div>
 
                 <div class="form-group">
@@ -195,6 +230,9 @@
                         <button id="detailsFolderBtn" class="folder-btn-blue">
                             <i class="fa-solid fa-folder-open"></i>
                             <span data-i18n="btn_folder">Game Folder</span>
+                        </button>
+                        <button id="attachProcessBtn" class="folder-btn-blue" style="display: none;">
+                            <i class="fa-regular fa-hand-pointer"></i> Attach to running game
                         </button>
                     </div>
 
@@ -453,6 +491,31 @@
         <a class="prev-lightbox" id="prevLightbox"><i class="fa-solid fa-chevron-left"></i></a>
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
+    
+    <div class="modal-overlay" id="updateModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2><i class="fa-solid fa-rocket" style="color: var(--accent);"></i> <span data-i18n="update_available">Update
+                    Available!</span></h2>
+            <p style="margin-top: 10px; color: var(--text-main);">
+                A new version is available: <strong id="newVersionTag" style="color: var(--accent);"></strong>
+                <span style="color: var(--text-muted); font-size: 13px;">(Current: <span
+                        id="currentVersionTag"></span>)</span>
+            </p>
+            <div class="description-wrapper"
+                style="margin: 15px 0; max-height: 200px; overflow-y: auto; background: var(--bg-input); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <p id="releaseNotesText"
+                    style="white-space: pre-wrap; margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                </p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button id="downloadUpdateBtn" class="save-btn">
+                    <i class="fa-brands fa-github"></i>
+                    <span data-i18n="btn_download_update">Download from GitHub</span>
+                </button>
+                <button id="closeUpdateModalBtn" class="cancel-btn" data-i18n="modal_btn_cancel">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ── Dev Modal ── -->
     <div class="modal-overlay" id="devModal">
@@ -469,7 +532,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.1.0</p>
+                <p style="text-align: center;">version 2.2.0</p>
             </div>
         </div>
     </div>
@@ -514,6 +577,11 @@
                 <div class="shortcut-item">
                     <kbd>P</kbd>
                     <span data-i18n="shortcut_pause">Pause / Resume playtime timer</span>
+                </div>
+
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                    <span data-i18n="shortcut_save_settings">Save settings</span>
                 </div>
             </div>
             <!-- <button class="close-shortcuts-btn" data-i18n="shortcuts_close">Close</button> -->

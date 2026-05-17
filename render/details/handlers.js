@@ -4,7 +4,7 @@ import { showToast, updateBackupSidebarUI, pulseBackupSuccess } from '../details
 import { t } from './helpers.js';
 import { session, resetSession } from './state.js';
 
-export async function handleGameStop(gameName) {
+export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
     if (session.isHandlingStop) {
         console.log(`[FRONTEND] ⚠️ handleGameStop already running for: ${gameName} — skipping`);
         return;
@@ -21,10 +21,10 @@ export async function handleGameStop(gameName) {
     if (session.timerInterval) clearInterval(session.timerInterval);
     session.timerInterval = null;
 
-    // --- Always save playtime ---
-    const elapsedSeconds = Math.floor((Date.now() - session.startTime) / 1000);
+    // ✅ Use elapsed from backend (already accounts for pauses)
+    const elapsedSeconds = elapsedSecondsFromBackend || 0;
     const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-    console.log(`[FRONTEND] ⏱️ Session: ${elapsedSeconds}s = ${elapsedMinutes}min`);
+    console.log(`[FRONTEND] ⏱️ Session (active): ${elapsedSeconds}s = ${elapsedMinutes}min`);
 
     const newTotalPlaytime = await window.api.addPlaytime(gameName, elapsedMinutes, elapsedSeconds);
     if (elapsedSeconds >= 60 && newTotalPlaytime !== false && newTotalPlaytime !== undefined) {
@@ -42,7 +42,7 @@ export async function handleGameStop(gameName) {
         }
     }
 
-    // Refresh Last Played
+    // Refresh Last Played (unchanged)
     const updatedInfo = await window.api.getPlaytimeInfo(gameName);
     const lastPlayedContainer = document.getElementById('lastPlayedContainer');
     const lastPlayedValueSpan = document.getElementById('lastPlayedValue');
@@ -72,7 +72,6 @@ export async function handleGameStop(gameName) {
 
     if (!autoBackup) {
         console.log(`[FRONTEND] ⏭️ Auto backup disabled, skipping backup for "${gameName}"`);
-        // No backup UI; we will reset button after final cleanup
     } else {
         // Show securing UI
         if (playBtn) {
@@ -144,7 +143,7 @@ export async function handleGameStop(gameName) {
         }
     }
 
-    // --- Final cleanup (always) ---
+    // Final cleanup
     state.isGameRunning = false;
     session.startTime = 0;
     session.isHandlingStop = false;
@@ -154,7 +153,6 @@ export async function handleGameStop(gameName) {
     const timerValue = document.getElementById('sessionTimerValue');
     if (timerValue) timerValue.innerText = '00:00:00';
 
-    // ✅ Always reset the play button to green after a short delay (0.5s if no backup, else 3s)
     const resetDelay = (autoBackup && backupResult.success) ? 3000 : 500;
     setTimeout(() => {
         const btn = document.getElementById('detailsPlayBtn');

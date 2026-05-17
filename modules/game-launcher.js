@@ -14,17 +14,12 @@ const { readSettings } = require('./app-settings');
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Returns the total active seconds for the game (accounting for manual pauses).
- */
 function getElapsedSeconds(gameId) {
     const game = runningGames.get(gameId);
     if (!game || !game.startTime) return 0;
 
     let elapsed = Math.floor((Date.now() - game.startTime) / 1000);
-    // subtract total paused seconds
     elapsed -= (game.pauseOffset || 0);
-    // if currently paused, subtract the ongoing pause duration
     if (game.pauseStartTime) {
         elapsed -= Math.floor((Date.now() - game.pauseStartTime) / 1000);
     }
@@ -39,9 +34,6 @@ function stopTimer(gameId) {
     }
 }
 
-/**
- * Stops the game, triggers backup (if enabled), and sends final playtime.
- */
 async function stopMonitor(gameId) {
     const game = runningGames.get(gameId);
     if (!game) {
@@ -80,10 +72,6 @@ async function stopMonitor(gameId) {
     }
 }
 
-/**
- * Starts a 1-second tick that sends playtime updates.
- * The elapsed value accounts for manual pauses.
- */
 function startTimer(gameId) {
     if (gameTimers.has(gameId)) return;
 
@@ -103,28 +91,45 @@ function startTimer(gameId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROCESS LIST (Windows via PowerShell) – unchanged
+// CROSS‑PLATFORM PROCESS LISTING (Windows / Linux / macOS)
 // ─────────────────────────────────────────────────────────────────────────────
-
 function getProcesses(callback) {
-    const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process | Select ProcessId,ExecutablePath | ConvertTo-Json"`;
-    exec(cmd, { windowsHide: true, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
-        if (err || !stdout) return callback([]);
-        try {
-            let data = JSON.parse(stdout);
-            if (!Array.isArray(data)) data = [data];
-            const processes = data
-                .filter(p => p.ExecutablePath)
-                .map(p => ({ pid: p.ProcessId, path: p.ExecutablePath.toLowerCase() }));
+    if (process.platform === 'win32') {
+        const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process | Select ProcessId,ExecutablePath | ConvertTo-Json"`;
+        exec(cmd, { windowsHide: true, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
+            if (err || !stdout) return callback([]);
+            try {
+                let data = JSON.parse(stdout);
+                if (!Array.isArray(data)) data = [data];
+                const processes = data
+                    .filter(p => p.ExecutablePath)
+                    .map(p => ({ pid: p.ProcessId, path: p.ExecutablePath.toLowerCase() }));
+                callback(processes);
+            } catch { callback([]); }
+        });
+    } else {
+        // Linux / macOS – use ps (command name only, but enough for matching)
+        exec('ps -eo pid,comm', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
+            if (err || !stdout) return callback([]);
+            const lines = stdout.split('\n').slice(1);
+            const processes = [];
+            for (const line of lines) {
+                const match = line.match(/^\s*(\d+)\s+(.+)$/);
+                if (match) {
+                    const pid = parseInt(match[1]);
+                    let exePath = match[2].trim();
+                    // On Linux, comm is just the executable name (no path)
+                    processes.push({ pid, path: exePath.toLowerCase() });
+                }
+            }
             callback(processes);
-        } catch { callback([]); }
-    });
+        });
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SMART MONITOR
+// SMART MONITOR (for normally launched games)
 // ─────────────────────────────────────────────────────────────────────────────
-
 function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
     let trackedPid = launcherPid;
     let realGameDetected = false;
@@ -161,11 +166,24 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LAUNCH
+// LAUNCH GAME (existing)
 // ─────────────────────────────────────────────────────────────────────────────
-
 function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
-    if (!gamePath) return;
+    if (!gamePath) {
+        if (!event.sender.isDestroyed()) {
+            event.sender.send('game:error', { message: 'No game executable path provided.' });
+        }
+        return;
+    }
+
+    if (!fs.existsSync(gamePath)) {
+        const errorMsg = `Game executable not found.\nPath: ${gamePath}\nPlease update the game path in the edit modal.`;
+        console.error('[BACKEND] Launch error:', errorMsg);
+        if (!event.sender.isDestroyed()) {
+            event.sender.send('game:error', { message: errorMsg });
+        }
+        return;
+    }
 
     const isLinux = process.platform === 'linux';
     const isExe = gamePath.toLowerCase().endsWith('.exe');
@@ -179,7 +197,6 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
         let proc;
 
         if (isLinux && isExe) {
-            // Simplified Proton launcher – replace with your full Linux launcher if needed
             const protonVersion = 'GE-Proton10-32';
             const userHome = os.homedir();
             const protonPath = path.join(userHome, 'Nexus-Proton', protonVersion, 'proton');
@@ -198,6 +215,20 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
 
         proc.on('spawn', () => console.log(`[BACKEND] PID: ${proc.pid}`));
         proc.on('exit', () => console.log('[BACKEND] Launcher/wrapper process exited (game may still be running)'));
+        proc.on('error', (err) => {
+            console.error('[BACKEND] Spawn error:', err);
+            let errorMessage = '';
+            if (err.code === 'ENOENT') {
+                errorMessage = `Game executable not found.\nPath: ${gamePath}\nThe file may have been moved or deleted.`;
+            } else if (err.code === 'EACCES') {
+                errorMessage = `Permission denied to run the game.\nPath: ${gamePath}`;
+            } else {
+                errorMessage = err.message;
+            }
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('game:error', { message: errorMessage });
+            }
+        });
 
         runningGames.set(gameId, {
             pid: proc.pid,
@@ -220,8 +251,12 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
         }
     } catch (err) {
         console.error(`[BACKEND ERROR] ${err.message}`);
+        let errorMessage = err.message;
+        if (err.code === 'ENOENT') {
+            errorMessage = `Game executable not found.\nPath: ${gamePath}\nPlease update the game path.`;
+        }
         if (!event.sender.isDestroyed()) {
-            event.sender.send('game:error', { message: err.message });
+            event.sender.send('game:error', { message: errorMessage });
         }
     }
 }
@@ -229,13 +264,11 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MANUAL PAUSE / RESUME (affects currently running game)
 // ─────────────────────────────────────────────────────────────────────────────
-
 function pauseTimer() {
-    // Find the currently running game (only one at a time)
     const gameId = [...runningGames.keys()][0];
     const game = runningGames.get(gameId);
     if (!game) return false;
-    if (game.pauseStartTime) return false; // already paused
+    if (game.pauseStartTime) return false;
     game.pauseStartTime = Date.now();
     console.log(`[BACKEND] Timer paused for game: ${game.gameName}`);
     return true;
@@ -256,7 +289,6 @@ function resumeTimer() {
 // ─────────────────────────────────────────────────────────────────────────────
 // FORCE STOP
 // ─────────────────────────────────────────────────────────────────────────────
-
 function forceStopGame(gameId) {
     const game = runningGames.get(gameId);
     if (!game) {
@@ -275,4 +307,12 @@ function forceStopGame(gameId) {
     }
 }
 
-module.exports = { launchGame, forceStopGame, pauseTimer, resumeTimer };
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────────────────────────────────────────
+module.exports = {
+    launchGame,
+    forceStopGame,
+    pauseTimer,
+    resumeTimer,
+};

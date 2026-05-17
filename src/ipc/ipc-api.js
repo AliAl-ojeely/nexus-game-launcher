@@ -11,6 +11,7 @@ const db = require('../../modules/database');
 const { mergeMetadata } = require('../../modules/metadata');
 const { ASSETS_DIR } = require('../../modules/app-settings');
 const { slugifyName, downloadAsset, downloadGameAssets } = require('../../modules/assets');
+const updater = require('../../modules/updater');
 
 function registerApiIPC() {
 
@@ -264,6 +265,12 @@ function registerApiIPC() {
             console.error('[Order] Failed to save favorites order:', err);
             return false;
         }
+    });
+
+    // ── Check For Updates ─────────────────────────────────────────────────────
+    ipcMain.handle('app:checkForUpdates', async () => {
+        console.log('[API] Checking for updates from GitHub...');
+        return await updater.checkGitHubReleases();
     });
 }
 

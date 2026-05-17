@@ -57,6 +57,16 @@ contextBridge.exposeInMainWorld('api', {
     removeGameTickListener: () => ipcRenderer.removeAllListeners('game:tick'),
 
     getIconDataURL: (path) => ipcRenderer.invoke('get-icon-dataurl', path),
+
+    // ── User Path Data ──────────────────────────────────────────────────────────────
+    getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),
+
+    // ── Updates ───────────────────────────────────────────────────────────────
+    checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+
+    // ── Window App Size ──────────────────────────────────────────────────────────────
+    getWindowSize: () => ipcRenderer.invoke('app:getWindowSize'),
+    setWindowSize: (width, height) => ipcRenderer.invoke('app:setWindowSize', width, height),
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {
 

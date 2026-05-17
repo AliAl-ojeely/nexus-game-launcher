@@ -156,4 +156,53 @@ export function initUI() {
             if (window.api && window.api.openExternal) window.api.openExternal(e.currentTarget.href);
         });
     });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Check For Updates Logic
+    // ─────────────────────────────────────────────────────────────────────────
+    const checkUpdatesBtn = document.getElementById('checkForUpdatesBtn');
+    const updateModal = document.getElementById('updateModal');
+
+    if (checkUpdatesBtn) {
+        checkUpdatesBtn.addEventListener('click', async () => {
+            const originalHtml = checkUpdatesBtn.innerHTML;
+            checkUpdatesBtn.disabled = true;
+            checkUpdatesBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Checking...</span>`;
+
+            try {
+                const result = await window.api.checkForUpdates();
+
+                if (result.error) {
+                    showToast('error', userSettings.lang === 'ar' ? 'فشل التحقق من التحديثات' : 'Update check failed', result.error, 4000);
+                } else if (result.hasUpdate) {
+                    // تعبئة النافذة ببيانات الإصدار
+                    document.getElementById('newVersionTag').innerText = result.latestVersion;
+                    document.getElementById('currentVersionTag').innerText = result.currentVersion;
+                    document.getElementById('releaseNotesText').innerText = result.releaseNotes || 'No release notes provided.';
+
+                    const downloadBtn = document.getElementById('downloadUpdateBtn');
+                    downloadBtn.onclick = () => window.api.openExternal(result.downloadUrl);
+
+                    updateModal.classList.add('active');
+                } else {
+                    const msg = userSettings.lang === 'ar' ? `أنت تستخدم أحدث إصدار (${result.currentVersion})` : `You are running the latest version (${result.currentVersion})`;
+                    showToast('success', userSettings.lang === 'ar' ? 'التطبيق محدث!' : 'Up to date!', msg, 3000);
+                }
+            } catch (err) {
+                showToast('error', 'Error', 'Could not communicate with background process', 3000);
+            } finally {
+                checkUpdatesBtn.disabled = false;
+                checkUpdatesBtn.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    if (updateModal) {
+        document.getElementById('closeUpdateModalBtn').addEventListener('click', () => {
+            updateModal.classList.remove('active');
+        });
+        updateModal.addEventListener('click', (e) => {
+            if (e.target === updateModal) updateModal.classList.remove('active');
+        });
+    }
 }

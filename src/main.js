@@ -19,10 +19,13 @@ backups.initBackupDB();
 
 // ─── Window ─────────────────────────────────
 
+const { getWindowSize, setWindowSize } = require('../modules/app-settings');
+
 function createWindow() {
+    const savedSize = getWindowSize();
     const win = new BrowserWindow({
-        width: 1100,
-        height: 750,
+        width: savedSize.width,
+        height: savedSize.height,
         minWidth: 800,
         minHeight: 600,
         icon: path.join(__dirname, '../assets/icon.ico'),
@@ -36,6 +39,12 @@ function createWindow() {
 
     win.setMenuBarVisibility(false);
     win.loadFile(path.join(__dirname, '../index.html'));
+
+    // Save window size when it changes
+    win.on('resize', () => {
+        const [width, height] = win.getSize();
+        setWindowSize(width, height);
+    });
 
     win.webContents.on('context-menu', async () => {
         let lang = 'en';
@@ -71,8 +80,6 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 app.whenReady().then(() => {
-
-    
     protocol.handle('local-resource', async (request) => {
         const raw = request.url.replace(/^local-resource:\/\//, '');
         const decoded = decodeURI(raw);
@@ -114,6 +121,28 @@ app.whenReady().then(() => {
     });
 
     createWindow();
+});
+
+ipcMain.handle('app:getUserDataPath', () => {
+    return app.getPath('userData');
+});
+
+ipcMain.handle('app:setWindowSize', (event, width, height) => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+        win.setSize(width, height);
+        setWindowSize(width, height);
+    }
+    return true;
+});
+
+ipcMain.handle('app:getWindowSize', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+        const [width, height] = win.getSize();
+        return { width, height };
+    }
+    return { width: 1100, height: 750 };
 });
 
 app.on('window-all-closed', () => {

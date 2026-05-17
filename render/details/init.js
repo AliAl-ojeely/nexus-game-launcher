@@ -5,6 +5,13 @@ import { formatTime } from '../details-utils.js';
 import { t } from './helpers.js';
 import { session, resetSession } from './state.js';
 
+// Helper to get base filename from a full path (works without Node's 'path' module)
+function getBasename(filePath) {
+    if (!filePath) return '';
+    const parts = filePath.split(/[/\\]/);
+    return parts[parts.length - 1].toLowerCase();
+}
+
 export function initDetails() {
     // Play / Stop button
     document.getElementById('detailsPlayBtn').onclick = async () => {
@@ -26,7 +33,7 @@ export function initDetails() {
         if (!currentGame) return;
 
         console.log(`[FRONTEND] ▶️ Launching: ${currentGame.name}`);
-        session.startTime = Date.now();        // ← needed for playtime calculation
+        session.startTime = Date.now();
         state.isGameRunning = true;
         session.isHandlingStop = false;
 
@@ -52,9 +59,9 @@ export function initDetails() {
     if (window.api.removeGameErrorListener) window.api.removeGameErrorListener();
 
     window.api.onGameStopped(async (data) => {
-        console.log(`[FRONTEND] 🛑 game:stopped → gameId: ${data.gameId}`);
+        console.log(`[FRONTEND] 🛑 game:stopped → gameId: ${data.gameId}, elapsed: ${data.elapsed}s`);
         const currentGame = state.allGamesData.find(g => String(g.id) === String(data.gameId));
-        if (currentGame) await handleGameStop(currentGame.name);
+        if (currentGame) await handleGameStop(currentGame.name, data.elapsed);
     });
 
     window.api.onGameError((data) => {

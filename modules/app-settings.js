@@ -49,6 +49,21 @@ function initAppData() {
     }
 }
 
+function getWindowSize() {
+    const settings = readSettings();
+    return {
+        width: settings.windowWidth || 1100,
+        height: settings.windowHeight || 750
+    };
+}
+
+function setWindowSize(width, height) {
+    const settings = readSettings();
+    settings.windowWidth = width;
+    settings.windowHeight = height;
+    writeSettings(settings);
+}
+
 module.exports = {
     USER_DATA,
     SETTINGS_FILE,
@@ -59,4 +74,6 @@ module.exports = {
     readSettings,
     writeSettings,
     initAppData,
+    getWindowSize,
+    setWindowSize
 };

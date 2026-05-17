@@ -76,6 +76,21 @@ const dictionary = {
         show_titles_note: "تختفي الأسماء تلقائياً في وضع الشبكة الصغير جداً.",
         shortcut_pause: "إيقاف / استئناف مؤقت وقت اللعب",
 
+        window_size_title: "حجم النافذة (يدوي)",
+        window_width: "العرض (بكسل)",
+        window_height: "الارتفاع (بكسل)",
+
+        shortcut_save_settings: "حفظ الإعدادات",
+
+        open_appdata_label: "مجلد بيانات التطبيق",
+        open_appdata_btn: "فتح مجلد AppData",
+        open_appdata_desc: "يحتوي على games.json و settings.json و playTime.json وإعدادات النسخ الاحتياطي وغيرها.",
+
+        check_updates_title: "تحديثات التطبيق",
+        btn_check_updates: "التحقق من وجود تحديثات",
+        update_available: "تحديث جديد متاح!",
+        btn_download_update: "تحميل من GitHub",
+
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
         settings_backup_desc: "المجلد الافتراضي لنسخ حفظ الألعاب (يُفضل عدم استخدام محرك الأقراص C):",
@@ -196,6 +211,21 @@ const dictionary = {
         show_titles_desc: "Display game names under posters",
         show_titles_note: "Titles are always hidden in “Very Small” grid mode.",
         shortcut_pause: "Pause / Resume playtime timer",
+
+        window_size_title: "Window Size (Manual)",
+        window_width: "Width (px)",
+        window_height: "Height (px)",
+
+        shortcut_save_settings: "Save settings",
+
+        open_appdata_label: "Application Data Folder",
+        open_appdata_btn: "Open AppData Folder",
+        open_appdata_desc: "Contains games.json, settings.json, playTime.json, backups configuration, etc.",
+
+        check_updates_title: "Application Updates",
+        btn_check_updates: "Check for Updates",
+        update_available: "Update Available!",
+        btn_download_update: "Download from GitHub",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",

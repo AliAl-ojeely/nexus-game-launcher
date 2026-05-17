@@ -28,15 +28,22 @@ async function selectFolder() {
     return result.canceled ? null : result.filePaths[0];
 }
 
-function openFolder(event, filePath) {
-    if (!filePath) return;
-    const folderPath = path.dirname(filePath);
+function openFolder(event, pathOrFile) {
+    if (!pathOrFile) return;
+    let folderPath;
+    // Check if the path looks like a file (has an extension like .exe, .lnk, .bat, etc.)
+    const isFile = /\.(exe|lnk|bat|sh|AppImage)$/i.test(pathOrFile);
+    if (isFile) {
+        folderPath = path.dirname(pathOrFile);
+    } else {
+        folderPath = pathOrFile;
+    }
     if (fs.existsSync(folderPath)) {
         shell.openPath(folderPath);
     } else {
         if (event && !event.sender.isDestroyed()) {
             event.sender.send('game:error', {
-                message: `The game folder does not exist.\nPath: ${folderPath}`,
+                message: `The folder does not exist.\nPath: ${folderPath}`,
                 code: 'FOLDER_NOT_FOUND'
             });
         }
