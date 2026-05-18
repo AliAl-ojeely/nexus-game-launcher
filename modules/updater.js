@@ -1,10 +1,20 @@
 const { app } = require('electron');
+const EventEmitter = require('events');
 const packageJson = require('../package.json');
 
-// استبدل هذا باسم المستودع الخاص بك على جيتهاب إذا كان مختلفاً
-const GITHUB_REPO = 'AliAl-ojeely/NEXUS-GAME-LAUNCHER';
+// Optional: try to use semver if installed, otherwise fallback
+let semver;
+try {
+    semver = require('semver');
+} catch (e) {
+    semver = null;
+}
 
-function compareVersions(v1, v2) {
+const GITHUB_REPO = 'AliAl-ojeely/NEXUS-GAME-LAUNCHER';
+const USER_AGENT = 'Nexus-Game-Launcher/1.0';
+
+// Simple version comparison fallback (numeric segments only)
+function simpleCompare(v1, v2) {
     const p1 = v1.split('.').map(Number);
     const p2 = v2.split('.').map(Number);
     for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
@@ -16,35 +26,143 @@ function compareVersions(v1, v2) {
     return 0;
 }
 
-async function checkGitHubReleases() {
-    try {
-        const currentVersion = packageJson.version;
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-            headers: { 'User-Agent': 'Nexus-Game-Launcher' }
-        });
+const compareVersions = semver ? semver.gt : (a, b) => simpleCompare(a, b) > 0;
 
-        if (!response.ok) {
-            return { error: 'Failed to fetch release from GitHub' };
+class Updater extends EventEmitter {
+    constructor(options = {}) {
+        super();
+        this.repo = options.repo || GITHUB_REPO;
+        this.userAgent = options.userAgent || USER_AGENT;
+        this.currentVersion = packageJson.version;
+        this.includePrerelease = options.includePrerelease || false;
+        this.cacheTtlMs = options.cacheTtlMs || 5 * 60 * 1000; // 5 minutes
+        this.lastCheck = null;
+        this.cachedResult = null;
+    }
+
+    // Get latest release from GitHub (cached)
+    async getLatestRelease() {
+        const now = Date.now();
+        if (this.cachedResult && this.lastCheck && (now - this.lastCheck) < this.cacheTtlMs) {
+            return this.cachedResult;
         }
 
-        const data = await response.json();
-        // إزالة حرف 'v' من رقم الإصدار إذا كان موجوداً (مثلاً v1.9.5 يصبح 1.9.5)
-        const latestVersion = data.tag_name.replace(/^v/, '');
-        const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+        try {
+            const url = this.includePrerelease
+                ? `https://api.github.com/repos/${this.repo}/releases?per_page=1`
+                : `https://api.github.com/repos/${this.repo}/releases/latest`;
 
-        return {
-            hasUpdate,
-            currentVersion,
-            latestVersion: data.tag_name,
-            releaseNotes: data.body,
-            downloadUrl: data.html_url
-        };
-    } catch (err) {
-        console.error('[UPDATER] Error checking for updates:', err);
-        return { error: err.message };
+            const response = await fetch(url, {
+                headers: { 'User-Agent': this.userAgent }
+            });
+
+            // Handle rate limiting
+            const remaining = response.headers.get('x-ratelimit-remaining');
+            const reset = response.headers.get('x-ratelimit-reset');
+            if (response.status === 403 && remaining === '0') {
+                const resetDate = new Date(reset * 1000);
+                this.emit('rate-limited', { resetDate });
+                return {
+                    error: `GitHub API rate limit exceeded. Resets at ${resetDate.toLocaleString()}`,
+                    rateLimited: true,
+                    resetDate
+                };
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            let release;
+            if (this.includePrerelease) {
+                const releases = await response.json();
+                release = releases[0];
+                if (!release) throw new Error('No releases found');
+            } else {
+                release = await response.json();
+            }
+
+            // Extract version from tag_name (remove leading 'v')
+            const latestVersion = release.tag_name.replace(/^v/, '');
+            const hasUpdate = compareVersions(latestVersion, this.currentVersion);
+
+            const result = {
+                hasUpdate,
+                currentVersion: this.currentVersion,
+                latestVersion: release.tag_name,
+                releaseNotes: release.body,
+                downloadUrl: release.html_url,
+                releaseDate: release.published_at,
+                assets: release.assets || [],
+                prerelease: release.prerelease || false
+            };
+
+            // Cache the result
+            this.cachedResult = result;
+            this.lastCheck = now;
+
+            return result;
+        } catch (err) {
+            console.error('[UPDATER] Error checking for updates:', err);
+            this.emit('error', err);
+            return { error: err.message };
+        }
+    }
+
+    // Convenience method that matches the original API
+    async checkGitHubReleases() {
+        return this.getLatestRelease();
+    }
+
+    // Optional: download asset (e.g., installer)
+    async downloadAsset(assetUrl, destinationPath, onProgress) {
+        const response = await fetch(assetUrl, {
+            headers: { 'User-Agent': this.userAgent }
+        });
+        if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
+        const contentLength = response.headers.get('content-length');
+        const total = parseInt(contentLength, 10);
+        let downloaded = 0;
+        const fs = require('fs');
+        const fileStream = fs.createWriteStream(destinationPath);
+
+        return new Promise((resolve, reject) => {
+            response.body.on('data', (chunk) => {
+                downloaded += chunk.length;
+                if (onProgress && total) {
+                    onProgress({ downloaded, total, percent: (downloaded / total) * 100 });
+                }
+            });
+            response.body.pipe(fileStream);
+            fileStream.on('finish', () => resolve(destinationPath));
+            fileStream.on('error', reject);
+        });
+    }
+
+    // Start periodic checking (every intervalMs)
+    startAutoCheck(intervalMs = 60 * 60 * 1000, callback = null) {
+        if (this.intervalId) clearInterval(this.intervalId);
+        this.intervalId = setInterval(async () => {
+            const result = await this.checkGitHubReleases();
+            if (result.hasUpdate && callback) callback(result);
+            this.emit('auto-check', result);
+        }, intervalMs);
+        return this.intervalId;
+    }
+
+    stopAutoCheck() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
     }
 }
 
+// Singleton instance for backward compatibility
+const defaultUpdater = new Updater();
+
 module.exports = {
-    checkGitHubReleases
+    checkGitHubReleases: () => defaultUpdater.checkGitHubReleases(),
+    Updater,
+    defaultUpdater
 };
