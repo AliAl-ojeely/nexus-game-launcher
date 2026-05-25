@@ -1,37 +1,217 @@
 import { state } from './state.js';
 import { handleGoBack } from './ui.js';
 
+let slideshowInterval = null;
+let isSlideshowRunning = false;
+
+// --- Pan & zoom state ---
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let panOffset = { x: 0, y: 0 };
+let currentScale = 1;
+const ZOOM_SCALE = 2;
+
+// Update lightbox image with smooth transition
+function updateLightboxImage(newIndex) {
+    state.currentScreenshotIndex = newIndex;
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+
+    img.style.opacity = '0';
+
+    setTimeout(() => {
+        img.src = state.currentScreenshotsList[state.currentScreenshotIndex];
+        img.style.opacity = '1';
+        // Reset pan & zoom when image changes
+        resetPanAndZoom();
+    }, 300);
+}
+
+// Reset pan offset and zoom level
+function resetPanAndZoom() {
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+    img.classList.remove('zoomed');
+    panOffset = { x: 0, y: 0 };
+    currentScale = 1;
+    img.style.transform = '';
+    if (img.style.cursor) img.style.cursor = 'zoom-in';
+}
+
+// Apply transform based on current scale and pan offset
+function applyTransform(img) {
+    if (currentScale === 1) {
+        img.style.transform = '';
+    } else {
+        img.style.transform = `scale(${currentScale}) translate(${panOffset.x}px, ${panOffset.y}px)`;
+    }
+}
+
+// Toggle zoom (double‑click)
+function toggleZoom(e) {
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+    e.stopPropagation();
+
+    if (currentScale === 1) {
+        // Zoom in
+        currentScale = ZOOM_SCALE;
+        img.classList.add('zoomed');
+        // Optional: center pan on click point (uncomment for smooth experience)
+        // const rect = img.getBoundingClientRect();
+        // const clickX = e.clientX - rect.left;
+        // const clickY = e.clientY - rect.top;
+        // const imgWidth = img.naturalWidth;
+        // const imgHeight = img.naturalHeight;
+        // const viewWidth = rect.width;
+        // const viewHeight = rect.height;
+        // const targetX = (clickX / viewWidth) * imgWidth * currentScale - viewWidth / 2;
+        // const targetY = (clickY / viewHeight) * imgHeight * currentScale - viewHeight / 2;
+        // panOffset = { x: -targetX, y: -targetY };
+    } else {
+        // Zoom out
+        currentScale = 1;
+        img.classList.remove('zoomed');
+        panOffset = { x: 0, y: 0 };
+    }
+    applyTransform(img);
+    img.style.cursor = currentScale === 1 ? 'zoom-in' : 'grab';
+}
+
+// Mouse drag to pan (only when zoomed)
+function startPan(e) {
+    const img = document.getElementById('lightboxImage');
+    if (!img || currentScale === 1) return;
+    e.preventDefault();
+    isPanning = true;
+    panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+    img.style.cursor = 'grabbing';
+}
+
+function onPan(e) {
+    if (!isPanning || currentScale === 1) return;
+    e.preventDefault();
+    panOffset = { x: e.clientX - panStart.x, y: e.clientY - panStart.y };
+    applyTransform(document.getElementById('lightboxImage'));
+}
+
+function stopPan() {
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+    isPanning = false;
+    img.style.cursor = currentScale === 1 ? 'zoom-in' : 'grab';
+}
+
+// --- Slideshow logic ---
+export function toggleSlideshow() {
+    const btn = document.getElementById('slideshowBtn');
+    if (!btn) return;
+
+    if (isSlideshowRunning) {
+        clearInterval(slideshowInterval);
+        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        isSlideshowRunning = false;
+    } else {
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        isSlideshowRunning = true;
+        slideshowInterval = setInterval(() => {
+            const nextIndex = (state.currentScreenshotIndex < state.currentScreenshotsList.length - 1)
+                ? state.currentScreenshotIndex + 1
+                : 0;
+            updateLightboxImage(nextIndex);
+        }, 3000);
+    }
+}
+
+// --- Initialize lightbox events ---
+function initLightboxEvents() {
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+
+    // Remove any previous listeners to avoid duplicates
+    img.removeEventListener('dblclick', toggleZoom);
+    img.removeEventListener('mousedown', startPan);
+    window.removeEventListener('mousemove', onPan);
+    window.removeEventListener('mouseup', stopPan);
+
+    img.addEventListener('dblclick', toggleZoom);
+    img.addEventListener('mousedown', startPan);
+    window.addEventListener('mousemove', onPan);
+    window.addEventListener('mouseup', stopPan);
+}
+
+// --- Open lightbox with given index ---
 export function openLightbox(index) {
     state.currentScreenshotIndex = index;
     const lightbox = document.getElementById('imageLightbox');
     const lightboxImg = document.getElementById('lightboxImage');
+    if (!lightbox || !lightboxImg) return;
+
     lightboxImg.src = state.currentScreenshotsList[state.currentScreenshotIndex];
     lightbox.classList.add('show');
+    // Reset pan/zoom when opening
+    currentScale = 1;
+    panOffset = { x: 0, y: 0 };
+    lightboxImg.classList.remove('zoomed');
+    lightboxImg.style.transform = '';
+    lightboxImg.style.cursor = 'zoom-in';
+    initLightboxEvents();
 }
 
+// --- Reset lightbox state (close) ---
+function resetLightboxState() {
+    if (isSlideshowRunning) toggleSlideshow();
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        currentScale = 1;
+        panOffset = { x: 0, y: 0 };
+        img.classList.remove('zoomed');
+        img.style.transform = '';
+        img.style.cursor = 'zoom-in';
+    }
+    document.getElementById('imageLightbox').classList.remove('show');
+}
+
+// --- Global shortcuts and initialisation ---
 export function initShortcuts() {
-    // Lightbox close
-    document.getElementById('closeLightbox').addEventListener('click', () => document.getElementById('imageLightbox').classList.remove('show'));
+    // Lightbox controls
+    const closeBtn = document.getElementById('closeLightbox');
+    if (closeBtn) closeBtn.addEventListener('click', resetLightboxState);
 
-    document.getElementById('prevLightbox').addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.currentScreenshotIndex = (state.currentScreenshotIndex > 0) ? state.currentScreenshotIndex - 1 : state.currentScreenshotsList.length - 1;
-        document.getElementById('lightboxImage').src = state.currentScreenshotsList[state.currentScreenshotIndex];
-    });
+    const slideshowBtn = document.getElementById('slideshowBtn');
+    if (slideshowBtn) slideshowBtn.addEventListener('click', toggleSlideshow);
 
-    document.getElementById('nextLightbox').addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.currentScreenshotIndex = (state.currentScreenshotIndex < state.currentScreenshotsList.length - 1) ? state.currentScreenshotIndex + 1 : 0;
-        document.getElementById('lightboxImage').src = state.currentScreenshotsList[state.currentScreenshotIndex];
-    });
+    const prevBtn = document.getElementById('prevLightbox');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prevIndex = (state.currentScreenshotIndex > 0)
+                ? state.currentScreenshotIndex - 1
+                : state.currentScreenshotsList.length - 1;
+            updateLightboxImage(prevIndex);
+        });
+    }
 
-    document.getElementById('imageLightbox').addEventListener('click', (e) => {
-        if (e.target.id === 'imageLightbox') document.getElementById('imageLightbox').classList.remove('show');
-    });
+    const nextBtn = document.getElementById('nextLightbox');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nextIndex = (state.currentScreenshotIndex < state.currentScreenshotsList.length - 1)
+                ? state.currentScreenshotIndex + 1
+                : 0;
+            updateLightboxImage(nextIndex);
+        });
+    }
 
-    // Global keydown handlers
+    const lightboxOverlay = document.getElementById('imageLightbox');
+    if (lightboxOverlay) {
+        lightboxOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'imageLightbox') resetLightboxState();
+        });
+    }
+
+    // Keyboard navigation
     document.addEventListener('keydown', (event) => {
-        // Ignore if Ctrl or Alt is pressed (allow browser shortcuts like zoom)
         if (event.ctrlKey || event.altKey) return;
 
         if (event.key === 'Escape') {
@@ -47,10 +227,9 @@ export function initShortcuts() {
             }
             const lightbox = document.getElementById('imageLightbox');
             if (lightbox && lightbox.classList.contains('show')) {
-                document.getElementById('closeLightbox').click();
+                resetLightboxState();
                 return;
             }
-            // Close shortcuts modal if open
             const shortcutsModal = document.getElementById('shortcutsModal');
             if (shortcutsModal && shortcutsModal.classList.contains('active')) {
                 shortcutsModal.classList.remove('active');
@@ -68,75 +247,70 @@ export function initShortcuts() {
         const isImageViewerOpen = lightbox && lightbox.classList.contains('show');
 
         switch (event.key) {
-            case 'ArrowRight': if (isImageViewerOpen) document.getElementById('nextLightbox').click(); break;
-            case 'ArrowLeft': if (isImageViewerOpen) document.getElementById('prevLightbox').click(); break;
-            case 'Backspace': if (!isImageViewerOpen) handleGoBack(); break;
+            case 'ArrowRight':
+                if (isImageViewerOpen) document.getElementById('nextLightbox')?.click();
+                break;
+            case 'ArrowLeft':
+                if (isImageViewerOpen) document.getElementById('prevLightbox')?.click();
+                break;
+            case 'Backspace':
+                if (!isImageViewerOpen) handleGoBack();
+                break;
             case 'Enter': {
                 const detailsArea = document.getElementById('gameDetailsArea');
-                if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) document.getElementById('detailsPlayBtn').click();
-                break;
-            }
-            case 'p':
-            case 'P': {
-                event.preventDefault();
-                // Only trigger if a game is running (pause button is visible then)
-                if (state.isGameRunning) {
-                    const pauseBtn = document.getElementById('pauseTimerBtn');
-                    if (pauseBtn && pauseBtn.style.display !== 'none') {
-                        pauseBtn.click();
-                    }
+                if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) {
+                    document.getElementById('detailsPlayBtn')?.click();
                 }
                 break;
             }
-            case '+': {
+            case 'p':
+            case 'P':
                 event.preventDefault();
-                const addBtn = document.getElementById('addGameBtn');
-                if (addBtn) addBtn.click();
+                if (state.isGameRunning) {
+                    const pauseBtn = document.getElementById('pauseTimerBtn');
+                    if (pauseBtn && pauseBtn.style.display !== 'none') pauseBtn.click();
+                }
                 break;
-            }
+            case '+':
+                event.preventDefault();
+                document.getElementById('addGameBtn')?.click();
+                break;
             case 's':
-            case 'S': {
+            case 'S':
                 event.preventDefault();
-                const searchInput = document.getElementById('searchInput');
-                if (searchInput) searchInput.focus();
+                document.getElementById('searchInput')?.focus();
                 break;
-            }
+            default:
+                break;
         }
     });
 
-    // Mouse back button
+    // Mouse back button (button 3)
     document.addEventListener('mouseup', (event) => {
         if (event.button === 3) {
             event.preventDefault();
             const lightbox = document.getElementById('imageLightbox');
-            if (lightbox && lightbox.classList.contains('show')) document.getElementById('closeLightbox').click();
+            if (lightbox && lightbox.classList.contains('show')) resetLightboxState();
             else handleGoBack();
         }
     });
 
-    // Wheel for lightbox
+    // Mouse wheel navigation in lightbox
     document.addEventListener('wheel', (event) => {
         const lightbox = document.getElementById('imageLightbox');
         if (lightbox && lightbox.classList.contains('show')) {
-            if (event.deltaY > 0) document.getElementById('nextLightbox').click();
-            else if (event.deltaY < 0) document.getElementById('prevLightbox').click();
+            if (event.deltaY > 0) document.getElementById('nextLightbox')?.click();
+            else if (event.deltaY < 0) document.getElementById('prevLightbox')?.click();
         }
     });
 
-    // ── Shortcuts Info Modal ─────────────────────────────────────────────
+    // Shortcuts modal
     const shortcutsBtn = document.getElementById('shortcutsBtn');
     const shortcutsModal = document.getElementById('shortcutsModal');
-    const closeShortcutsBtn = document.querySelector('.close-shortcuts-btn');
-
     if (shortcutsBtn && shortcutsModal) {
-        shortcutsBtn.addEventListener('click', () => {
-            shortcutsModal.classList.add('active');
-        });
-
-        const closeModal = () => shortcutsModal.classList.remove('active');
-        if (closeShortcutsBtn) closeShortcutsBtn.addEventListener('click', closeModal);
+        shortcutsBtn.addEventListener('click', () => shortcutsModal.classList.add('active'));
         shortcutsModal.addEventListener('click', (e) => {
-            if (e.target === shortcutsModal) closeModal();
+            if (e.target === shortcutsModal) shortcutsModal.classList.remove('active');
         });
     }
 }

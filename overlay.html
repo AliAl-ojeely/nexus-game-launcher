@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        #overlay-ui {
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #overlay-ui.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .resume-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px 32px;
+            font-size: 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .resume-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="overlay-ui">
+        <h1 id="overlay-title" style="font-weight: 300; letter-spacing: 2px;">NEXUS PAUSED</h1>
+        <p id="overlay-desc" style="opacity: 0.6; margin-bottom: 30px;">Time calculation is currently frozen.</p>
+        <button id="resumeBtn" class="resume-btn">Resume Game (Shift+Tab)</button>
+    </div>
+
+    <script>
+        const overlayUi = document.getElementById('overlay-ui');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const titleEl = document.getElementById('overlay-title');
+        const descEl = document.getElementById('overlay-desc');
+
+        const translations = {
+            en: {
+                title: "NEXUS PAUSED",
+                desc: "Time calculation is currently frozen.",
+                btn: "Resume Game (Shift+Tab)"
+            },
+            ar: {
+                title: "تم إيقاف اللعبة",
+                desc: "حساب وقت اللعب متوقف مؤقتاً.",
+                btn: "استئناف اللعب (Shift+Tab)"
+            }
+        };
+
+        function updateLanguage() {
+            const currentLang = localStorage.getItem('lang') || 'en';
+            const isAr = currentLang === 'ar';
+            const t = translations[currentLang];
+
+            titleEl.innerText = t.title;
+            descEl.innerText = t.desc;
+            resumeBtn.innerText = t.btn;
+
+            document.body.dir = isAr ? 'rtl' : 'ltr';
+            document.body.style.fontFamily = isAr
+                ? "'Tajawal', 'Segoe UI', Tahoma, sans-serif"
+                : "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+            titleEl.style.letterSpacing = isAr ? "normal" : "2px";
+        }
+
+        window.api.onOverlayState((isActive) => {
+            if (isActive) {
+                updateLanguage();
+                overlayUi.classList.add('active');
+            } else {
+                overlayUi.classList.remove('active');
+            }
+        });
+
+        resumeBtn.addEventListener('click', () => {
+            window.api.toggleOverlay();
+        });
+    </script>
+</body>
+
+</html>

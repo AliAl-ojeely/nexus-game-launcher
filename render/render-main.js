@@ -6,6 +6,7 @@ import { initModal } from './modal.js';
 import { initShortcuts } from './shortcuts.js';
 import { initReorderButton } from './library.js';
 import { showToast } from './details-components.js';
+import { handleCanIRunItCheck } from './details/handlers.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
@@ -22,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderGames();
     initReorderButton();
+
+    const runItBtn = document.getElementById('runItCheckBtn');
+    if (runItBtn) runItBtn.addEventListener('click', handleCanIRunItCheck);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

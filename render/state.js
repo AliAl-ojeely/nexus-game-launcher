@@ -19,5 +19,6 @@ export const userSettings = {
     theme: localStorage.getItem('theme') || 'dark',
     lang: localStorage.getItem('lang') || 'ar',
     gridSize: localStorage.getItem('gridSize') || '260px',
-    globalBackupVault: localStorage.getItem('globalBackupVault') || ''
+    globalBackupVault: localStorage.getItem('globalBackupVault') || '',
+    accentColor: localStorage.getItem('accentColor') || '#ff4655'
 };

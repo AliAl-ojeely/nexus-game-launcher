@@ -40,7 +40,6 @@ function applyThemeClass(theme) {
 }
 
 export function initUI() {
-    // Load initial settings into UI fields
     document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
     document.getElementById('sidebarLogoName').innerText = userSettings.appName;
     document.getElementById('appNameSetting').value = userSettings.appName;
@@ -58,14 +57,20 @@ export function initUI() {
     document.getElementById('gridSizeSetting').value = userSettings.gridSize;
     document.documentElement.style.setProperty('--grid-size', userSettings.gridSize);
 
-    // --- Show titles toggle and visibility control ---
+    // Apply and set the Accent Color
+    document.documentElement.style.setProperty('--accent', userSettings.accentColor);
+    const accentInput = document.getElementById('accentColorSetting');
+    if (accentInput) {
+        accentInput.value = userSettings.accentColor;
+    }
+
     const showTitlesToggle = document.getElementById('showTitlesToggle');
     let showTitles = true;
     if (showTitlesToggle) {
         showTitles = localStorage.getItem('showTitles') !== 'false';
         showTitlesToggle.checked = showTitles;
     }
-    // Get ALL game grids (main library and favorites)
+
     const gamesGrids = document.querySelectorAll('.games-grid');
     function updateTitleVisibility(gridSize) {
         gamesGrids.forEach(grid => {
@@ -83,9 +88,7 @@ export function initUI() {
         });
     }
     updateTitleVisibility(userSettings.gridSize);
-    // --- end ---
 
-    // Save General Settings
     document.getElementById('saveGeneralSettings').addEventListener('click', () => {
         const newName = document.getElementById('appNameSetting').value;
         const newTheme = document.getElementById('themeSetting').value;
@@ -93,11 +96,15 @@ export function initUI() {
         const newGrid = document.getElementById('gridSizeSetting').value;
         const newVault = document.getElementById('globalBackupPath').value;
 
+        // Fetch new accent color
+        const newAccent = accentInput ? accentInput.value : userSettings.accentColor;
+
         userSettings.lang = newLang;
         userSettings.appName = newName;
         userSettings.theme = newTheme;
         userSettings.gridSize = newGrid;
         userSettings.globalBackupVault = newVault;
+        userSettings.accentColor = newAccent;
 
         localStorage.setItem('showFPS', document.getElementById('fpsToggle').checked);
         localStorage.setItem('appName', newName);
@@ -105,6 +112,8 @@ export function initUI() {
         localStorage.setItem('lang', newLang);
         localStorage.setItem('gridSize', newGrid);
         localStorage.setItem('globalBackupVault', newVault);
+        localStorage.setItem('accentColor', newAccent);
+
         if (showTitlesToggle) {
             localStorage.setItem('showTitles', showTitlesToggle.checked);
         }
@@ -112,6 +121,7 @@ export function initUI() {
         document.getElementById('sidebarLogoName').innerText = newName;
         applyThemeClass(newTheme);
         document.documentElement.style.setProperty('--grid-size', newGrid);
+        document.documentElement.style.setProperty('--accent', newAccent);
         updateTitleVisibility(newGrid);
         applyLanguage(newLang);
 

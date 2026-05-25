@@ -104,25 +104,70 @@ export function createGameCard(game, index) {
 export async function renderGames() {
     const gamesContainer = document.getElementById('gamesContainer');
     const favoritesContainer = document.getElementById('favoritesContainer');
-    gamesContainer.innerHTML = '';
-    favoritesContainer.innerHTML = '';
+    const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
+
+    if (gamesContainer) gamesContainer.innerHTML = '';
+    if (favoritesContainer) favoritesContainer.innerHTML = '';
+    if (recentlyPlayedContainer) recentlyPlayedContainer.innerHTML = '';
+
     try {
         state.allGamesData = await window.api.getGames();
-        document.getElementById('gameCountDisplay').innerText = state.allGamesData.length;
 
-        const savedOrder = await loadOrder('main');
-        const orderedGames = applyOrder(state.allGamesData, savedOrder);
-        orderedGames.forEach((game, index) => {
-            gamesContainer.appendChild(createGameCard(game, index));
-        });
+        const countDisplay = document.getElementById('gameCountDisplay');
+        if (countDisplay) {
+            countDisplay.innerText = state.allGamesData.length;
+        }
 
-        const favGames = state.allGamesData.filter(g => g.isFavorite);
-        const savedFavOrder = await loadOrder('favorites');
-        const orderedFavGames = applyOrder(favGames, savedFavOrder);
-        orderedFavGames.forEach((game, index) => {
-            favoritesContainer.appendChild(createGameCard(game, index));
-        });
-    } catch (error) { console.error("Error loading games:", error); }
+        // 1. Process Recently Played Games
+        if (recentlyPlayedContainer) {
+            // Filter games that have been played, then sort by most recent
+            const recentGames = [...state.allGamesData]
+                .filter(g => g.lastPlayed || (g.playtime && g.playtime > 0))
+                .sort((a, b) => {
+                    const dateA = a.lastPlayed ? new Date(a.lastPlayed).getTime() : 0;
+                    const dateB = b.lastPlayed ? new Date(b.lastPlayed).getTime() : 0;
+                    return dateB - dateA;
+                })
+                .slice(0, 10);
+
+            if (recentGames.length > 0) {
+                recentGames.forEach((game, index) => {
+                    recentlyPlayedContainer.appendChild(createGameCard(game, index));
+                });
+            } else {
+                // Show a placeholder message if no games have been played yet
+                recentlyPlayedContainer.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <i class="fa-solid fa-ghost" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="margin: 0; font-size: 16px; font-weight: 500;">No recently played games found.</p>
+                        <small style="opacity: 0.7;">Launch a game from your library to see it here!</small>
+                    </div>
+                `;
+            }
+        }
+
+        // 2. Process Main Library
+        if (gamesContainer) {
+            const savedOrder = await loadOrder('main');
+            const orderedGames = applyOrder(state.allGamesData, savedOrder);
+            orderedGames.forEach((game, index) => {
+                gamesContainer.appendChild(createGameCard(game, index));
+            });
+        }
+
+        // 3. Process Favorites
+        if (favoritesContainer) {
+            const favGames = state.allGamesData.filter(g => g.isFavorite);
+            const savedFavOrder = await loadOrder('favorites');
+            const orderedFavGames = applyOrder(favGames, savedFavOrder);
+            orderedFavGames.forEach((game, index) => {
+                favoritesContainer.appendChild(createGameCard(game, index));
+            });
+        }
+
+    } catch (error) {
+        console.error("Error loading games:", error);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

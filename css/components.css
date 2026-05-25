@@ -501,3 +501,85 @@ body.darker-mode .toast {
 .action-btn.delete-btn:hover i {
     color: #ef4444 !important;
 }
+
+/* Settings Sections */
+.settings-section {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 0;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header i {
+    font-size: 20px;
+    color: var(--accent);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.section-content {
+    padding: 20px 24px;
+}
+
+/* =========================================
+   Lightbox Enhancements (Slideshow & Zoom)
+========================================= */
+/* Container for controls at the bottom */
+.lightbox-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 101;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 20px;
+    border-radius: 30px;
+    backdrop-filter: blur(5px);
+}
+
+.lightbox-controls button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.lightbox-controls button:hover {
+    color: var(--accent);
+}
+
+/* Smooth transition for images */
+.lightbox-content {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease-in-out;
+    cursor: zoom-in;
+    transform-origin: center center;
+}
+
+.lightbox-content.zoomed {
+    cursor: zoom-out;
+}
+
+#lightboxImage {
+    will-change: transform;
+    transition: opacity 0.4s ease;
+}

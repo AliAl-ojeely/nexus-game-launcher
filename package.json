@@ -1,6 +1,6 @@
 {
   "name": "mygamelauncher",
-  "version": "2.2.0",
+  "version": "2.2.5",
   "description": "A sleek game launcher for managing PC titles",
   "author": "Ali Al-ojeely <alialojeely@gmail.com>",
   "main": "src/main.js",
@@ -20,7 +20,8 @@
     "axios": "^1.14.0",
     "fs-extra": "^11.3.4",
     "js-yaml": "^4.1.1",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "systeminformation": "^5.31.6"
   },
   "build": {
     "appId": "com.nexus.launcher",

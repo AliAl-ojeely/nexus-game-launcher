@@ -7,6 +7,7 @@ const playtimeDB = require('../modules/playtime');
 const backups = require('../modules/backup');
 const dialogs = require('../modules/dialogs');
 const launcher = require('../modules/game-launcher');
+const si = require('systeminformation');
 
 const { initAppData } = require('../modules/app-settings');
 const { registerDatabaseIPC } = require('./ipc/ipc-database');
@@ -179,6 +180,25 @@ ipcMain.handle('timer:pause', () => {
 
 ipcMain.handle('timer:resume', () => {
     return launcher.resumeTimer();
+});
+
+ipcMain.handle('app:getSystemSpecs', async () => {
+    try {
+        const cpu = await si.cpu();
+        const mem = await si.mem();
+        const graphics = await si.graphics();
+        const os = await si.osInfo();
+
+        return {
+            cpu: `${cpu.manufacturer} ${cpu.brand}`,
+            ramGB: Math.round(mem.total / (1024 ** 3)),
+            gpu: graphics.controllers.map(c => c.model).join(' / '),
+            os: os.distro
+        };
+    } catch (error) {
+        console.error('[Specs] Error fetching system specs:', error);
+        return null;
+    }
 });
 
 // Feature modules

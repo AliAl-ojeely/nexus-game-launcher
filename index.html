@@ -18,11 +18,16 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.2.0</span>
+            <span class="version-badge">v2.2.5</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
         </div>
+
+        <div class="nav-item" data-target="recentArea">
+            <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="nav_recent">Recently Played</span>
+        </div>
+
         <div class="nav-item" data-target="favoritesArea">
             <i class="fa-solid fa-heart"></i> <span data-i18n="nav_favorites">Favorites</span>
         </div>
@@ -56,7 +61,19 @@
 
         <!-- ── Library ── -->
         <div id="libraryArea" class="page-area active">
+            <h2 style="margin-top:0; color: var(--text-main);">
+                <i class="fa-solid fa-gamepad" style="color:var(--accent);"></i>
+                <span data-i18n="title_all_games">All Games</span>
+            </h2>
             <div class="games-grid" id="gamesContainer"></div>
+        </div>
+        
+        <div id="recentArea" class="page-area">
+            <h2 style="margin-top:0; color: var(--text-main);">
+                <i class="fa-solid fa-clock-rotate-left" style="color:var(--accent);"></i>
+                <span data-i18n="title_recently_played">Recently Played</span>
+            </h2>
+            <div class="games-grid" id="recentlyPlayedContainer"></div>
         </div>
 
         <!-- ── Favorites ── -->
@@ -72,129 +89,169 @@
         <div id="settingsArea" class="page-area">
             <div class="settings-container">
                 <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
-
-                <div class="form-group">
-                    <label data-i18n="set_app_name">Launcher Name (Logo):</label>
-                    <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
-                </div>
-
-                <div class="settings-grid">
-                    <div class="form-group">
-                        <label data-i18n="set_theme">Theme:</label>
-                        <select id="themeSetting" class="custom-select">
-                            <option value="dark" data-i18n="theme_dark">Dark</option>
-                            <option value="darker" data-i18n="theme_darker">Darker</option>
-                            <option value="light" data-i18n="theme_light">Light</option>
-                        </select>
+        
+                <!-- ===== SECTION 1: GENERAL ===== -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fa-solid fa-gear"></i>
+                        <h3 data-i18n="section_general">General</h3>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="set_lang">Language:</label>
-                        <select id="langSetting" class="custom-select">
-                            <option value="ar">العربية</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="set_grid">Grid Size:</label>
-                        <select id="gridSizeSetting" class="custom-select">
-                            <option value="150px" data-i18n="grid_very_small">Very Small</option>
-                            <option value="200px" data-i18n="grid_small">Small</option>
-                            <option value="260px" data-i18n="grid_medium" selected>Medium</option>
-                            <option value="320px" data-i18n="grid_large">Large</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Window Size Settings -->
-                <div class="form-group">
-                    <label data-i18n="window_size_title">Window Size (Manual)</label>
-                    <br>
-                    <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label data-i18n="window_width">Width (px):</label>
-                            <input type="number" id="windowWidthInput" class="custom-input" min="800" step="10" value="1100">
+                    <div class="section-content">
+                        <div class="form-group">
+                            <label data-i18n="set_app_name">Launcher Name (Logo):</label>
+                            <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label data-i18n="window_height">Height (px):</label>
-                            <input type="number" id="windowHeightInput" class="custom-input" min="600" step="10" value="750">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="open_appdata_label">Application Data Folder</label>
-                    <button id="openAppDataBtn" class="folder-btn-blue">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <span data-i18n="open_appdata_btn">Open AppData Folder</span>
-                    </button>
-                    <small data-i18n="open_appdata_desc">Contains games.json, settings.json, playTime.json, backups configuration,
-                        etc.</small>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="show_titles_label">Show Game Titles on Cards</label>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="showTitlesToggle" class="custom-toggle" checked>
-                        <span class="toggle-label" data-i18n="show_titles_desc">Display game names under posters</span>
-                    </div>
-                    <small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="auto_backup_title">Auto Backup on Game Close:</label>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="autoBackupToggle" class="custom-toggle">
-                        <span class="toggle-label" data-i18n="auto_backup_desc">Automatically backup save data when a game closes</span>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-top: 15px;">
-                    <label data-i18n="check_updates_title">Application Updates</label>
-                    <button id="checkForUpdatesBtn" class="folder-btn-blue"
-                        style="background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                        <span data-i18n="btn_check_updates">Check for Updates</span>
-                    </button>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="set_fps">Show Performance HUD:</label>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="fpsToggle" class="custom-toggle">
-                        <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
-                    </div>
-                </div>
-
-                <!-- Global Backup Vault -->
-                <div class="settings-section"
-                    style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                    <h3 style="margin-bottom: 15px; color: var(--text-main); font-size: 16px;">
-                        <i class="fa-solid fa-shield-halved" style="color: var(--accent);"></i>
-                        <span data-i18n="settings_backup_title">Global Backup Vault</span>
-                    </h3>
-                    <div class="form-group">
-                        <label data-i18n="settings_backup_desc">Default folder for save backups (Non-C drive
-                            recommended):</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="globalBackupPath" readonly
-                                placeholder="Select a safe backup location...">
-                            <button id="selectGlobalBackupBtn" class="folder-btn-blue">
+        
+                        <div class="form-group">
+                            <label data-i18n="open_appdata_label">Application Data Folder</label>
+                            <button id="openAppDataBtn" class="folder-btn-blue">
                                 <i class="fa-solid fa-folder-open"></i>
+                                <span data-i18n="open_appdata_btn">Open AppData Folder</span>
+                            </button>
+                            <small data-i18n="open_appdata_desc">Contains games.json, settings.json, playTime.json, backups
+                                configuration, etc.</small>
+                        </div>
+        
+                        <div class="form-group">
+                            <label data-i18n="check_updates_title">Application Updates</label>
+                            <button id="checkForUpdatesBtn" class="folder-btn-blue"
+                                style="background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                                <span data-i18n="btn_check_updates">Check for Updates</span>
                             </button>
                         </div>
-
-                        <button id="scanVaultBtn" class="folder-btn-blue" style="gap:7px; font-size:12px; padding: 8px 15px;">
-                            <i class="fa-solid fa-magnifying-glass-chart"></i>
-                            <span data-i18n="scan_vault_title">Scan Vault & Re-link Backups</span>
-                        </button>
-                        <small style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px; line-height: 1.4;">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <span data-i18n="scan_vault_desc">Use this after reinstalling Windows or moving your games to automatically link
-                                existing backup files to your current library.</span>
-                        </small>
+        
+                        <div class="form-group">
+                            <label data-i18n="window_size_title">Window Size (Manual)</label>
+                            <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label data-i18n="window_width">Width (px):</label>
+                                    <input type="number" id="windowWidthInput" class="custom-input" min="800" step="10"
+                                        value="1100">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label data-i18n="window_height">Height (px):</label>
+                                    <input type="number" id="windowHeightInput" class="custom-input" min="600" step="10"
+                                        value="750">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+        
+                <!-- ===== SECTION 2: APPEARANCE ===== -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fa-solid fa-palette"></i>
+                        <h3 data-i18n="section_appearance">Appearance</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label data-i18n="set_theme">Theme:</label>
+                                <select id="themeSetting" class="custom-select">
+                                    <option value="dark" data-i18n="theme_dark">Dark</option>
+                                    <option value="darker" data-i18n="theme_darker">Darker</option>
+                                    <option value="light" data-i18n="theme_light">Light</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="set_lang">Language:</label>
+                                <select id="langSetting" class="custom-select">
+                                    <option value="ar">العربية</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="set_grid">Grid Size:</label>
+                                <select id="gridSizeSetting" class="custom-select">
+                                    <option value="150px" data-i18n="grid_very_small">Very Small</option>
+                                    <option value="200px" data-i18n="grid_small">Small</option>
+                                    <option value="260px" data-i18n="grid_medium" selected>Medium</option>
+                                    <option value="320px" data-i18n="grid_large">Large</option>
+                                </select>
+                            </div>
+                        </div>
 
+                        <div class="form-group">
+                            <label data-i18n="set_accent_color">Accent Color:</label>
+                            <input type="color" id="accentColorSetting" class="custom-color-input"
+                                style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                        </div>
+        
+                        <div class="form-group">
+                            <label data-i18n="show_titles_label">Show Game Titles on Cards</label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="showTitlesToggle" class="custom-toggle" checked>
+                                <span class="toggle-label" data-i18n="show_titles_desc">Display game names under posters</span>
+                            </div>
+                            <small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- ===== SECTION 4: PERFORMANCE ===== -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <h3 data-i18n="section_performance">Performance</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-group">
+                            <label data-i18n="set_fps">Show Performance HUD:</label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="fpsToggle" class="custom-toggle">
+                                <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- ===== SECTION 5: BACKUP ===== -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <h3 data-i18n="section_backup">Backup & Vault</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-group">
+                            <label data-i18n="auto_backup_title">Auto Backup on Game Close:</label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="autoBackupToggle" class="custom-toggle">
+                                <span class="toggle-label" data-i18n="auto_backup_desc">Automatically backup save data when a
+                                    game closes</span>
+                            </div>
+                        </div>
+        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label data-i18n="settings_backup_title">Global Backup Vault</label>
+                            <div class="form-group">
+                                <label data-i18n="settings_backup_desc">Default folder for save backups (Non-C drive
+                                    recommended):</label>
+                                <div class="input-with-btn">
+                                    <input type="text" id="globalBackupPath" readonly
+                                        placeholder="Select a safe backup location...">
+                                    <button id="selectGlobalBackupBtn" class="folder-btn-blue">
+                                        <i class="fa-solid fa-folder-open"></i>
+                                    </button>
+                                </div>
+                                <button id="scanVaultBtn" class="folder-btn-blue"
+                                    style="gap:7px; font-size:12px; padding: 8px 15px; margin-top: 10px;">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                    <span data-i18n="scan_vault_title">Scan Vault & Re-link Backups</span>
+                                </button>
+                                <small
+                                    style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px;">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span data-i18n="scan_vault_desc">Use this after reinstalling Windows or moving your games
+                                        to automatically link existing backup files to your current library.</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Save Button -->
                 <button class="save-settings-btn" id="saveGeneralSettings">
                     <i class="fa-solid fa-floppy-disk"></i>
                     <span data-i18n="btn_save_settings">Save Settings</span>
@@ -293,6 +350,38 @@
                             </button>
                         </div>
                         <div class="screenshots-grid" id="detailsScreenshotsGrid"></div>
+                    </div>
+
+                    <div class="details-can-run-it" id="canRunItContainer" style="display: none; margin: 30px 0;">
+                        <button id="runItCheckBtn" class="add-btn" style="margin: 0 auto; background: var(--accent); color: #fff;">
+                            <i class="fa-solid fa-microchip"></i>
+                            <span data-i18n="btn_can_run_it">Can I Run It?</span>
+                        </button>
+                    
+                        <div id="runItResultBox"
+                            style="display: none; margin-top: 20px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <h3 id="runItScoreTitle" style="margin: 0; font-size: 24px;">-</h3>
+                                <p id="runItScoreDesc" style="margin: 5px 0 0; color: var(--text-muted);">-</p>
+                            </div>
+                    
+                            <div class="req-grid">
+                                <div class="req-box" style="border-color: var(--accent);">
+                                    <h3 data-i18n="title_your_pc">Your PC</h3>
+                                    <ul
+                                        style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.8;">
+                                        <li><strong>OS:</strong> <span id="myOs">-</span></li>
+                                        <li><strong>CPU:</strong> <span id="myCpu">-</span></li>
+                                        <li><strong>RAM:</strong> <span id="myRam">-</span> GB</li>
+                                        <li><strong>GPU:</strong> <span id="myGpu">-</span></li>
+                                    </ul>
+                                </div>
+                                <div class="req-box">
+                                    <h3 data-i18n="title_game_minimum">Game Minimum</h3>
+                                    <div id="gameMinReqsText" class="req-text" style="font-size: 13px;">-</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="details-req-section" id="systemRequirementsSection">
@@ -488,6 +577,11 @@
     <div id="imageLightbox" class="lightbox">
         <span class="close-lightbox" id="closeLightbox">&times;</span>
         <img class="lightbox-content" id="lightboxImage">
+    
+        <div class="lightbox-controls">
+            <button id="slideshowBtn" title="Play/Pause Slideshow"><i class="fa-solid fa-play"></i></button>
+        </div>
+    
         <a class="prev-lightbox" id="prevLightbox"><i class="fa-solid fa-chevron-left"></i></a>
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
@@ -532,7 +626,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.2.0</p>
+                <p style="text-align: center;">version 2.2.5</p>
             </div>
         </div>
     </div>

@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('api', {
     updateGame: (game) => ipcRenderer.invoke('db:updateGame', game),
     deleteGame: (id) => ipcRenderer.invoke('db:deleteGame', id),
 
+    // ── Your Pc Info (Can I Run IT) ─────────────────────────────────────────────────────────
+    getSystemSpecs: () => ipcRenderer.invoke('app:getSystemSpecs'),
+
     // ── Game Launcher ─────────────────────────────────────────────────────────
     launchGame: (path, showFPS, args, id, name) => ipcRenderer.send('game:launch', path, showFPS, args, id, name),
     forceStopGame: (id) => ipcRenderer.send('game:force-stop', id),

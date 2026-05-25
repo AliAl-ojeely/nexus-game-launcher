@@ -91,6 +91,29 @@ const dictionary = {
         update_available: "تحديث جديد متاح!",
         btn_download_update: "تحميل من GitHub",
 
+        section_general: "عام",
+        section_appearance: "المظهر",
+        section_overlay: "الواجهة الداخلية",
+        section_performance: "الأداء",
+        section_backup: "النسخ الاحتياطي والخزنة",
+
+        title_all_games: "جميع الالعاب",
+        title_recently_played: "لعبة مؤخراً",
+        nav_recent: "لعبة مؤخراً",
+
+        btn_can_run_it: "هل يمكنني تشغيلها؟",
+        title_your_pc: "مواصفات جهازك",
+        title_game_minimum: "الحد الأدنى للعبة",
+        run_it_excellent: "ممتاز!",
+        run_it_excellent_desc: "جهازك يتجاوز متطلبات الذاكرة الأساسية بسهولة. يتوقع أداء عالي.",
+        run_it_playable: "قابل للتشغيل",
+        run_it_playable_desc: "جهازك يلبي متطلبات الذاكرة. يتوقع أداء جيد على إعدادات متوسطة.",
+        run_it_warning: "تحذير",
+        run_it_warning_desc: "ذاكرة جهازك أقل من الحد الأدنى. قد تواجه تقطيعاً شديداً في الإطارات.",
+        run_it_specs_loaded: "تم جلب المواصفات",
+        run_it_specs_loaded_desc: "قارن مواصفاتك يدوياً مع النص المرفق في الجدول.",
+        btn_checking: "جاري الفحص...",
+
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
         settings_backup_desc: "المجلد الافتراضي لنسخ حفظ الألعاب (يُفضل عدم استخدام محرك الأقراص C):",
@@ -216,6 +239,17 @@ const dictionary = {
         window_width: "Width (px)",
         window_height: "Height (px)",
 
+        // Section titles
+        section_general: "General",
+        section_appearance: "Appearance",
+        section_overlay: "In‑Game Overlay",
+        section_performance: "Performance",
+        section_backup: "Backup & Vault",
+
+        title_all_games: "All Games",
+        title_recently_played: "Recently Played",
+        nav_recent: "Recently Played",
+
         shortcut_save_settings: "Save settings",
 
         open_appdata_label: "Application Data Folder",
@@ -226,6 +260,19 @@ const dictionary = {
         btn_check_updates: "Check for Updates",
         update_available: "Update Available!",
         btn_download_update: "Download from GitHub",
+
+        btn_can_run_it: "Can I Run It?",
+        title_your_pc: "Your PC",
+        title_game_minimum: "Game Minimum",
+        run_it_excellent: "Excellent!",
+        run_it_excellent_desc: "Your PC easily exceeds the basic memory requirements. High settings expected.",
+        run_it_playable: "Playable",
+        run_it_playable_desc: "Your PC meets the memory requirements. Expect decent performance on medium settings.",
+        run_it_warning: "Warning",
+        run_it_warning_desc: "Your PC RAM is below the minimum required. You may experience severe stuttering.",
+        run_it_specs_loaded: "Specs Loaded",
+        run_it_specs_loaded_desc: "Compare your specs manually with the text provided.",
+        btn_checking: "Checking...",
 
         // Backup translations (English)
         settings_backup_title: "Global Backup Vault",

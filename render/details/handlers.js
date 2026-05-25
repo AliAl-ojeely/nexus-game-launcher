@@ -165,3 +165,74 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         }
     }, resetDelay);
 }
+
+function extractRequiredRam(reqText) {
+    if (!reqText) return 0;
+    const match = reqText.toLowerCase().match(/(\d+(?:\.\d+)?)\s*(gb|mb)\s*ram/);
+    if (match) {
+        const val = parseFloat(match[1]);
+        const unit = match[2];
+        if (unit === 'mb') return val / 1024;
+        return val;
+    }
+    return 0;
+}
+
+export async function handleCanIRunItCheck() {
+    const btn = document.getElementById('runItCheckBtn');
+    const resultBox = document.getElementById('runItResultBox');
+    if (!btn || !resultBox) return;
+
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    const checkingLabel = t('btn_checking', userSettings.lang === 'ar' ? 'جاري الفحص...' : 'Checking...');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${checkingLabel}`;
+    
+    try {
+        const mySpecs = await window.api.getSystemSpecs();
+        if (!mySpecs) throw new Error("Could not fetch specs");
+
+        document.getElementById('myOs').innerText = mySpecs.os || 'Unknown';
+        document.getElementById('myCpu').innerText = mySpecs.cpu || 'Unknown';
+        document.getElementById('myRam').innerText = mySpecs.ramGB || '0';
+        document.getElementById('myGpu').innerText = mySpecs.gpu || 'Unknown';
+
+        const rawMinReqs = document.getElementById('gameMinReqsText').getAttribute('data-raw-req') || '';
+        const reqRamGB = extractRequiredRam(rawMinReqs);
+
+        const titleEl = document.getElementById('runItScoreTitle');
+        const descEl = document.getElementById('runItScoreDesc');
+        const reqBox = document.querySelector('#runItResultBox .req-box');
+
+        if (reqRamGB > 0) {
+            if (mySpecs.ramGB >= reqRamGB * 2) {
+                titleEl.innerText = t('run_it_excellent', 'Excellent!');
+                titleEl.style.color = "#10b981";
+                descEl.innerText = t('run_it_excellent_desc', 'Your PC easily exceeds the basic memory requirements. High settings expected.');
+                if (reqBox) reqBox.style.borderColor = "#10b981";
+            } else if (mySpecs.ramGB >= reqRamGB) {
+                titleEl.innerText = t('run_it_playable', 'Playable');
+                titleEl.style.color = "#3b82f6";
+                descEl.innerText = t('run_it_playable_desc', 'Your PC meets the memory requirements. Expect decent performance on medium settings.');
+                if (reqBox) reqBox.style.borderColor = "#3b82f6";
+            } else {
+                titleEl.innerText = t('run_it_warning', 'Warning');
+                titleEl.style.color = "#ef4444";
+                descEl.innerText = t('run_it_warning_desc', 'Your PC RAM is below the minimum required. You may experience severe stuttering.');
+                if (reqBox) reqBox.style.borderColor = "#ef4444";
+            }
+        } else {
+            titleEl.innerText = t('run_it_specs_loaded', 'Specs Loaded');
+            titleEl.style.color = "var(--text-main)";
+            descEl.innerText = t('run_it_specs_loaded_desc', 'Compare your specs manually with the text provided.');
+            if (reqBox) reqBox.style.borderColor = "var(--border-color)";
+        }
+
+        resultBox.style.display = 'block';
+    } catch (err) {
+        console.error("Can I Run It Error:", err);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}

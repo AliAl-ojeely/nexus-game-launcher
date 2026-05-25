@@ -141,6 +141,10 @@ export function renderGameDetails(game) {
     const reqMinEl = document.getElementById('reqMin');
     const reqRecEl = document.getElementById('reqRec');
     const fullReqSection = document.getElementById('systemRequirementsSection');
+    const canRunItContainer = document.getElementById('canRunItContainer');
+    const resultBox = document.getElementById('runItResultBox');
+    const minReqTextHidden = document.getElementById('gameMinReqsText');
+
     let hasAnyReq = false;
     const sysReqs = meta.systemRequirements || null;
 
@@ -149,10 +153,19 @@ export function renderGameDetails(game) {
             reqMinEl.innerHTML = sysReqs.minimum;
             reqMinEl.parentElement.style.display = 'block';
             hasAnyReq = true;
+            if (minReqTextHidden) {
+                minReqTextHidden.innerHTML = sysReqs.minimum;
+                minReqTextHidden.setAttribute('data-raw-req', sysReqs.minimum);
+            }
         } else {
             reqMinEl.parentElement.style.display = 'none';
+            if (minReqTextHidden) {
+                minReqTextHidden.innerHTML = '-';
+                minReqTextHidden.setAttribute('data-raw-req', '');
+            }
         }
     }
+
     if (reqRecEl) {
         if (sysReqs && isValid(sysReqs.recommended)) {
             reqRecEl.innerHTML = sysReqs.recommended;
@@ -162,7 +175,13 @@ export function renderGameDetails(game) {
             reqRecEl.parentElement.style.display = 'none';
         }
     }
+
     if (fullReqSection) fullReqSection.style.display = hasAnyReq ? 'block' : 'none';
+
+    if (canRunItContainer) {
+        canRunItContainer.style.display = hasAnyReq ? 'block' : 'none';
+        if (resultBox) resultBox.style.display = 'none';
+    }
 
     // Screenshots
     if (screenshotsGrid) {
