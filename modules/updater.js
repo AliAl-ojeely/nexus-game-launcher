@@ -1,6 +1,7 @@
 const { app } = require('electron');
 const EventEmitter = require('events');
 const packageJson = require('../package.json');
+const fetch = require('node-fetch');
 
 // Optional: try to use semver if installed, otherwise fallback
 let semver;
@@ -38,6 +39,7 @@ class Updater extends EventEmitter {
         this.cacheTtlMs = options.cacheTtlMs || 5 * 60 * 1000; // 5 minutes
         this.lastCheck = null;
         this.cachedResult = null;
+        this.abortController = null;
     }
 
     // Get latest release from GitHub (cached)
@@ -47,14 +49,20 @@ class Updater extends EventEmitter {
             return this.cachedResult;
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
             const url = this.includePrerelease
                 ? `https://api.github.com/repos/${this.repo}/releases?per_page=1`
                 : `https://api.github.com/repos/${this.repo}/releases/latest`;
 
             const response = await fetch(url, {
-                headers: { 'User-Agent': this.userAgent }
+                headers: { 'User-Agent': this.userAgent },
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             // Handle rate limiting
             const remaining = response.headers.get('x-ratelimit-remaining');
@@ -103,9 +111,16 @@ class Updater extends EventEmitter {
 
             return result;
         } catch (err) {
-            console.error('[UPDATER] Error checking for updates:', err);
-            this.emit('error', err);
-            return { error: err.message };
+            clearTimeout(timeoutId);
+
+            let errorMessage = err.message;
+            if (err.name === 'AbortError') {
+                errorMessage = 'Connection timed out (15s). Please check your internet connection.';
+            }
+
+            console.error('[UPDATER] Error checking for updates:', errorMessage);
+            this.emit('error', new Error(errorMessage));
+            return { error: errorMessage };
         }
     }
 
@@ -116,27 +131,50 @@ class Updater extends EventEmitter {
 
     // Optional: download asset (e.g., installer)
     async downloadAsset(assetUrl, destinationPath, onProgress) {
-        const response = await fetch(assetUrl, {
-            headers: { 'User-Agent': this.userAgent }
-        });
-        if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
-        const contentLength = response.headers.get('content-length');
-        const total = parseInt(contentLength, 10);
-        let downloaded = 0;
-        const fs = require('fs');
-        const fileStream = fs.createWriteStream(destinationPath);
+        this.abortController = new AbortController();
 
-        return new Promise((resolve, reject) => {
-            response.body.on('data', (chunk) => {
-                downloaded += chunk.length;
-                if (onProgress && total) {
-                    onProgress({ downloaded, total, percent: (downloaded / total) * 100 });
-                }
+        try {
+            const response = await fetch(assetUrl, {
+                headers: { 'User-Agent': this.userAgent },
+                signal: this.abortController.signal
             });
-            response.body.pipe(fileStream);
-            fileStream.on('finish', () => resolve(destinationPath));
-            fileStream.on('error', reject);
-        });
+
+            if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
+
+            const contentLength = response.headers.get('content-length');
+            const total = parseInt(contentLength, 10);
+            let downloaded = 0;
+
+            const fs = require('fs');
+            const fileStream = fs.createWriteStream(destinationPath);
+
+            return new Promise((resolve, reject) => {
+                response.body.on('data', (chunk) => {
+                    downloaded += chunk.length;
+                    if (onProgress && total) {
+                        onProgress({ downloaded, total, percent: (downloaded / total) * 100 });
+                    }
+                });
+
+                response.body.pipe(fileStream);
+
+                fileStream.on('close', () => resolve(destinationPath));
+                fileStream.on('error', reject);
+                response.body.on('error', reject);
+            });
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Download was manually cancelled');
+            }
+            throw error;
+        }
+    }
+
+    cancelDownload() {
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
     }
 
     // Start periodic checking (every intervalMs)

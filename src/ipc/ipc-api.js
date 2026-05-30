@@ -1,6 +1,8 @@
-const { ipcMain, app } = require('electron');
+const { ipcMain, app, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const { spawn } = require('child_process');
 
 const rawg = require('../../modules/rawg-api');
 const steam = require('../../modules/steam-api');
@@ -271,6 +273,40 @@ function registerApiIPC() {
     ipcMain.handle('app:checkForUpdates', async () => {
         console.log('[API] Checking for updates from GitHub...');
         return await updater.checkGitHubReleases();
+    });
+
+    // Download the update to temp folder
+    ipcMain.handle('app:downloadUpdate', async (event, url, filename) => {
+        const destPath = path.join(os.tmpdir(), filename);
+        try {
+            await updater.defaultUpdater.downloadAsset(url, destPath, (progress) => {
+                // 🚨 التحقق الأمني: لا ترسل البيانات إذا تم إغلاق النافذة أو التطبيق
+                if (!event.sender.isDestroyed()) {
+                    event.sender.send('update:progress', progress);
+                }
+            });
+            return { success: true, path: destPath };
+        } catch (err) {
+            console.error('[UPDATER] Download failed:', err);
+            return { success: false, error: err.message };
+        }
+    });
+
+    // Execute the NSIS installer and quit
+    ipcMain.on('app:installUpdate', async (event, filePath) => {
+        console.log('[UPDATER] Launching installer:', filePath);
+        const error = await shell.openPath(filePath);
+        if (error) {
+            console.error('[UPDATER] Failed to open installer:', error);
+        } else {
+            app.quit();
+        }
+    });
+
+    // Cancel the ongoing download
+    ipcMain.on('app:cancelDownload', () => {
+        console.log('[UPDATER] Download cancelled by user.');
+        updater.defaultUpdater.cancelDownload();
     });
 }
 

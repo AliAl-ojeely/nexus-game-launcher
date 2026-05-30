@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.2.5</span>
+            <span class="version-badge">v2.3.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -586,6 +586,8 @@
         <a class="next-lightbox" id="nextLightbox"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
     
+    <!-- ── Updater ── -->
+    
     <div class="modal-overlay" id="updateModal">
         <div class="modal-content" style="max-width: 500px;">
             <h2><i class="fa-solid fa-rocket" style="color: var(--accent);"></i> <span data-i18n="update_available">Update
@@ -595,16 +597,33 @@
                 <span style="color: var(--text-muted); font-size: 13px;">(Current: <span
                         id="currentVersionTag"></span>)</span>
             </p>
-            <div class="description-wrapper"
+    
+            <div class="description-wrapper no-shadow"
                 style="margin: 15px 0; max-height: 200px; overflow-y: auto; background: var(--bg-input); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <p id="releaseNotesText"
-                    style="white-space: pre-wrap; margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                </p>
+                <div id="releaseNotesText" style="margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                </div>
             </div>
-            <div class="modal-buttons" style="margin-top: 20px;">
+    
+            <div id="updateProgressContainer" style="display: none; width: 100%; margin-top: 15px; margin-bottom: 15px;">
+                <div
+                    style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); font-weight: 600;">
+                    <span id="updateProgressText" data-i18n="update_downloading">Downloading Update...</span>
+                    <span id="updateProgressPercent">0%</span>
+                </div>
+                <div
+                    style="width: 100%; height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                    <div id="updateProgressBar"
+                        style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+                </div>
+                <button id="cancelDownloadBtn" class="cancel-btn" style="width: 100%;">
+                    <i class="fa-solid fa-xmark"></i> Cancel Download
+                </button>
+            </div>
+    
+            <div class="modal-buttons" id="updateModalButtons" style="margin-top: 20px;">
                 <button id="downloadUpdateBtn" class="save-btn">
-                    <i class="fa-brands fa-github"></i>
-                    <span data-i18n="btn_download_update">Download from GitHub</span>
+                    <i class="fa-solid fa-download"></i>
+                    <span data-i18n="btn_download_update">Download Update</span>
                 </button>
                 <button id="closeUpdateModalBtn" class="cancel-btn" data-i18n="modal_btn_cancel">Close</button>
             </div>
@@ -626,7 +645,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.2.5</p>
+                <p style="text-align: center;">version 2.3.0</p>
             </div>
         </div>
     </div>

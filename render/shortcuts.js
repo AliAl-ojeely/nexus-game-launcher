@@ -220,6 +220,21 @@ export function initShortcuts() {
                 searchInput.blur();
                 return;
             }
+
+            // منع الإغلاق إذا كانت نافذة التحديث مفتوحة والتحميل جارٍ
+            const updateModal = document.getElementById('updateModal');
+            if (updateModal && updateModal.classList.contains('active')) {
+                const progressContainer = document.getElementById('updateProgressContainer');
+                const isDownloading = progressContainer && progressContainer.style.display === 'block';
+
+                if (isDownloading) {
+                    return; // 🚨 تجاهل زر Esc تماماً أثناء التحميل
+                } else {
+                    updateModal.classList.remove('active');
+                    return;
+                }
+            }
+
             const editModal = document.getElementById('editModal');
             if (editModal && editModal.style.display === 'flex') {
                 editModal.style.display = 'none';

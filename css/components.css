@@ -54,7 +54,6 @@
 ========================================= */
 .add-btn {
     background: var(--accent);
-    /* استخدام المتغير بدلاً من التدرج الثابت */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -62,16 +61,23 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 15px var(--shadow-color);
-    transition: 0.3s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     gap: 8px;
     align-items: center;
 }
 
 .add-btn:hover {
-    background: var(--accent-hover);
+    background: var(--accent);
+    filter: brightness(0.85);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px var(--shadow-color);
+}
+
+.add-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 .action-btn {

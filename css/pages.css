@@ -38,11 +38,20 @@
     cursor: pointer;
     margin-top: 15px;
     width: 100%;
-    transition: 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .save-settings-btn:hover {
-    background: var(--accent-hover);
+    background: var(--accent);
+    filter: brightness(0.85);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+.save-settings-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 /* =========================================
@@ -252,7 +261,7 @@
 }
 
 .folder-btn-blue {
-    background-color: #3498db;
+    background-color: var(--accent);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -267,7 +276,19 @@
 }
 
 .folder-btn-blue:hover {
-    background-color: #2980b9;
+    /* Darken the dynamic accent color by 15% */
+    filter: brightness(0.85) !important;
+    /* Move button slightly up */
+    transform: translateY(-2px) !important;
+    /* Add a dynamic shadow effect */
+    box-shadow: 0 6px 15px var(--shadow-color) !important;
+}
+
+.folder-btn-blue:active {
+    /* Click effect */
+    transform: translateY(1px) !important;
+    filter: brightness(0.75) !important;
+    box-shadow: 0 2px 5px var(--shadow-color) !important;
 }
 
 /* =========================================

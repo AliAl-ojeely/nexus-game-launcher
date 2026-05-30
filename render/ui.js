@@ -1,6 +1,40 @@
-// render/ui.js
 import { state, userSettings } from './state.js';
 import { showToast } from './details-components.js';
+
+// Parse GitHub Markdown release notes to standard HTML
+function parseMarkdown(text) {
+    if (!text) return '';
+
+    let html = text;
+
+    // Remove the auto-generated GitHub "Full Changelog" line
+    html = html.replace(/.*Full Changelog.*https:\/\/github\.com.*/gim, '');
+
+    // Standardize line breaks and remove extra empty lines
+    html = html.replace(/\r\n/g, '\n');
+    html = html.replace(/\n{2,}/g, '\n');
+
+    // Convert headings with precise margins
+    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--accent); margin: 15px 0 5px 0; font-size: 15px;">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2 style="color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0 0 12px 0; font-size: 18px;">$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1 style="margin: 0 0 12px 0;">$1</h1>');
+
+    // Convert bold text
+    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: var(--text-main);">$1</strong>');
+
+    // Convert list items with bullet points
+    html = html.replace(/^\- (.*$)/gim, '<li style="margin-inline-start: 20px; margin-bottom: 6px; list-style-type: disc;">$1</li>');
+
+    // Convert remaining line breaks to <br> and clean up gaps
+    html = html.replace(/\n/g, '<br>');
+    html = html.replace(/<br><h/g, '<h');
+    html = html.replace(/<\/h2><br>/g, '</h2>');
+    html = html.replace(/<\/h3><br>/g, '</h3>');
+    html = html.replace(/<br><li/g, '<li');
+    html = html.replace(/<\/li><br>/g, '</li>');
+
+    return html;
+}
 
 function t(key, fallback = '') {
     const lang = userSettings.lang;
@@ -172,34 +206,114 @@ export function initUI() {
     // ─────────────────────────────────────────────────────────────────────────
     const checkUpdatesBtn = document.getElementById('checkForUpdatesBtn');
     const updateModal = document.getElementById('updateModal');
+    const downloadBtn = document.getElementById('downloadUpdateBtn');
+    const progressContainer = document.getElementById('updateProgressContainer');
+    const progressBar = document.getElementById('updateProgressBar');
+    const progressPercent = document.getElementById('updateProgressPercent');
+    const progressText = document.getElementById('updateProgressText');
+    const updateModalButtons = document.getElementById('updateModalButtons');
+    const cancelDownloadBtn = document.getElementById('cancelDownloadBtn');
+
+    let isDownloadingUpdate = false;
+
+    // Helper to reset the update UI to its default state
+    function resetUpdateUI() {
+        isDownloadingUpdate = false;
+        if (updateModalButtons && progressContainer) {
+            updateModalButtons.style.display = 'flex';
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+            progressText.innerText = 'Downloading Update...';
+        }
+    }
 
     if (checkUpdatesBtn) {
         checkUpdatesBtn.addEventListener('click', async () => {
             const originalHtml = checkUpdatesBtn.innerHTML;
             checkUpdatesBtn.disabled = true;
-            checkUpdatesBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Checking...</span>`;
+
+            const isAr = userSettings.lang === 'ar';
+            const txtChecking = isAr ? 'جاري التحقق...' : 'Checking...';
+            const txtDownloading = isAr ? 'جاري التحميل الان...' : 'Downloading Update...';
+            const txtInstalling = isAr ? 'جاري التثبيت...' : 'Installing...';
+            const txtCancel = isAr ? 'إلغاء التحميل' : 'Cancel Download';
+            const txtCancelled = isAr ? 'تم الإلغاء' : 'Cancelled';
+            const txtCancelMsg = isAr ? 'تم إلغاء تحميل التحديث.' : 'Update download was cancelled.';
+            const txtFailed = isAr ? 'فشل التحميل' : 'Download Failed';
+            const txtError = isAr ? 'خطأ' : 'Error';
+            const txtErrorMsg = isAr ? 'لا يمكن الاتصال بالخلفية' : 'Could not communicate with background process';
+
+            // تطبيق نص التحقق
+            checkUpdatesBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${txtChecking}</span>`;
 
             try {
                 const result = await window.api.checkForUpdates();
 
                 if (result.error) {
-                    showToast('error', userSettings.lang === 'ar' ? 'فشل التحقق من التحديثات' : 'Update check failed', result.error, 4000);
+                    showToast('error', isAr ? 'فشل التحقق من التحديثات' : 'Update check failed', result.error, 4000);
                 } else if (result.hasUpdate) {
-                    // تعبئة النافذة ببيانات الإصدار
+
+                    // Fill the modal with release data
                     document.getElementById('newVersionTag').innerText = result.latestVersion;
                     document.getElementById('currentVersionTag').innerText = result.currentVersion;
-                    document.getElementById('releaseNotesText').innerText = result.releaseNotes || 'No release notes provided.';
 
-                    const downloadBtn = document.getElementById('downloadUpdateBtn');
-                    downloadBtn.onclick = () => window.api.openExternal(result.downloadUrl);
+                    // Pass the release notes through the Markdown parser and use innerHTML
+                    const notes = result.releaseNotes || 'No release notes provided.';
+                    document.getElementById('releaseNotesText').innerHTML = parseMarkdown(notes);
+
+                    downloadBtn.onclick = async () => {
+                        const asset = result.assets && result.assets.find(a => a.name.endsWith('.exe'));
+                        if (!asset) {
+                            window.api.openExternal(result.downloadUrl);
+                            return;
+                        }
+
+                        // Lock the UI and start download
+                        isDownloadingUpdate = true;
+                        updateModalButtons.style.display = 'none';
+                        progressContainer.style.display = 'block';
+
+                        progressText.innerText = txtDownloading;
+
+                        // Setup the cancel button
+                        if (cancelDownloadBtn) {
+                            cancelDownloadBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> ${txtCancel}`;
+                            cancelDownloadBtn.onclick = () => {
+                                window.api.cancelDownload(); // Send abort signal to main process
+                                resetUpdateUI();
+                                showToast('info', txtCancelled, txtCancelMsg, 3000);
+                            };
+                        }
+
+                        window.api.onUpdateProgress((data) => {
+                            const percent = Math.floor(data.percent);
+                            progressBar.style.width = `${percent}%`;
+                            progressPercent.innerText = `${percent}%`;
+                        });
+
+                        const downloadResult = await window.api.downloadUpdate(asset.browser_download_url, asset.name);
+
+                        if (downloadResult.success && isDownloadingUpdate) {
+                            progressText.innerText = txtInstalling;
+                            progressPercent.innerText = '100%';
+                            setTimeout(() => {
+                                window.api.installUpdate(downloadResult.path);
+                            }, 1500);
+                        } else if (isDownloadingUpdate) {
+                            // Handle failure not caused by manual cancellation
+                            showToast('error', txtFailed, downloadResult.error, 4000);
+                            resetUpdateUI();
+                        }
+                    };
 
                     updateModal.classList.add('active');
                 } else {
-                    const msg = userSettings.lang === 'ar' ? `أنت تستخدم أحدث إصدار (${result.currentVersion})` : `You are running the latest version (${result.currentVersion})`;
-                    showToast('success', userSettings.lang === 'ar' ? 'التطبيق محدث!' : 'Up to date!', msg, 3000);
+                    const msg = isAr ? `أنت تستخدم أحدث إصدار (${result.currentVersion})` : `You are running the latest version (${result.currentVersion})`;
+                    showToast('success', isAr ? 'التطبيق محدث!' : 'Up to date!', msg, 3000);
                 }
             } catch (err) {
-                showToast('error', 'Error', 'Could not communicate with background process', 3000);
+                showToast('error', txtError, txtErrorMsg, 3000);
             } finally {
                 checkUpdatesBtn.disabled = false;
                 checkUpdatesBtn.innerHTML = originalHtml;
@@ -207,12 +321,21 @@ export function initUI() {
         });
     }
 
+    // Modal Close Logic (Registered only ONCE to prevent bugs)
     if (updateModal) {
         document.getElementById('closeUpdateModalBtn').addEventListener('click', () => {
+            if (isDownloadingUpdate) return; // Explicitly block closing during download
             updateModal.classList.remove('active');
+            resetUpdateUI();
         });
+
         updateModal.addEventListener('click', (e) => {
-            if (e.target === updateModal) updateModal.classList.remove('active');
+            if (isDownloadingUpdate) return; // Explicitly block overlay click during download
+
+            if (e.target === updateModal) {
+                updateModal.classList.remove('active');
+                resetUpdateUI();
+            }
         });
     }
 }

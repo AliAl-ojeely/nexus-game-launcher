@@ -12,7 +12,6 @@
     z-index: 9999;
 }
 
-/* دعم كلا الكلاسين لضمان عمل المودال */
 .modal-overlay.show,
 .modal-overlay.active {
     display: flex;
@@ -56,10 +55,8 @@
     text-overflow: ellipsis;
     overflow: hidden;
     min-width: 0;
-    /* منع الحقل من دفع الأزرار للخارج */
 }
 
-/* تنسيق الحقول التي تظهر تلقائياً (Original Path) */
 .readonly-input {
     background: rgba(255, 255, 255, 0.02) !important;
     border: 1px dashed var(--border-color) !important;
@@ -73,39 +70,44 @@
     color: var(--text-main);
     border: 1px solid var(--border-color);
     padding: 0 15px;
-    /* مساحة جانبية للنص */
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: 0.2s;
     white-space: nowrap;
-    /* يمنع نزول الكلمة لسطر جديد */
     display: flex;
     align-items: center;
     justify-content: center;
     min-width: fit-content;
-    /* الزر يتوسع حسب الكلمة */
     height: 45px;
     flex-shrink: 0;
-    /* يمنع انضغاط الزر */
+}
+
+.folder-btn-blue {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .input-with-btn button:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
+    /* Darken the dynamic accent color by 15% */
+    filter: brightness(0.85) !important;
+    /* Move button slightly up */
+    transform: translateY(-2px) !important;
+    /* Add a dynamic shadow effect */
+    box-shadow: 0 6px 15px var(--shadow-color) !important;
 }
 
-/* الألوان الخاصة بالأزرار الجديدة */
-.folder-btn-blue {
-    background-color: #3b82f6 !important;
-    color: white !important;
-    border: none !important;
+.folder-btn-blue:active {
+    /* Click effect */
+    transform: translateY(1px) !important;
+    filter: brightness(0.75) !important;
+    box-shadow: 0 2px 5px var(--shadow-color) !important;
 }
 
 .input-with-btn .delete-btn {
     width: 45px;
-    /* أزرار الحذف تبقى مربعة لأنها أيقونة فقط */
     height: 45px;
     min-width: 45px;
     display: flex;
@@ -143,11 +145,20 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .save-btn:hover {
-    background: var(--accent-hover);
+    background: var(--accent);
+    filter: brightness(0.85);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+.save-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 .cancel-btn {
@@ -346,11 +357,20 @@
     cursor: pointer;
     width: 100%;
     margin-top: 10px;
-    transition: 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .close-shortcuts-btn:hover {
-    background: var(--accent-hover);
+    background: var(--accent);
+    filter: brightness(0.85);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+.close-shortcuts-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 /* RTL adjustments */

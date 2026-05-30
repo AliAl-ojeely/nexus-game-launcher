@@ -66,6 +66,10 @@ contextBridge.exposeInMainWorld('api', {
 
     // ── Updates ───────────────────────────────────────────────────────────────
     checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+    downloadUpdate: (url, filename) => ipcRenderer.invoke('app:downloadUpdate', url, filename),
+    installUpdate: (filePath) => ipcRenderer.send('app:installUpdate', filePath),
+    onUpdateProgress: (callback) => ipcRenderer.on('update:progress', (_event, data) => callback(data)),
+    cancelDownload: () => ipcRenderer.send('app:cancelDownload'),
 
     // ── Window App Size ──────────────────────────────────────────────────────────────
     getWindowSize: () => ipcRenderer.invoke('app:getWindowSize'),
