@@ -8,15 +8,18 @@ const backups = require('../modules/backup');
 const dialogs = require('../modules/dialogs');
 const launcher = require('../modules/game-launcher');
 const si = require('systeminformation');
+const sessions = require('../modules/playSessions');   // 🆕
 
 const { initAppData } = require('../modules/app-settings');
 const { registerDatabaseIPC } = require('./ipc/ipc-database');
 const { registerApiIPC } = require('./ipc/ipc-api');
 const { registerBackupIPC } = require('./ipc/ipc-backup');
+
 initAppData();
 db.initDB();
 playtimeDB.initPlaytimeDB();
 backups.initBackupDB();
+sessions.initSessionsDB();   // 🆕
 
 // ─── Window ─────────────────────────────────
 

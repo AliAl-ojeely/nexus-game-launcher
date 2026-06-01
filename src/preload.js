@@ -34,10 +34,11 @@ contextBridge.exposeInMainWorld('api', {
     openFolder: (path) => ipcRenderer.send('shell:openFolder', path),
 
     // ── Game Event Listeners ──────────────────────────────────────────────────
-    onGameStopped: (cb) => ipcRenderer.on('game:stopped', (_e, data) => cb(data)),
+    onGameStopped: (callback) => {ipcRenderer.on('game:stopped', (event, data) => callback(data));},
     onGameError: (cb) => ipcRenderer.on('game:error', (_e, data) => cb(data)),
     removeGameStoppedListener: () => ipcRenderer.removeAllListeners('game:stopped'),
     removeGameErrorListener: () => ipcRenderer.removeAllListeners('game:error'),
+
 
     // ── Order ──────────────────────────────────────────────────────────────
     getGameOrder: () => ipcRenderer.invoke('db:getGameOrder'),
@@ -60,6 +61,27 @@ contextBridge.exposeInMainWorld('api', {
     removeGameTickListener: () => ipcRenderer.removeAllListeners('game:tick'),
 
     getIconDataURL: (path) => ipcRenderer.invoke('get-icon-dataurl', path),
+
+    getAllPlaytime: () => ipcRenderer.invoke('get-all-playtime'),
+    clearLastPlayed: (gameName) => ipcRenderer.invoke('clear-last-played', gameName),
+
+
+    // ── Statics For Games ──────────────────────────────────────────────────────────────
+    getGameStats: (gameName, periodDays) => ipcRenderer.invoke('get-game-stats', gameName, periodDays),
+    getOverallStats: (periodDays) => ipcRenderer.invoke('get-overall-stats', periodDays),
+    getDailyStats: (gameName, periodDays) => ipcRenderer.invoke('get-daily-stats', gameName, periodDays),
+    getGameNamesWithSessions: () => ipcRenderer.invoke('get-game-names-with-sessions'),
+    getGameList: () => ipcRenderer.invoke('get-game-list'),
+    getAllSessions: () => ipcRenderer.invoke('get-all-sessions'),
+    getLongestSession: (gameName) => ipcRenderer.invoke('get-longest-session', gameName),
+    getShortestSession: (gameName) => ipcRenderer.invoke('get-shortest-session', gameName),
+    getPlaytimeByWeekday: () => ipcRenderer.invoke('get-playtime-by-weekday'),
+    getPlaytimeByHour: () => ipcRenderer.invoke('get-playtime-by-hour'),
+    getLongestStreak: () => ipcRenderer.invoke('get-longest-streak'),
+    getTopGames: (limit, periodDays) => ipcRenderer.invoke('get-top-games', limit, periodDays),
+    getUniqueGamesCount: () => ipcRenderer.invoke('get-unique-games-count'),
+    getFirstPlayedDate: () => ipcRenderer.invoke('get-first-played-date'),
+    getMonthlyPlaytime: (months) => ipcRenderer.invoke('get-monthly-playtime', months),
 
     // ── User Path Data ──────────────────────────────────────────────────────────────
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),

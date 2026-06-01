@@ -1,5 +1,6 @@
 :root {
     --bg-body: #0b131b;
+    --bg-body-rgb: 11, 19, 27;
     --bg-sidebar: #121d28;
     --bg-topbar: rgba(11, 19, 27, 0.95);
     --bg-card: #1e293b;
@@ -16,6 +17,7 @@
 }
 
 .light-mode {
+    --bg-body-rgb: 241, 245, 249;
     --bg-body: #f1f5f9;
     --bg-sidebar: #ffffff;
     --bg-topbar: rgba(241, 245, 249, 0.95);
@@ -27,10 +29,10 @@
     --border-color: rgba(0, 0, 0, 0.1);
     --shadow-color: rgba(0, 0, 0, 0.1);
     --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    --accent: #d92b3a;
 }
 
 .darker-mode {
+    --bg-body-rgb: 0, 0, 0;
     --bg-body: #000000;
     --bg-sidebar: #0a0a0a;
     --bg-topbar: rgba(0, 0, 0, 0.95);

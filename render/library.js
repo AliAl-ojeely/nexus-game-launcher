@@ -31,70 +31,164 @@ function resolveDisplayIcon(assets) {
 // CREATE GAME CARD
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function createGameCard(game, index) {
+/**
+ * Creates a game card.
+ * @param {Object} game - Game object
+ * @param {number} index - Animation index
+ * @param {boolean} hideActions - If true, shows only a remove-from-recent button (for recently played)
+ * @param {boolean} hideEdit - If true, hides the edit button
+ * @param {boolean} hideDelete - If true, hides the delete button
+ */
+export function createGameCard(game, index, hideActions = false, hideEdit = false, hideDelete = false) {
     const card = document.createElement('div');
     card.className = 'game-card';
     card.style.animationDelay = `${index * 0.03}s`;
     card.setAttribute('data-title', game.name.toLowerCase());
-    card.setAttribute('data-game-id', game.id);          // ← for reordering
+    card.setAttribute('data-game-id', game.id);
 
-    const isFav = game.isFavorite ? 'active-fav' : '';
-    const favIcon = game.isFavorite ? 'fa-solid' : 'fa-regular';
     const posterUrl = toSafeUrl(game.assets?.poster || '');
 
+    let actionsHtml = '';
+    if (hideActions) {
+        // Recently played – only remove button (trash can)
+        actionsHtml = `
+            <div class="game-actions">
+                <button class="action-btn delete-btn" title="${userSettings.lang === 'ar' ? 'إزالة من الحديث' : 'Remove from recent'}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+    } else {
+        // Normal card (library / favorites)
+        const isFav = game.isFavorite ? 'active-fav' : '';
+        const favIcon = game.isFavorite ? 'fa-solid' : 'fa-regular';
+        const editButton = !hideEdit ? `<button class="action-btn edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>` : '';
+        const deleteButton = !hideDelete ? `<button class="action-btn delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>` : '';
+        actionsHtml = `
+            <div class="game-actions">
+                <button class="action-btn fav-btn ${isFav}" title="Favorite">
+                    <i class="${favIcon} fa-heart"></i>
+                </button>
+                ${editButton}
+                ${deleteButton}
+            </div>
+        `;
+    }
+
     card.innerHTML = `
-        <div class="game-actions">
-            <button class="action-btn fav-btn ${isFav}" title="Favorite"><i class="${favIcon} fa-heart"></i></button>
-            <button class="action-btn edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
-            <button class="action-btn delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        ${actionsHtml}
+        <img class="game-poster" src="${posterUrl}" alt="${game.name}" 
+             onerror="this.style.background='#1e293b'; this.removeAttribute('src');">
+        <div class="game-info">
+            <div class="game-title">${escapeHtml(game.name)}</div>
         </div>
-        <img class="game-poster" src="${posterUrl}" alt="${game.name}" onerror="this.style.background='#1e293b'; this.removeAttribute('src');">
-        <div class="game-info"><div class="game-title">${game.name}</div></div>
     `;
 
+    // Click handler – open details (ignore buttons)
     card.addEventListener('click', (e) => {
-        if (!e.target.closest('.action-btn')) openGameDetailsPage(game);
-    });
-
-    card.querySelector('.delete-btn').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        if (confirm(userSettings.lang === 'ar' ? `حذف "${game.name}"؟` : `Delete "${game.name}"?`)) {
-            await window.api.deleteGame(game.id);
-            renderGames();
+        if (!e.target.closest('.action-btn')) {
+            openGameDetailsPage(game);
         }
     });
 
-    card.querySelector('.edit-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.editingGameId = game.id;
-        state.tempGamePath = game.path;
+    // ── Attach button handlers ─────────────────────────────────────────────
+    if (hideActions) {
+        // Remove from recent
+        const removeBtn = card.querySelector('.delete-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const confirmMsg = userSettings.lang === 'ar'
+                    ? `هل تريد إزالة "${game.name}" من قائمة الألعاب الحديثة؟`
+                    : `Remove "${game.name}" from recently played list?`;
+                if (confirm(confirmMsg)) {
+                    await window.api.clearLastPlayed(game.name);
+                    renderGames();
+                }
+            });
+        }
+    } else {
+        // Delete button (full game deletion)
+        if (!hideDelete) {
+            const deleteBtn = card.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmMsg = userSettings.lang === 'ar'
+                        ? `حذف "${game.name}"؟`
+                        : `Delete "${game.name}"?`;
+                    if (confirm(confirmMsg)) {
+                        await window.api.deleteGame(game.id);
+                        renderGames();
+                    }
+                });
+            }
+        }
 
-        document.getElementById('gameNameInput').value = game.name;
-        document.getElementById('gamePathInput').value = game.path;
+        // Edit button
+        if (!hideEdit) {
+            const editBtn = card.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    state.editingGameId = game.id;
+                    state.tempGamePath = game.path;
 
-        const currentPos = game.assets?.poster || "";
-        document.getElementById('customPosterInput').value = currentPos.startsWith('file:///') ? decodeURIComponent(currentPos.replace('file:///', '')) : "";
+                    document.getElementById('gameNameInput').value = game.name;
+                    document.getElementById('gamePathInput').value = game.path;
 
-        const currentLogo = game.assets?.logo || "";
-        document.getElementById('customLogoInput').value = currentLogo.startsWith('file:///') ? decodeURIComponent(currentLogo.replace('file:///', '')) : "";
+                    const currentPoster = game.assets?.poster || '';
+                    document.getElementById('customPosterInput').value = currentPoster.startsWith('file:///')
+                        ? decodeURIComponent(currentPoster.replace('file:///', ''))
+                        : '';
 
-        const currentBg = game.assets?.background || "";
-        document.getElementById('customBgInput').value = currentBg.startsWith('file:///') ? decodeURIComponent(currentBg.replace('file:///', '')) : "";
+                    const currentLogo = game.assets?.logo || '';
+                    document.getElementById('customLogoInput').value = currentLogo.startsWith('file:///')
+                        ? decodeURIComponent(currentLogo.replace('file:///', ''))
+                        : '';
 
-        document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar' ? "حفظ التعديلات" : "Save Changes";
-        document.getElementById('launchArgsInput').value = game.arguments || "";
+                    const currentBg = game.assets?.background || '';
+                    document.getElementById('customBgInput').value = currentBg.startsWith('file:///')
+                        ? decodeURIComponent(currentBg.replace('file:///', ''))
+                        : '';
 
-        document.getElementById('editModal').style.display = 'flex';
-    });
+                    const currentIcon = game.assets?.icon || '';
+                    document.getElementById('customIconInput').value = currentIcon.startsWith('file:///')
+                        ? decodeURIComponent(currentIcon.replace('file:///', ''))
+                        : '';
 
-    card.querySelector('.fav-btn').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        game.isFavorite = !game.isFavorite;
-        await window.api.updateGame(game);
-        renderGames();
-    });
+                    document.getElementById('launchArgsInput').value = game.arguments || '';
+                    document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar'
+                        ? 'حفظ التعديلات'
+                        : 'Save Changes';
+
+                    document.getElementById('editModal').style.display = 'flex';
+                });
+            }
+        }
+
+        // Favorite button (always present)
+        const favBtn = card.querySelector('.fav-btn');
+        if (favBtn) {
+            favBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                game.isFavorite = !game.isFavorite;
+                await window.api.updateGame(game);
+                renderGames();
+            });
+        }
+    }
 
     return card;
+}
+
+function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function (m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,57 +205,74 @@ export async function renderGames() {
     if (recentlyPlayedContainer) recentlyPlayedContainer.innerHTML = '';
 
     try {
-        state.allGamesData = await window.api.getGames();
+        // Load games and playtime data in parallel
+        const [games, playtimeMap] = await Promise.all([
+            window.api.getGames(),
+            window.api.getAllPlaytime()
+        ]);
+
+        state.allGamesData = games;
 
         const countDisplay = document.getElementById('gameCountDisplay');
-        if (countDisplay) {
-            countDisplay.innerText = state.allGamesData.length;
-        }
+        if (countDisplay) countDisplay.innerText = games.length;
 
-        // 1. Process Recently Played Games
+        // ─────────────────────────────────────────────────────────────────────
+        // 1. RECENTLY PLAYED (merged with playtimeMap)
+        // ─────────────────────────────────────────────────────────────────────
         if (recentlyPlayedContainer) {
-            // Filter games that have been played, then sort by most recent
-            const recentGames = [...state.allGamesData]
-                .filter(g => g.lastPlayed || (g.playtime && g.playtime > 0))
-                .sort((a, b) => {
-                    const dateA = a.lastPlayed ? new Date(a.lastPlayed).getTime() : 0;
-                    const dateB = b.lastPlayed ? new Date(b.lastPlayed).getTime() : 0;
-                    return dateB - dateA;
-                })
+            const gamesWithLastPlayed = games.map(game => {
+                const pt = playtimeMap[game.name];
+                return {
+                    ...game,
+                    lastPlayed: pt?.lastPlayed || null
+                };
+            });
+
+            const recentGames = gamesWithLastPlayed
+                .filter(g => g.lastPlayed && typeof g.lastPlayed === 'string')
+                .sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed))
                 .slice(0, 10);
 
             if (recentGames.length > 0) {
-                recentGames.forEach((game, index) => {
-                    recentlyPlayedContainer.appendChild(createGameCard(game, index));
+                recentGames.forEach((game, idx) => {
+                    recentlyPlayedContainer.appendChild(createGameCard(game, idx, true)); // hideActions = true
                 });
             } else {
-                // Show a placeholder message if no games have been played yet
+                const isAr = userSettings.lang === 'ar';
                 recentlyPlayedContainer.innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
                         <i class="fa-solid fa-ghost" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <p style="margin: 0; font-size: 16px; font-weight: 500;">No recently played games found.</p>
-                        <small style="opacity: 0.7;">Launch a game from your library to see it here!</small>
+                        <p style="margin: 0; font-size: 16px; font-weight: 500;">
+                            ${isAr ? 'لا توجد ألعاب تم تشغيلها مؤخراً' : 'No recently played games found.'}
+                        </p>
+                        <small style="opacity: 0.7;">
+                            ${isAr ? 'قم بتشغيل أي لعبة من مكتبتك لتظهر هنا!' : 'Launch a game from your library to see it here!'}
+                        </small>
                     </div>
                 `;
             }
         }
 
-        // 2. Process Main Library
+        // ─────────────────────────────────────────────────────────────────────
+        // 2. MAIN LIBRARY (with full controls: fav, edit, delete)
+        // ─────────────────────────────────────────────────────────────────────
         if (gamesContainer) {
             const savedOrder = await loadOrder('main');
-            const orderedGames = applyOrder(state.allGamesData, savedOrder);
+            const orderedGames = applyOrder(games, savedOrder);   // ✅ orderedGames defined here
             orderedGames.forEach((game, index) => {
-                gamesContainer.appendChild(createGameCard(game, index));
+                gamesContainer.appendChild(createGameCard(game, index, false, false, false));
             });
         }
 
-        // 3. Process Favorites
+        // ─────────────────────────────────────────────────────────────────────
+        // 3. FAVORITES (only favorite button – no edit, no delete)
+        // ─────────────────────────────────────────────────────────────────────
         if (favoritesContainer) {
-            const favGames = state.allGamesData.filter(g => g.isFavorite);
+            const favGames = games.filter(g => g.isFavorite);
             const savedFavOrder = await loadOrder('favorites');
-            const orderedFavGames = applyOrder(favGames, savedFavOrder);
+            const orderedFavGames = applyOrder(favGames, savedFavOrder); // ✅ orderedFavGames defined here
             orderedFavGames.forEach((game, index) => {
-                favoritesContainer.appendChild(createGameCard(game, index));
+                favoritesContainer.appendChild(createGameCard(game, index, false, true, true));
             });
         }
 
@@ -182,10 +293,9 @@ export function initReorderButton() {
         return;
     }
 
-    const shortcutsBtn = document.getElementById('shortcutsBtn');
     const addBtn = document.getElementById('addGameBtn');
-    if (!shortcutsBtn || !addBtn) {
-        console.error('[Reorder] shortcutsBtn or addGameBtn not found');
+    if (!addBtn) {
+        console.error('[Reorder] addGameBtn not found');
         return;
     }
 
@@ -208,6 +318,7 @@ export function initReorderButton() {
     topbarActions.insertBefore(resetBtn, addBtn);
 
     const gamesContainer = document.getElementById('gamesContainer');
+    const favoritesContainer = document.getElementById('favoritesContainer');
     if (!gamesContainer) {
         console.error('[Reorder] gamesContainer not found');
         return;

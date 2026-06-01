@@ -8,7 +8,9 @@ const rawg = require('../../modules/rawg-api');
 const steam = require('../../modules/steam-api');
 const steamGrid = require('../../modules/steamGrid-api');
 const youtube = require('../../modules/youtube-api');
+const playtime = require('../../modules/playtime');
 const db = require('../../modules/database');
+const sessions = require('../../modules/playSessions');
 
 const { mergeMetadata } = require('../../modules/metadata');
 const { ASSETS_DIR } = require('../../modules/app-settings');
@@ -307,6 +309,76 @@ function registerApiIPC() {
     ipcMain.on('app:cancelDownload', () => {
         console.log('[UPDATER] Download cancelled by user.');
         updater.defaultUpdater.cancelDownload();
+    });
+
+    ipcMain.handle('get-all-playtime', () => {
+        return playtime.getAllPlaytimeData();
+    });
+
+    ipcMain.handle('clear-last-played', (_, gameName) => {
+        return playtime.clearLastPlayed(gameName);
+    });
+
+    ipcMain.handle('get-game-stats', (_, gameName, periodDays) => {
+        return sessions.getGameStats(gameName, periodDays);
+    });
+
+    ipcMain.handle('get-overall-stats', (_, periodDays) => {
+        return sessions.getOverallStats(periodDays);
+    });
+
+    ipcMain.handle('get-daily-stats', (_, gameName, periodDays) => {
+        return sessions.getDailyStats(gameName, periodDays);
+    });
+
+    ipcMain.handle('get-game-names-with-sessions', () => {
+        return sessions.getGameNamesWithSessions();
+    });
+
+    ipcMain.handle('get-game-list', () => {
+        const allGames = db.getGames();
+        const gameNames = sessions.getGameNamesWithSessions();
+        return allGames.filter(g => gameNames.includes(g.name));
+    });
+
+    ipcMain.handle('get-all-sessions', () => {
+        return sessions.getAllSessions();
+    });
+
+    ipcMain.handle('get-longest-session', (_, gameName) => {
+        return sessions.getLongestSession(gameName);
+    });
+
+    ipcMain.handle('get-shortest-session', (_, gameName) => {
+        return sessions.getShortestSession(gameName);
+    });
+
+    ipcMain.handle('get-playtime-by-weekday', () => {
+        return sessions.getPlaytimeByWeekday();
+    });
+
+    ipcMain.handle('get-playtime-by-hour', () => {
+        return sessions.getPlaytimeByHour();
+    });
+
+    ipcMain.handle('get-longest-streak', () => {
+        return sessions.getLongestStreak();
+    });
+
+    ipcMain.handle('get-top-games', (_, limit, periodDays) => {
+        return sessions.getTopGames(limit, periodDays);
+    });
+
+    ipcMain.handle('get-unique-games-count', () => {
+        return sessions.getUniqueGamesCount();
+    });
+
+    ipcMain.handle('get-first-played-date', () => {
+        return sessions.getFirstPlayedDate();
+    });
+
+    ipcMain.handle('get-monthly-playtime', (_, months) => {
+        return sessions.getMonthlyPlaytime(months);
     });
 }
 

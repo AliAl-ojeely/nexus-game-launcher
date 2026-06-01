@@ -45,7 +45,6 @@
 
 .search-box input:focus {
     border-color: var(--accent);
-    /* إزالة الظل الأحمر الثابت والاعتماد على لون الحدود للجمالية */
     box-shadow: 0 0 0 2px var(--border-color);
 }
 
@@ -588,4 +587,87 @@ body.darker-mode .toast {
 #lightboxImage {
     will-change: transform;
     transition: opacity 0.4s ease;
+}
+
+.remove-recent-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    opacity: 0;
+    color: #ff6b6b;
+}
+
+.game-card:hover .remove-recent-btn {
+    opacity: 1;
+}
+
+.remove-recent-btn:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+.library-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.library-stats {
+    margin-top: auto;
+    background: var(--border-color);
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.stats-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stats-number {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: center;
+}
+
+.shortcuts-icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shortcuts-icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+    transform: scale(1.05);
+}
+
+/* Make settings and statistics page header icons use accent color */
+.settings-container h2 i,
+.stats-header h2 i {
+    color: var(--accent);
 }

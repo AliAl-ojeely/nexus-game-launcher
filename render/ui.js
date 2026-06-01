@@ -42,7 +42,8 @@ function t(key, fallback = '') {
 }
 
 export function applyLanguage(lang) {
-    document.getElementById('htmlRoot').dir = lang === 'ar' ? 'rtl' : 'ltr';
+    const htmlRoot = document.getElementById('htmlRoot');
+    if (htmlRoot) htmlRoot.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.body.style.fontFamily = lang === 'ar' ? "'Cairo', sans-serif" : "'Poppins', sans-serif";
 
     if (typeof dictionary !== 'undefined') {
@@ -60,7 +61,8 @@ export function applyLanguage(lang) {
 export function handleGoBack() {
     const detailsArea = document.getElementById('gameDetailsArea');
     if (detailsArea && detailsArea.classList.contains('active')) {
-        document.getElementById('backToLibraryBtn').click();
+        const backBtn = document.getElementById('backToLibraryBtn');
+        if (backBtn) backBtn.click();
     }
 }
 
@@ -74,29 +76,39 @@ function applyThemeClass(theme) {
 }
 
 export function initUI() {
-    document.getElementById('fpsToggle').checked = localStorage.getItem('showFPS') === 'true';
-    document.getElementById('sidebarLogoName').innerText = userSettings.appName;
-    document.getElementById('appNameSetting').value = userSettings.appName;
-
-    if (document.getElementById('globalBackupPath')) {
-        document.getElementById('globalBackupPath').value = userSettings.globalBackupVault;
+    // Helper to safely set text content
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
     }
 
-    document.getElementById('themeSetting').value = userSettings.theme;
+    const fpsToggle = document.getElementById('fpsToggle');
+    if (fpsToggle) fpsToggle.checked = localStorage.getItem('showFPS') === 'true';
+
+    setText('sidebarLogoName', userSettings.appName);
+
+    const appNameInput = document.getElementById('appNameSetting');
+    if (appNameInput) appNameInput.value = userSettings.appName;
+
+    const globalBackupPath = document.getElementById('globalBackupPath');
+    if (globalBackupPath) globalBackupPath.value = userSettings.globalBackupVault;
+
+    const themeSetting = document.getElementById('themeSetting');
+    if (themeSetting) themeSetting.value = userSettings.theme;
     applyThemeClass(userSettings.theme);
 
-    document.getElementById('langSetting').value = userSettings.lang;
+    const langSetting = document.getElementById('langSetting');
+    if (langSetting) langSetting.value = userSettings.lang;
     applyLanguage(userSettings.lang);
 
-    document.getElementById('gridSizeSetting').value = userSettings.gridSize;
+    const gridSizeSetting = document.getElementById('gridSizeSetting');
+    if (gridSizeSetting) gridSizeSetting.value = userSettings.gridSize;
     document.documentElement.style.setProperty('--grid-size', userSettings.gridSize);
 
     // Apply and set the Accent Color
     document.documentElement.style.setProperty('--accent', userSettings.accentColor);
     const accentInput = document.getElementById('accentColorSetting');
-    if (accentInput) {
-        accentInput.value = userSettings.accentColor;
-    }
+    if (accentInput) accentInput.value = userSettings.accentColor;
 
     const showTitlesToggle = document.getElementById('showTitlesToggle');
     let showTitles = true;
@@ -123,63 +135,91 @@ export function initUI() {
     }
     updateTitleVisibility(userSettings.gridSize);
 
-    document.getElementById('saveGeneralSettings').addEventListener('click', () => {
-        const newName = document.getElementById('appNameSetting').value;
-        const newTheme = document.getElementById('themeSetting').value;
-        const newLang = document.getElementById('langSetting').value;
-        const newGrid = document.getElementById('gridSizeSetting').value;
-        const newVault = document.getElementById('globalBackupPath').value;
+    const saveBtn = document.getElementById('saveGeneralSettings');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const newName = document.getElementById('appNameSetting')?.value || 'Nexus Launcher';
+            const newTheme = document.getElementById('themeSetting')?.value || 'dark';
+            const newLang = document.getElementById('langSetting')?.value || 'en';
+            const newGrid = document.getElementById('gridSizeSetting')?.value || '260px';
+            const newVault = document.getElementById('globalBackupPath')?.value || '';
+            const newAccent = accentInput ? accentInput.value : userSettings.accentColor;
 
-        // Fetch new accent color
-        const newAccent = accentInput ? accentInput.value : userSettings.accentColor;
+            userSettings.lang = newLang;
+            userSettings.appName = newName;
+            userSettings.theme = newTheme;
+            userSettings.gridSize = newGrid;
+            userSettings.globalBackupVault = newVault;
+            userSettings.accentColor = newAccent;
 
-        userSettings.lang = newLang;
-        userSettings.appName = newName;
-        userSettings.theme = newTheme;
-        userSettings.gridSize = newGrid;
-        userSettings.globalBackupVault = newVault;
-        userSettings.accentColor = newAccent;
+            localStorage.setItem('showFPS', document.getElementById('fpsToggle')?.checked || false);
+            localStorage.setItem('appName', newName);
+            localStorage.setItem('theme', newTheme);
+            localStorage.setItem('lang', newLang);
+            localStorage.setItem('gridSize', newGrid);
+            localStorage.setItem('globalBackupVault', newVault);
+            localStorage.setItem('accentColor', newAccent);
 
-        localStorage.setItem('showFPS', document.getElementById('fpsToggle').checked);
-        localStorage.setItem('appName', newName);
-        localStorage.setItem('theme', newTheme);
-        localStorage.setItem('lang', newLang);
-        localStorage.setItem('gridSize', newGrid);
-        localStorage.setItem('globalBackupVault', newVault);
-        localStorage.setItem('accentColor', newAccent);
+            if (showTitlesToggle) {
+                localStorage.setItem('showTitles', showTitlesToggle.checked);
+            }
 
-        if (showTitlesToggle) {
-            localStorage.setItem('showTitles', showTitlesToggle.checked);
-        }
+            setText('sidebarLogoName', newName);
+            applyThemeClass(newTheme);
+            document.documentElement.style.setProperty('--grid-size', newGrid);
+            document.documentElement.style.setProperty('--accent', newAccent);
+            updateTitleVisibility(newGrid);
+            applyLanguage(newLang);
 
-        document.getElementById('sidebarLogoName').innerText = newName;
-        applyThemeClass(newTheme);
-        document.documentElement.style.setProperty('--grid-size', newGrid);
-        document.documentElement.style.setProperty('--accent', newAccent);
-        updateTitleVisibility(newGrid);
-        applyLanguage(newLang);
-
-        showToast('success', newLang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved', '', 3000);
-    });
+            showToast('success', newLang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved', '', 3000);
+        });
+    }
 
     // Navigation logic
-    document.querySelectorAll('.nav-item').forEach(item => {
+    const navItems = document.querySelectorAll('.nav-item');
+    const hideTopbarPages = ['settingsArea', 'recentArea', 'favoritesArea', 'statsArea'];
+
+    navItems.forEach(item => {
         item.addEventListener('click', function () {
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            navItems.forEach(nav => nav.classList.remove('active'));
             this.classList.add('active');
+
             document.querySelectorAll('.page-area').forEach(page => page.classList.remove('active'));
+
             const targetArea = this.getAttribute('data-target');
-            document.getElementById(targetArea).classList.add('active');
-            state.currentTab = targetArea;
-            document.getElementById('mainTopbar').style.display = targetArea === 'settingsArea' ? 'none' : 'flex';
+            if (!targetArea) return;
+
+            const targetPage = document.getElementById(targetArea);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                state.currentTab = targetArea;
+            } else {
+                console.error(`Navigation target "${targetArea}" not found in DOM.`);
+                return;
+            }
+
+            const topbar = document.getElementById('mainTopbar');
+            if (topbar) {
+                topbar.style.display = hideTopbarPages.includes(targetArea) ? 'none' : 'flex';
+            }
         });
     });
 
-    document.getElementById('backToLibraryBtn').addEventListener('click', () => {
-        document.getElementById('gameDetailsArea').classList.remove('active');
-        document.getElementById(state.currentTab).classList.add('active');
-        if (state.currentTab !== 'settingsArea') document.getElementById('mainTopbar').style.display = 'flex';
-    });
+    const backBtn = document.getElementById('backToLibraryBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            const detailsArea = document.getElementById('gameDetailsArea');
+            if (detailsArea) detailsArea.classList.remove('active');
+
+            const currentPage = document.getElementById(state.currentTab);
+            if (currentPage) currentPage.classList.add('active');
+
+            const topbar = document.getElementById('mainTopbar');
+            if (topbar && !hideTopbarPages.includes(state.currentTab)) {
+                topbar.style.display = 'flex';
+            }
+        });
+    }
 
     // Developer Modal logic
     const logoContainer = document.querySelector('.sidebar .logo');
@@ -216,15 +256,14 @@ export function initUI() {
 
     let isDownloadingUpdate = false;
 
-    // Helper to reset the update UI to its default state
     function resetUpdateUI() {
         isDownloadingUpdate = false;
         if (updateModalButtons && progressContainer) {
             updateModalButtons.style.display = 'flex';
             progressContainer.style.display = 'none';
-            progressBar.style.width = '0%';
-            progressPercent.innerText = '0%';
-            progressText.innerText = 'Downloading Update...';
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercent) progressPercent.innerText = '0%';
+            if (progressText) progressText.innerText = 'Downloading Update...';
         }
     }
 
@@ -244,7 +283,6 @@ export function initUI() {
             const txtError = isAr ? 'خطأ' : 'Error';
             const txtErrorMsg = isAr ? 'لا يمكن الاتصال بالخلفية' : 'Could not communicate with background process';
 
-            // تطبيق نص التحقق
             checkUpdatesBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${txtChecking}</span>`;
 
             try {
@@ -252,63 +290,58 @@ export function initUI() {
 
                 if (result.error) {
                     showToast('error', isAr ? 'فشل التحقق من التحديثات' : 'Update check failed', result.error, 4000);
-                } else if (result.hasUpdate) {
+                } else if (result.hasUpdate && updateModal) {
+                    const newVersionSpan = document.getElementById('newVersionTag');
+                    const currentVersionSpan = document.getElementById('currentVersionTag');
+                    if (newVersionSpan) newVersionSpan.innerText = result.latestVersion;
+                    if (currentVersionSpan) currentVersionSpan.innerText = result.currentVersion;
 
-                    // Fill the modal with release data
-                    document.getElementById('newVersionTag').innerText = result.latestVersion;
-                    document.getElementById('currentVersionTag').innerText = result.currentVersion;
-
-                    // Pass the release notes through the Markdown parser and use innerHTML
                     const notes = result.releaseNotes || 'No release notes provided.';
-                    document.getElementById('releaseNotesText').innerHTML = parseMarkdown(notes);
+                    const releaseNotesDiv = document.getElementById('releaseNotesText');
+                    if (releaseNotesDiv) releaseNotesDiv.innerHTML = parseMarkdown(notes);
 
-                    downloadBtn.onclick = async () => {
-                        const asset = result.assets && result.assets.find(a => a.name.endsWith('.exe'));
-                        if (!asset) {
-                            window.api.openExternal(result.downloadUrl);
-                            return;
-                        }
+                    if (downloadBtn) {
+                        downloadBtn.onclick = async () => {
+                            const asset = result.assets && result.assets.find(a => a.name.endsWith('.exe'));
+                            if (!asset) {
+                                window.api.openExternal(result.downloadUrl);
+                                return;
+                            }
 
-                        // Lock the UI and start download
-                        isDownloadingUpdate = true;
-                        updateModalButtons.style.display = 'none';
-                        progressContainer.style.display = 'block';
+                            isDownloadingUpdate = true;
+                            if (updateModalButtons) updateModalButtons.style.display = 'none';
+                            if (progressContainer) progressContainer.style.display = 'block';
+                            if (progressText) progressText.innerText = txtDownloading;
 
-                        progressText.innerText = txtDownloading;
+                            if (cancelDownloadBtn) {
+                                cancelDownloadBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> ${txtCancel}`;
+                                cancelDownloadBtn.onclick = () => {
+                                    window.api.cancelDownload();
+                                    resetUpdateUI();
+                                    showToast('info', txtCancelled, txtCancelMsg, 3000);
+                                };
+                            }
 
-                        // Setup the cancel button
-                        if (cancelDownloadBtn) {
-                            cancelDownloadBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> ${txtCancel}`;
-                            cancelDownloadBtn.onclick = () => {
-                                window.api.cancelDownload(); // Send abort signal to main process
+                            window.api.onUpdateProgress((data) => {
+                                const percent = Math.floor(data.percent);
+                                if (progressBar) progressBar.style.width = `${percent}%`;
+                                if (progressPercent) progressPercent.innerText = `${percent}%`;
+                            });
+
+                            const downloadResult = await window.api.downloadUpdate(asset.browser_download_url, asset.name);
+                            if (downloadResult.success && isDownloadingUpdate) {
+                                if (progressText) progressText.innerText = txtInstalling;
+                                if (progressPercent) progressPercent.innerText = '100%';
+                                setTimeout(() => window.api.installUpdate(downloadResult.path), 1500);
+                            } else if (isDownloadingUpdate) {
+                                showToast('error', txtFailed, downloadResult.error, 4000);
                                 resetUpdateUI();
-                                showToast('info', txtCancelled, txtCancelMsg, 3000);
-                            };
-                        }
-
-                        window.api.onUpdateProgress((data) => {
-                            const percent = Math.floor(data.percent);
-                            progressBar.style.width = `${percent}%`;
-                            progressPercent.innerText = `${percent}%`;
-                        });
-
-                        const downloadResult = await window.api.downloadUpdate(asset.browser_download_url, asset.name);
-
-                        if (downloadResult.success && isDownloadingUpdate) {
-                            progressText.innerText = txtInstalling;
-                            progressPercent.innerText = '100%';
-                            setTimeout(() => {
-                                window.api.installUpdate(downloadResult.path);
-                            }, 1500);
-                        } else if (isDownloadingUpdate) {
-                            // Handle failure not caused by manual cancellation
-                            showToast('error', txtFailed, downloadResult.error, 4000);
-                            resetUpdateUI();
-                        }
-                    };
+                            }
+                        };
+                    }
 
                     updateModal.classList.add('active');
-                } else {
+                } else if (!result.hasUpdate) {
                     const msg = isAr ? `أنت تستخدم أحدث إصدار (${result.currentVersion})` : `You are running the latest version (${result.currentVersion})`;
                     showToast('success', isAr ? 'التطبيق محدث!' : 'Up to date!', msg, 3000);
                 }
@@ -321,17 +354,18 @@ export function initUI() {
         });
     }
 
-    // Modal Close Logic (Registered only ONCE to prevent bugs)
     if (updateModal) {
-        document.getElementById('closeUpdateModalBtn').addEventListener('click', () => {
-            if (isDownloadingUpdate) return; // Explicitly block closing during download
-            updateModal.classList.remove('active');
-            resetUpdateUI();
-        });
+        const closeModalBtn = document.getElementById('closeUpdateModalBtn');
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => {
+                if (isDownloadingUpdate) return;
+                updateModal.classList.remove('active');
+                resetUpdateUI();
+            });
+        }
 
         updateModal.addEventListener('click', (e) => {
-            if (isDownloadingUpdate) return; // Explicitly block overlay click during download
-
+            if (isDownloadingUpdate) return;
             if (e.target === updateModal) {
                 updateModal.classList.remove('active');
                 resetUpdateUI();

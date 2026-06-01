@@ -221,14 +221,13 @@ export function initShortcuts() {
                 return;
             }
 
-            // منع الإغلاق إذا كانت نافذة التحديث مفتوحة والتحميل جارٍ
             const updateModal = document.getElementById('updateModal');
             if (updateModal && updateModal.classList.contains('active')) {
                 const progressContainer = document.getElementById('updateProgressContainer');
                 const isDownloading = progressContainer && progressContainer.style.display === 'block';
 
                 if (isDownloading) {
-                    return; // 🚨 تجاهل زر Esc تماماً أثناء التحميل
+                    return; 
                 } else {
                     updateModal.classList.remove('active');
                     return;
@@ -253,6 +252,13 @@ export function initShortcuts() {
             if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
                 handleGoBack();
             }
+            return;
+        }
+
+        if (event.key === 'F1') {
+            event.preventDefault();
+            const shortcutsModal = document.getElementById('shortcutsModal');
+            if (shortcutsModal) shortcutsModal.classList.add('active');
             return;
         }
 

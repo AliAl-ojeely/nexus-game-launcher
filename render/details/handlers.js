@@ -3,6 +3,7 @@ import { formatTime, formatPlaytime } from '../details-utils.js';
 import { showToast, updateBackupSidebarUI, pulseBackupSuccess } from '../details-components.js';
 import { t } from './helpers.js';
 import { session, resetSession } from './state.js';
+import { renderGames } from '../library.js';
 
 export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
     if (session.isHandlingStop) {
@@ -154,7 +155,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
     if (timerValue) timerValue.innerText = '00:00:00';
 
     const resetDelay = (autoBackup && backupResult.success) ? 3000 : 500;
-    setTimeout(() => {
+    setTimeout(async () => {
         const btn = document.getElementById('detailsPlayBtn');
         if (btn) {
             btn.disabled = false;
@@ -163,6 +164,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
             const playLabel = t('btn_play', userSettings.lang === 'ar' ? 'إلعب الآن' : 'Play');
             btn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${playLabel}</span>`;
         }
+        await renderGames();
     }, resetDelay);
 }
 
@@ -212,9 +214,9 @@ export async function handleCanIRunItCheck() {
                 if (reqBox) reqBox.style.borderColor = "#10b981";
             } else if (mySpecs.ramGB >= reqRamGB) {
                 titleEl.innerText = t('run_it_playable', 'Playable');
-                titleEl.style.color = "#3b82f6";
+                titleEl.style.color = "#e6f63b";
                 descEl.innerText = t('run_it_playable_desc', 'Your PC meets the memory requirements. Expect decent performance on medium settings.');
-                if (reqBox) reqBox.style.borderColor = "#3b82f6";
+                if (reqBox) reqBox.style.borderColor = "#e6f63b";
             } else {
                 titleEl.innerText = t('run_it_warning', 'Warning');
                 titleEl.style.color = "#ef4444";

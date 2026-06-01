@@ -4,24 +4,20 @@
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
-    /* تمت إضافته في حال وجود تمرير أفقي */
 }
 
 ::-webkit-scrollbar-track {
     background: transparent;
-    /* خلفية شفافة ليتناسق مع كل القوائم والمودال */
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: 3px;
     transition: background 0.3s ease;
-    /* إضافة نعومة لتغير اللون */
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent);
-    /* تأثير التمرير المأخوذ من المودال */
 }
 
 body {
@@ -69,7 +65,6 @@ body {
     color: var(--text-main);
     font-family: 'Poppins';
     cursor: pointer;
-    /* 🟢 ضروري ليعرف المستخدم أن الشعار قابل للضغط */
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -138,9 +133,9 @@ body {
 
 .library-stats span {
     display: block;
-    font-size: 20px;
+    font-size: 15px;
     color: var(--text-main);
-    font-weight: 700;
+    font-weight: 600;
     margin-top: 5px;
 }
 
@@ -190,7 +185,6 @@ body {
     }
 }
 
-/* 🟢 تم الإبقاء على هذه الأقسام كما طلبت لضمان عدم نقص الأسطر */
 .details-banner {
     position: relative;
     height: 450px;

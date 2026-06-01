@@ -122,4 +122,19 @@ function resetPlaytime(gameName) {
     }
 }
 
-module.exports = { initPlaytimeDB, getPlaytime, addPlaytime, resetPlaytime, getPlaytimeInfo };
+function getAllPlaytimeData() {
+    return readDB();
+}
+
+function clearLastPlayed(gameName) {
+    const data = readDB();
+    if (data[gameName] && typeof data[gameName] === 'object') {
+        delete data[gameName].lastPlayed;
+        writeDB(data);
+        console.log(`[Playtime DB] Cleared lastPlayed for: ${gameName}`);
+        return true;
+    }
+    return false;
+}
+
+module.exports = { initPlaytimeDB, getPlaytime, addPlaytime, resetPlaytime, getPlaytimeInfo, getAllPlaytimeData, clearLastPlayed };

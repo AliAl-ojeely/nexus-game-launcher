@@ -6,9 +6,10 @@ const { app } = require('electron');
 
 const gameMonitors = new Map();  // gameId → setInterval (process polling)
 const gameTimers = new Map();    // gameId → setInterval (playtime tick)
-const runningGames = new Map();  // gameId → { pid, exeName, gameName, installPath, proc, startTime, pauseOffset, pauseStartTime, event }
+const runningGames = new Map();  // gameId → { pid, exeName, gameName, installPath, proc, startTime, pauseOffset, pauseStartTime, event, sessionIndex }
 const backups = require('./backup');
 const { readSettings } = require('./app-settings');
+const sessions = require('./playSessions');  // 🆕 SESSION LOGGING
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -49,6 +50,12 @@ async function stopMonitor(gameId) {
     stopTimer(gameId);
 
     const elapsed = getElapsedSeconds(gameId);
+
+    // 🆕 SESSION LOGGING – finalise session
+    if (game.sessionIndex !== undefined && elapsed > 0) {
+        sessions.endSession(game.sessionIndex, Date.now(), elapsed);
+        console.log(`[BACKEND] Session recorded for "${game.gameName}": ${elapsed}s`);
+    }
 
     const settings = readSettings();
     const autoBackup = settings.autoBackup !== undefined ? settings.autoBackup : true;
@@ -91,7 +98,7 @@ function startTimer(gameId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CROSS‑PLATFORM PROCESS LISTING (Windows / Linux / macOS)
+// CROSS‑PLATFORM PROCESS LISTING
 // ─────────────────────────────────────────────────────────────────────────────
 function getProcesses(callback) {
     if (process.platform === 'win32') {
@@ -108,7 +115,6 @@ function getProcesses(callback) {
             } catch { callback([]); }
         });
     } else {
-        // Linux / macOS – use ps (command name only, but enough for matching)
         exec('ps -eo pid,comm', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
             if (err || !stdout) return callback([]);
             const lines = stdout.split('\n').slice(1);
@@ -118,7 +124,6 @@ function getProcesses(callback) {
                 if (match) {
                     const pid = parseInt(match[1]);
                     let exePath = match[2].trim();
-                    // On Linux, comm is just the executable name (no path)
                     processes.push({ pid, path: exePath.toLowerCase() });
                 }
             }
@@ -128,7 +133,7 @@ function getProcesses(callback) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SMART MONITOR (for normally launched games)
+// SMART MONITOR
 // ─────────────────────────────────────────────────────────────────────────────
 function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
     let trackedPid = launcherPid;
@@ -166,7 +171,7 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LAUNCH GAME (existing)
+// LAUNCH GAME (with session creation)
 // ─────────────────────────────────────────────────────────────────────────────
 function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
     if (!gamePath) {
@@ -230,6 +235,9 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
             }
         });
 
+        // 🆕 Create a session record for this play
+        const sessionIndex = sessions.startSession(gameName);
+
         runningGames.set(gameId, {
             pid: proc.pid,
             exeName,
@@ -239,7 +247,8 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
             startTime: Date.now(),
             pauseOffset: 0,
             pauseStartTime: null,
-            event
+            event,
+            sessionIndex   // 🆕 store session index
         });
 
         proc.unref();
@@ -262,7 +271,7 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MANUAL PAUSE / RESUME (affects currently running game)
+// MANUAL PAUSE / RESUME
 // ─────────────────────────────────────────────────────────────────────────────
 function pauseTimer() {
     const gameId = [...runningGames.keys()][0];

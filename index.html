@@ -6,7 +6,7 @@
     <title>Nexus Game Launcher</title>
 
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: local-resource:;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: local-resource:; connect-src 'self' https://cdn.jsdelivr.net;">
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.3.0</span>
+            <span class="version-badge">v2.3.5</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -31,12 +31,15 @@
         <div class="nav-item" data-target="favoritesArea">
             <i class="fa-solid fa-heart"></i> <span data-i18n="nav_favorites">Favorites</span>
         </div>
+        <div class="nav-item" data-target="statsArea">
+            <i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_stats">Game Statistics</span>
+        </div>
         <div class="nav-item" data-target="settingsArea">
             <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
         </div>
         <div class="library-stats">
             <span data-i18n="total_games" style="font-size: 13px; font-weight:normal;">Total Installed Games</span>
-            <span id="gameCountDisplay" style="font-size: 20px;">0</span>
+            <span id="gameCountDisplay" style="font-size: 19px;">0</span>
         </div>
     </div>
 
@@ -83,6 +86,142 @@
                 <span data-i18n="title_favorites">My Favorites</span>
             </h2>
             <div class="games-grid" id="favoritesContainer"></div>
+        </div>
+
+        <div id="statsArea" class="page-area">
+            <div class="stats-dashboard">
+
+                <div class="stats-header">
+                    <h2><i class="fa-solid fa-chart-line"></i> <span data-i18n="title_stats">Game Statistics</span></h2>
+                    <button id="overallStatsBtn" class="stats-period-btn" data-i18n="stats_overall">
+                        <i class="fa-solid fa-chart-simple"></i> <span>My Overall Stats</span>
+                    </button>
+                </div>
+        
+                <div class="stats-layout">
+                    <!-- Left sidebar with game list -->
+                    <div class="stats-sidebar">
+                        <div class="stats-game-list" id="statsGameList"></div>
+                    </div>
+        
+                    <!-- Right main area -->
+                    <div class="stats-main">
+                        <div class="stats-period-selector">
+                            <button class="period-btn active" data-days="1" data-i18n="period_day">Day</button>
+                            <button class="period-btn" data-days="7" data-i18n="period_week">Week</button>
+                            <button class="period-btn" data-days="30" data-i18n="period_month">Month</button>
+                            <button class="period-btn" data-days="180" data-i18n="period_6months">6 Months</button>
+                            <button class="period-btn" data-days="365" data-i18n="period_year">Year</button>
+                        </div>
+        
+                        <div class="stats-cards">
+                            <div class="stat-card">
+                                <i class="fa-solid fa-clock"></i>
+                                <h3 data-i18n="stats_total_playtime">Total Playtime</h3>
+                                <p id="statTotalPlaytime">0h 0m</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fa-solid fa-calendar-alt"></i>
+                                <h3 data-i18n="stats_play_count">Play Count</h3>
+                                <p id="statPlayCount">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <h3 data-i18n="stats_avg_session">Average per Session</h3>
+                                <p id="statAvgSession">0h 0m</p>
+                            </div>
+                        </div>
+        
+                        <div class="stats-chart-container">
+                            <canvas id="statsChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
+        
+                <!-- Additional metrics grid (outside the main layout, full width) -->
+                <div class="stats-metrics-grid">
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span data-i18n="longest_session">Longest Session</span>
+                        <strong id="longestSession">-</strong>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-chart-simple"></i>
+                        <span data-i18n="shortest_session">Shortest Session</span>
+                        <strong id="shortestSession">-</strong>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-calendar-week"></i>
+                        <span data-i18n="fav_weekday">Favorite Weekday</span>
+                        <strong id="favWeekday">-</strong>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-clock"></i>
+                        <span data-i18n="peak_hour">Peak Hour</span>
+                        <strong id="peakHour">-</strong>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-fire"></i>
+                        <span data-i18n="longest_streak">Longest Streak</span>
+                        <strong id="longestStreak">-</strong>
+                        <span data-i18n="days">days</span>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-gamepad"></i>
+                        <span data-i18n="unique_games">Unique Games</span>
+                        <strong id="uniqueGamesCount">-</strong>
+                    </div>
+                    <div class="stat-card-mini">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span data-i18n="first_played">First Played</span>
+                        <strong id="firstPlayedDate">-</strong>
+                    </div>
+                </div>
+        
+                <!-- Charts row (weekday + hour) -->
+                <div class="stats-charts-row">
+                    <div class="stats-chart-box">
+                        <canvas id="weekdayChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="stats-chart-box">
+                        <canvas id="hourChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+        
+                <!-- Top games chart -->
+                <div class="stats-chart-container">
+                    <canvas id="topGamesChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Monthly games chart -->
+                <div class="stats-chart-container">
+                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+                </div>
+        
+                <!-- Session history table -->
+                <div class="stats-history">
+                    <h3 data-i18n="recent_sessions">Recent Sessions</h3>
+                    <div class="table-wrapper">
+                        <table id="sessionHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="date_time">Date & Time</th>
+                                    <th data-i18n="game_name">Game</th>
+                                    <th data-i18n="duration">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionHistoryBody"></tbody>
+                        </table>
+                    </div>
+                    <button id="exportCsvBtn" class="export-btn">
+                        <i class="fa-solid fa-download"></i>
+                        <span data-i18n="export_csv">Export to CSV</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- ── Settings ── -->
@@ -645,7 +784,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.3.0</p>
+                <p style="text-align: center;">version 2.3.5</p>
             </div>
         </div>
     </div>
@@ -702,6 +841,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="src/translations.js"></script>
     <script type="module" src="render/render-main.js"></script>
 </body>
