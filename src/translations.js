@@ -161,6 +161,8 @@ const dictionary = {
         double_click_desc: "تشغيل اللعبة مباشرة عند النقر المزدوج على بطاقة اللعبة",
         double_click_note: "إذا تم التعطيل، سيفتح النقر المزدوج صفحة التفاصيل (السلوك الافتراضي).",
         sort_by: "ترتيب حسب",
+        sort_default: "الترتيب اليدوي",
+        sort_added_desc: "الأحدث إضافة",
         sort_name_asc: "الاسم (أ-ي)",
         sort_name_desc: "الاسم (ي-أ)",
         sort_playtime_desc: "الأكثر لعباً",
@@ -169,6 +171,8 @@ const dictionary = {
         game_notes_label: "ملاحظات شخصية",
         recent_limit_label: "عدد الألعاب الحديثة",
         recent_limit_desc: "عدد الألعاب المعروضة في قسم \"لعبت مؤخراً\".",
+        auto_update_label: "التحقق التلقائي من التحديثات",
+        auto_update_desc: "التحقق من التحديثات تلقائياً عند تشغيل اللانشر",
 
         folder_details: "تفاصيل مجلد اللعبة",
         folder_name: "اسم المجلد:",
@@ -178,6 +182,16 @@ const dictionary = {
         folder_size_on_disk: "الحجم على القرص:",
         folder_contains: "المحتويات:",
         folder_created: "تاريخ الإنشاء:",
+
+        export_library_csv: "تصدير المكتبة إلى CSV",
+        export_library_csv_desc: "تصدير جميع الألعاب (الاسم، المسار، وقت اللعب، الملاحظات، إلخ) إلى ملف CSV.",
+        export_success: "تم تصدير المكتبة بنجاح",
+        export_failed: "فشل التصدير",
+        export_no_games: "لا توجد ألعاب للتصدير",
+
+        backup_user_data: "نسخ احتياطي لجميع بيانات المستخدم",
+        backup_user_data_desc: "إنشاء ملف ZIP لجميع بيانات اللانشر (الألعاب، وقت اللعب، الملاحظات، الأصول، إلخ)",
+        backup_creating: "جاري إنشاء النسخ الاحتياطي...",
 
         // Backup translations (Arabic)
         settings_backup_title: "خزنة النسخ الاحتياطي العامة",
@@ -385,6 +399,8 @@ const dictionary = {
         double_click_desc: "Launch game directly when double‑clicking a game card",
         double_click_note: "If disabled, double‑click opens game details (default behaviour).",
         sort_by: "Sort by",
+        sort_default: "Default (Manual Order)",
+        sort_added_desc: "Recently Added",
         sort_name_asc: "Name (A-Z)",
         sort_name_desc: "Name (Z-A)",
         sort_playtime_desc: "Most Played",
@@ -393,6 +409,20 @@ const dictionary = {
         game_notes_label: "Personal Notes",
         recent_limit_label: "Recently Played Limit",
         recent_limit_desc: "Number of games shown in Recently Played section.",
+
+        auto_update_label: "Auto Check for Updates",
+        auto_update_desc: "Check for updates automatically when the launcher starts",
+
+        export_library_csv: "Export Library to CSV",
+        export_library_csv_desc: "Export all games (name, path, playtime, notes, etc.) to a CSV file.",
+        export_success: "Library exported successfully",
+        export_failed: "Export failed",
+        export_no_games: "No games to export",
+
+        backup_user_data: "Backup All User Data",
+        backup_user_data_desc: "Create a ZIP archive of your entire launcher data (games, playtime, notes, assets, etc.)",
+        backup_creating: "Creating backup...",
+
 
         folder_details: "Game Folder Details",
         folder_name: "Folder name:",

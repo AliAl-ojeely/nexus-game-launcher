@@ -86,6 +86,14 @@ export function initUI() {
     const fpsToggle = document.getElementById('fpsToggle');
     if (fpsToggle) fpsToggle.checked = localStorage.getItem('showFPS') === 'true';
 
+    const autoUpdateToggle = document.getElementById('autoUpdateToggle');
+    if (autoUpdateToggle) {
+        autoUpdateToggle.checked = localStorage.getItem('autoUpdate') === 'true';
+        autoUpdateToggle.addEventListener('change', (e) => {
+            localStorage.setItem('autoUpdate', e.target.checked);
+        });
+    }
+
     setText('sidebarLogoName', userSettings.appName);
 
     const appNameInput = document.getElementById('appNameSetting');
@@ -167,6 +175,10 @@ export function initUI() {
 
             if (recentLimitSelect) {
                 localStorage.setItem('recentLimit', recentLimitSelect.value);
+            }
+
+            if (autoUpdateToggle) {
+                localStorage.setItem('autoUpdate', autoUpdateToggle.checked);
             }
 
             setText('sidebarLogoName', newName);

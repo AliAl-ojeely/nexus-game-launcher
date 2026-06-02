@@ -59,15 +59,20 @@
             <div class="sort-dropdown">
                 <label data-i18n="sort_by">Sort by:</label>
                 <select id="sortGamesSelect" class="custom-select">
+                    <option value="default" data-i18n="sort_default">Default (Manual Order)</option>
                     <option value="name_asc" data-i18n="sort_name_asc">Name (A‑Z)</option>
                     <option value="name_desc" data-i18n="sort_name_desc">Name (Z‑A)</option>
                     <option value="playtime_desc" data-i18n="sort_playtime_desc">Most Played</option>
                     <option value="recent_desc" data-i18n="sort_recent_desc">Recently Played</option>
+                    <option value="added_desc" data-i18n="sort_added_desc">Recently Added</option>
                 </select>
             </div>
             <div class="topbar-actions">
                 <button id="shortcutsBtn" class="shortcuts-btn" title="Keyboard Shortcuts">
                     <i class="fa-regular fa-keyboard"></i>
+                </button>
+                <button id="randomGameBtn" class="shortcuts-btn" title="Pick a random game">
+                    <i class="fa-solid fa-dice-d6"></i>
                 </button>
                 <button id="addGameBtn" class="add-btn">
                     <i class="fa-solid fa-folder-plus"></i>
@@ -275,6 +280,33 @@
                                 <i class="fa-solid fa-arrows-rotate"></i>
                                 <span data-i18n="btn_check_updates">Check for Updates</span>
                             </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label data-i18n="auto_update_label">Auto Check for Updates</label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="autoUpdateToggle" class="custom-toggle">
+                                <span class="toggle-label" data-i18n="auto_update_desc">Periodically check for new versions (every 6
+                                    hours)</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button id="exportLibraryCsvBtn" class="folder-btn-blue" style="background: var(--accent);">
+                                <i class="fa-solid fa-table-list"></i>
+                                <span data-i18n="export_library_csv">Export Library to CSV</span>
+                            </button>
+                            <small data-i18n="export_library_csv_desc">Export all games (name, path, playtime, notes, etc.) to a CSV
+                                file.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <button id="backupUserDataBtn" class="folder-btn-blue" style="background: var(--accent);">
+                                <i class="fa-solid fa-database"></i>
+                                <span data-i18n="backup_user_data">Backup All User Data</span>
+                            </button>
+                            <small data-i18n="backup_user_data_desc">Create a ZIP archive of your entire launcher data (games, playtime, notes,
+                                assets, etc.)</small>
                         </div>
         
                         <div class="form-group">

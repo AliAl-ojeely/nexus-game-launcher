@@ -255,12 +255,12 @@ export async function renderGames() {
         }
 
         // ─────────────────────────────────────────────────────────────────────────────
-        // 2. MAIN LIBRARY – apply sorting if active
+        // 2. MAIN LIBRARY – apply sorting (does NOT overwrite manual order)
         // ─────────────────────────────────────────────────────────────────────────────
         if (gamesContainer) {
             const sortSelect = document.getElementById('sortGamesSelect');
             let sortedGames = [...games];
-            const sortValue = sortSelect ? sortSelect.value : 'name_asc';
+            const sortValue = sortSelect ? sortSelect.value : 'default';
 
             switch (sortValue) {
                 case 'name_asc':
@@ -283,8 +283,10 @@ export async function renderGames() {
                         return dateB - dateA;
                     });
                     break;
+                case 'added_desc':
+                    sortedGames.sort((a, b) => b.id - a.id);
+                    break;
                 default:
-                    // manual order fallback
                     const savedOrder = await loadOrder('main');
                     sortedGames = applyOrder(sortedGames, savedOrder);
             }

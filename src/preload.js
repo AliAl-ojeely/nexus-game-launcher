@@ -94,10 +94,13 @@ contextBridge.exposeInMainWorld('api', {
     installUpdate: (filePath) => ipcRenderer.send('app:installUpdate', filePath),
     onUpdateProgress: (callback) => ipcRenderer.on('update:progress', (_event, data) => callback(data)),
     cancelDownload: () => ipcRenderer.send('app:cancelDownload'),
+    onAutoUpdateAvailable: (callback) => ipcRenderer.on('auto-update:available', (_, data) => callback(data)),
+    backupUserData: (savePath) => ipcRenderer.invoke('backup-user-data', savePath),
 
     // ── Window App Size ──────────────────────────────────────────────────────────────
     getWindowSize: () => ipcRenderer.invoke('app:getWindowSize'),
     setWindowSize: (width, height) => ipcRenderer.invoke('app:setWindowSize', width, height),
+
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {
 

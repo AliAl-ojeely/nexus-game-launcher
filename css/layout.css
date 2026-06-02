@@ -175,43 +175,58 @@ body {
 
 /* Sort dropdown – sits right after search */
 .sort-dropdown {
-    position: relative;
     display: flex;
     align-items: center;
-    width: 210px;
-    flex-shrink: 0;
+    gap: 8px;
+    background: var(--bg-sidebar);
+    border-radius: 40px;
+    border: 1px solid var(--border-color);
+    padding: 6px 16px 6px 20px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sort-dropdown:hover {
+    border-color: var(--accent);
+    background: var(--bg-hover);
 }
 
 .sort-dropdown label {
-    position: absolute;
-    left: 16px;
-    color: var(--text-muted);
     font-size: 13px;
     font-weight: 500;
-    pointer-events: none;
-    z-index: 2;
-    white-space: nowrap;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
 }
 
 .sort-dropdown select {
-    width: 100%;
-    padding: 15px 30px 15px 70px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-input);
+    background: transparent;
+    border: none;
     color: var(--text-main);
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
     outline: none;
-    box-sizing: border-box;
+    padding: 6px 24px 6px 8px;
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: var(--dropdown-arrow);
     background-repeat: no-repeat;
-    background-position: right 12px center;
+    background-position: right center;
     background-size: 14px;
-    transition: all 0.3s ease;
+    width: auto;
+    min-width: 130px;
+    transition: color 0.2s;
+}
+
+.darker-mode .sort-dropdown select {
+    border: none !important;
+    outline: none !important;
+}
+
+.sort-dropdown select:hover {
+    color: var(--accent);
 }
 
 .sort-dropdown select:focus {
@@ -219,15 +234,21 @@ body {
 }
 
 .sort-dropdown select option {
-    background-color: var(--bg-sidebar);
+    background: var(--bg-sidebar);
     color: var(--text-main);
-    padding: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    transition: background 0.1s;
 }
 
-.sort-dropdown select option:hover,
+.sort-dropdown select option:hover {
+    background: var(--accent);
+    color: white;
+}
+
 .sort-dropdown select option:focus,
 .sort-dropdown select option:checked {
-    background-color: var(--accent);
+    background: var(--accent);
     color: white;
 }
 
@@ -276,9 +297,13 @@ body {
     right: 16px;
 }
 
+[dir="rtl"] .sort-dropdown {
+    padding: 6px 20px 6px 16px;
+}
+
 [dir="rtl"] .sort-dropdown select {
-    padding: 8px 90px 8px 30px;
-    background-position: left 12px center;
+    padding: 6px 8px 6px 24px;
+    background-position: left center;
     text-align: right;
 }
 

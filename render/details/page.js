@@ -4,6 +4,28 @@ import { updateBackupSidebarUI } from '../details-components.js';
 import { formatPlaytime } from '../details-utils.js';
 import { t } from './helpers.js';
 
+function getMainGameFolder(exePath) {
+    const subfolderPatterns = [
+        'bin', 'binaries', 'x64', 'x86', 'win32', 'win64',
+        'data', 'engine', 'content', 'plugins', 'saves', 'config', 'logs',
+        'redist', 'common', 'built', 'binary', 'executable'
+    ];
+    // Get directory of the executable
+    const lastSlash = Math.max(exePath.lastIndexOf('\\'), exePath.lastIndexOf('/'));
+    let folder = lastSlash !== -1 ? exePath.substring(0, lastSlash) : '';
+    let parts = folder.split(/[\\\/]/);
+
+    while (parts.length > 0) {
+        const lastPart = parts[parts.length - 1].toLowerCase();
+        if (subfolderPatterns.includes(lastPart)) {
+            parts.pop();
+        } else {
+            break;
+        }
+    }
+    return parts.join('/');
+}
+
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -171,12 +193,9 @@ export async function openGameDetailsPage(game) {
     // Load folder details
     const folderContainer = document.getElementById('folderDetailsContainer');
     if (folderContainer && game.path) {
-        // Get the folder path (parent directory of the executable) using string methods
-        const lastSlash = Math.max(game.path.lastIndexOf('\\'), game.path.lastIndexOf('/'));
-        const folderPath = lastSlash !== -1 ? game.path.substring(0, lastSlash) : '';
-
-        if (folderPath) {
-            const folderInfo = await window.api.getFolderInfo(folderPath);
+        const mainFolder = getMainGameFolder(game.path);
+        if (mainFolder) {
+            const folderInfo = await window.api.getFolderInfo(mainFolder);
             if (folderInfo) {
                 document.getElementById('folderName').innerText = folderInfo.folderName;
                 document.getElementById('folderType').innerText = folderInfo.type;

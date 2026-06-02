@@ -14,6 +14,7 @@
     --shadow-color: rgba(0, 0, 0, 0.5);
     --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     --grid-size: 260px;
+    --dropdown-arrow: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
 
 .light-mode {
@@ -29,6 +30,7 @@
     --border-color: rgba(0, 0, 0, 0.1);
     --shadow-color: rgba(0, 0, 0, 0.1);
     --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    --dropdown-arrow: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
 
 .darker-mode {
@@ -42,4 +44,5 @@
     --border-color: rgba(255, 255, 255, 0.03);
     --shadow-color: rgba(0, 0, 0, 0.8);
     --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    --dropdown-arrow: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }

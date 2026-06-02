@@ -62,8 +62,8 @@ function createWindow() {
             { role: 'copy', label: L('نسخ', 'Copy') },
             { role: 'paste', label: L('لصق', 'Paste') },
             { role: 'cut', label: L('قص', 'Cut') },
-            { type: 'separator' },
-            { role: 'inspectElement', label: L('فحص العنصر', 'Inspect Element') },
+            // { type: 'separator' },
+            // { role: 'inspectElement', label: L('فحص العنصر', 'Inspect Element') },
         ]).popup({ window: win });
     });
 }
@@ -202,6 +202,12 @@ ipcMain.handle('app:getSystemSpecs', async () => {
         console.error('[Specs] Error fetching system specs:', error);
         return null;
     }
+
+    // Fallback: ensure backup:getGlobalPath is registered
+    ipcMain.handle('backup:getGlobalPath', () => {
+        const { readSettings } = require('../modules/app-settings');
+        return readSettings().globalBackupPath || '';
+    });
 });
 
 // Feature modules

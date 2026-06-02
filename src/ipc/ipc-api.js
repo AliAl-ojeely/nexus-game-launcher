@@ -4,6 +4,7 @@ const fsPromises = require('fs').promises; // async methods
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
+const AdmZip = require('adm-zip');
 
 const rawg = require('../../modules/rawg-api');
 const steam = require('../../modules/steam-api');
@@ -42,7 +43,7 @@ function registerApiIPC() {
         console.log('\n==============================');
         console.log(`Fetching: "${name}" → /${slugifyName(name)}/`);
 
-        // ── Step 1: RAWG بالاسم ───────────────────────────────────────────────
+        // ── Step 1: RAWG ───────────────────────────────────────────────
         const rawgData = await rawg.fetchGameDetails(name).catch(err => {
             console.warn('[RAWG] Failed:', err.message);
             return null;
@@ -83,7 +84,7 @@ function registerApiIPC() {
             : 'NO'
         );
 
-        // ── Step 4: RAWG fallback عبر Steam AppID ─────────────────────────────
+        // ── Step 4: RAWG fallback Steam AppID ─────────────────────────────
         let rawgExtraData = null;
         if (!rawgData && resolvedAppId) {
             console.log(`[API] Trying RAWG lookup via Steam AppID: ${resolvedAppId}`);
@@ -108,7 +109,7 @@ function registerApiIPC() {
             }
         }
 
-        // ── Step 6: كل المصادر فشلت ──────────────────────────────────────────
+        // ── Step 6: all source failed──────────────────────────────────────────
         if (!rawgData && !rawgExtraData && !steamData && !sgAssets) {
             console.warn('[API] All sources failed for:', name);
             return {
@@ -427,6 +428,44 @@ function registerApiIPC() {
 
     ipcMain.handle('get-folder-info', async (_, folderPath) => {
         return await getFolderInfo(folderPath);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Backup all user data (ZIP)
+    // ─────────────────────────────────────────────────────────────────────────
+    ipcMain.handle('backup-user-data', async (event, savePath) => {
+        const userDataPath = app.getPath('userData');
+        const tempDir = path.join(os.tmpdir(), `nexus_backup_${Date.now()}`);
+
+        function copyRecursive(src, dest) {
+            if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+            const entries = fs.readdirSync(src, { withFileTypes: true });
+            for (const entry of entries) {
+                const srcPath = path.join(src, entry.name);
+                const destPath = path.join(dest, entry.name);
+                if (entry.isDirectory()) {
+                    copyRecursive(srcPath, destPath);
+                } else {
+                    try {
+                        fs.copyFileSync(srcPath, destPath);
+                    } catch (err) {
+                        console.warn(`[Backup] Skipping locked file: ${srcPath}`, err.message);
+                    }
+                }
+            }
+        }
+
+        try {
+            copyRecursive(userDataPath, tempDir);
+            const zip = new AdmZip();
+            zip.addLocalFolder(tempDir);
+            zip.writeZip(savePath);
+            fs.rmSync(tempDir, { recursive: true, force: true });
+            return { success: true, path: savePath };
+        } catch (err) {
+            if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+            throw err;
+        }
     });
 }
 
