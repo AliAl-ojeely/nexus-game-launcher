@@ -1145,10 +1145,11 @@ html[lang="ar"] .stat-card h3 {
 }
 
 .export-btn {
+    margin-left: 15px;
     background: var(--accent);
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 25px;
     border-radius: 8px;
     margin-top: 15px;
     cursor: pointer;
@@ -1307,4 +1308,18 @@ html[lang="ar"] .stat-card h3 {
 
 [dir="rtl"] .folder-detail-row .folder-detail-label {
     text-align: right;
+}
+
+.darker-mode .settings-section {
+    border: 1px solid #1d1d1d;
+}
+
+.darker-mode .settings-container {
+    border: 1px solid #1d1d1d;
+}
+
+.darker-mode .custom-input,
+.darker-mode .custom-select,
+.darker-mode .toggle-container {
+    border: 1px solid #1d1d1d !important;
 }

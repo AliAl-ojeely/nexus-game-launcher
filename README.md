@@ -3,7 +3,7 @@
 # Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.4.0-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-2.4.1-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,38 +22,73 @@
 
 ---
 
-## What's New in `v2.4.0` – The "Total Control" Update
+## What's New in `v2.4.1` – The "Insight & Control" Update
 
-Version `2.4.0` introduces powerful manual controls, a complete visual overhaul of the edit modal, and a fully modular, maintainable codebase.
+Version `2.4.1` introduces a complete **Game Statistics Dashboard**, library sorting, personal notes, folder details, and many UI/UX improvements.
 
-### Complete Asset Customization
+### Game Statistics Dashboard
 
-- **Custom Icon Support** – You can now set a custom icon (`.ico`, `.png`, `.jpg`) for each game. The icon is displayed prominently in the game details header.
-- **Smart Asset Fallback** – Removing a custom asset (poster, logo, background, or icon) automatically reverts to the best auto‑downloaded version from SteamGridDB or RAWG.
-- **Unified Asset Editor** – All four custom asset fields are now grouped together in the edit modal, each with its own **Select** and **Remove** button.
+A powerful analytics page that tracks every gaming session:
 
-### Drag & Drop Reordering
+- Total playtime, play count, average session length (per game or overall)
+- Period filters: Day, Week, Month, 6 Months, Year
+- Charts: daily play count + avg minutes, weekday distribution, hour distribution, top games, monthly playtime
+- Session history table (last 20 sessions) and export to CSV
+- Export current stats as PNG image (sharable)
 
-- **Reorder Mode** – Click the new cross‑arrow button next to the search bar to enter reorder mode. Game cards shake gently to indicate they can be moved.
-- **Intuitive Drag & Drop** – Drag any game poster to a new position. The new order is saved automatically to `order.json` (no changes to `games.json`).
-- **Reset Button** – While in reorder mode, a reset button appears. Click it to restore the original order (by date added).
-- **Persistent Order** – The custom order survives launcher restarts and is applied every time the library is rendered.
+<p align="center">
+  <img src="assets/statistics-dashboard.png" alt="Statistics Dashboard" width="80%">
+</p>
 
-### Complete Backup & Restore System
+### 🎮 Library Sorting
 
-- **One‑Click Backup** – The “Backup Now” button in the game details sidebar creates a ZIP archive of the game’s save folder.
-- **Backup History** – All previous backups are listed directly in the sidebar. Each backup has its own **Restore** button.
-- **Safe Restore** – Before restoring, a confirmation dialog warns that the current save data will be overwritten and that the game must be closed.
-- **Global Backup Vault** – Set a default backup folder in Settings. Per‑game custom paths can override it.
+Sort your games directly from the topbar:
+
+- Name (A‑Z / Z‑A)
+- Most played (by total playtime)
+- Recently played (by last launch)
+
+### 📝 Personal Game Notes
+
+Add custom notes for each game (e.g., "finished on hard mode", "next boss strategy") – visible in the game details sidebar and stored locally.
+
+### 📁 Folder Details in Game Sidebar
+
+Like Windows folder properties, you now see:
+
+- Folder name, type, location
+- Total size, size on disk
+- Number of files & folders
+- Creation date
+
+### 🔄 Recently Played Limit
+
+Choose how many games appear in the "Recently Played" section (5, 10, 20, 50) – accessible in Settings.
+
+### ⚡ Update Checker with Download Progress
+
+The built‑in update checker now shows a download progress bar and allows cancellation. The entire update process is more transparent.
+
+<p align="center">
+  <img src="assets/check-for-updates-downloader.png" alt="Update Downloader" width="60%">
+</p>
+
+### 🖼️ Recently Played Section (Redesigned)
+
+The “Recently Played” view now correctly uses session timestamps and respects the user‑defined limit. Action buttons on recent cards are replaced with a clean “Remove from recent” icon.
+
+<p align="center">
+  <img src="assets/recently-played.png" alt="Recently Played View" width="80%">
+</p>
 
 ### Technical Overhauls
 
-- **Modular Frontend Code** – The massive `details.js` and `modal.js` files have been split into well‑organized subfolders (`render/details/` and `render/modal/`), each containing focused, single‑responsibility modules.
-- **Improved RAWG Matching** – The game matching logic now **requires all significant words** (e.g., “Resident Evil Requiem” will never match “Resident Evil: Village”). Year filtering and strict overlap thresholds ensure accurate results.
-- **Steam User Rating Fallback** – When RAWG lacks a Metacritic score, the launcher falls back to the Steam user rating percentage (0–100). The rating display (green/yellow/red) works perfectly with the fallback.
-- **Manual Save Path Override** – If auto‑discovery fails, you can now manually select the original save folder using a dedicated browse button in the edit modal.
-- **Toast Notifications** – All backup, restore, and error messages now use a themed toast system that adapts to dark, darker, and light modes.
-- **CSP Fix for SortableJS** – The Content Security Policy has been updated to allow the SortableJS CDN, enabling smooth drag & drop.
+- **Session Logging** – Every game launch is recorded in `playSessions.json`, enabling accurate playtime analytics.
+- **Modular Statistics Page** – New `render/stats.js` with Chart.js visualisations.
+- **Sort Dropdown in Topbar** – Replaces the previous separate bar, saving screen space.
+- **Sidebar Collapse Button** – Toggle sidebar to icon‑only mode (state saved).
+- **CSP Fixes** – Allowed `html2canvas` and `cdnjs.cloudflare` for PNG export.
+- **Darker Mode Borders** – Improved border visibility in darker theme.
 
 ---
 
@@ -62,7 +97,7 @@ Version `2.4.0` introduces powerful manual controls, a complete visual overhaul 
 ### Organize Your Library
 
 Effortlessly manage your collection with dedicated views for your **entire library** and **favorite games**.  
-**New:** Drag & drop to reorder your library exactly as you like.
+**New:** Sort by name, playtime, or recent play – or drag & drop to reorder manually.
 
 <p align="center">
   <img src="assets/favorites-view.png" alt="Favorites View" width="80%">
@@ -86,6 +121,30 @@ Customize the experience with dark/light/darker themes, adjustable grid layouts,
   <img src="assets/main-library-ar.png" alt="Arabic RTL Interface" width="48%">
 </p>
 
+### Game Statistics Dashboard
+
+Gain deep insights into your gaming habits with interactive charts and exportable data.
+
+<p align="center">
+  <img src="assets/statistics-dashboard.png" alt="Statistics Dashboard" width="80%">
+</p>
+
+### Recently Played (Improved)
+
+See your most recently launched games at a glance, with the ability to remove entries from the list without deleting the game.
+
+<p align="center">
+  <img src="assets/recently-played.png" alt="Recently Played" width="80%">
+</p>
+
+### Update Checker with Download Progress
+
+Never miss a new version – the built‑in updater shows download progress and lets you cancel mid‑download.
+
+<p align="center">
+  <img src="assets/check-for-updates-downloader.png" alt="Update Downloader" width="60%">
+</p>
+
 ---
 
 ## Core Features
@@ -96,7 +155,7 @@ Customize the experience with dark/light/darker themes, adjustable grid layouts,
 - **Favorites & Search:** Quickly filter your library and pin your most-played games.
 - **Smart Launch & Playtime Tracking:** Prevents accidental double‑launches while accurately logging total playtime (localised to H/M or س/د), backed by an intelligent process monitor.
 - **Automatic & Manual Backups:** Secure your game saves with one‑click backups and restore any previous backup directly from the launcher.
-- **Persistent Local Storage:** A lightweight JSON‑based database keeps all your data (including custom order) entirely local and private.
+- **Persistent Local Storage:** A lightweight JSON‑based database keeps all your data (including custom order and session logs) entirely local and private.
 - **Secure Execution Environment:** Built with Electron IPC communication and context isolation for secure desktop behaviour.
 
 ---
@@ -186,7 +245,10 @@ NEXUS-GAME-LAUNCHER/
 │   ├── icon.png
 │   ├── main-library-ar.png
 │   ├── main-library-en.png
-│   └── settings-page.png
+│   ├── settings-page.png
+│   ├── check-for-updates-downloader.png   # New
+│   ├── recently-played.png                # New
+│   └── statistics-dashboard.png           # New
 ├── css/
 │   ├── components.css
 │   ├── backup-ux.css
