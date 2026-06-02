@@ -70,7 +70,7 @@ Choose how many games appear in the "Recently Played" section (5, 10, 20, 50) �
 The built‑in update checker now shows a download progress bar and allows cancellation. The entire update process is more transparent.
 
 <p align="center">
-  <img src="assets/check-for-updates-downloader.png" alt="Update Downloader" width="60%">
+  <img src="assets/check-for-updates downloader.png" alt="Update Downloader" width="60%">
 </p>
 
 ### 🖼️ Recently Played Section (Redesigned)
@@ -142,7 +142,7 @@ See your most recently launched games at a glance, with the ability to remove en
 Never miss a new version – the built‑in updater shows download progress and lets you cancel mid‑download.
 
 <p align="center">
-  <img src="assets/check-for-updates-downloader.png" alt="Update Downloader" width="60%">
+  <img src="assets/check-for-updates downloader.png" alt="Update Downloader" width="60%">
 </p>
 
 ---
