@@ -1,5 +1,6 @@
 const { ipcMain, app, shell } = require('electron');
-const fs = require('fs');
+const fs = require('fs');                 // sync methods
+const fsPromises = require('fs').promises; // async methods
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
@@ -226,7 +227,7 @@ function registerApiIPC() {
     // ─────────────────────────────────────────────────────────────────────────
     // 🆕 ORDER HANDLERS (drag & drop reordering)
     // ─────────────────────────────────────────────────────────────────────────
-    const orderPath = path.join(require('electron').app.getPath('userData'), 'order.json');
+    const orderPath = path.join(app.getPath('userData'), 'order.json');
     const favOrderPath = path.join(app.getPath('userData'), 'order-favorites.json');
 
     ipcMain.handle('db:getGameOrder', () => {
@@ -282,7 +283,6 @@ function registerApiIPC() {
         const destPath = path.join(os.tmpdir(), filename);
         try {
             await updater.defaultUpdater.downloadAsset(url, destPath, (progress) => {
-                // 🚨 التحقق الأمني: لا ترسل البيانات إذا تم إغلاق النافذة أو التطبيق
                 if (!event.sender.isDestroyed()) {
                     event.sender.send('update:progress', progress);
                 }
@@ -379,6 +379,54 @@ function registerApiIPC() {
 
     ipcMain.handle('get-monthly-playtime', (_, months) => {
         return sessions.getMonthlyPlaytime(months);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Folder info handler (size, file count, etc.)
+    // ─────────────────────────────────────────────────────────────────────────
+    async function getFolderInfo(folderPath) {
+        if (!folderPath || !fs.existsSync(folderPath)) return null;
+        try {
+            let totalSize = 0;
+            let fileCount = 0;
+            let folderCount = 0;
+
+            async function walk(dir) {
+                const entries = await fsPromises.readdir(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(dir, entry.name);
+                    if (entry.isDirectory()) {
+                        folderCount++;
+                        await walk(fullPath);
+                    } else {
+                        fileCount++;
+                        const stat = await fsPromises.stat(fullPath);
+                        totalSize += stat.size;
+                    }
+                }
+            }
+            await walk(folderPath);
+
+            const stats = await fsPromises.stat(folderPath);
+            const created = stats.birthtime || stats.ctime;
+
+            return {
+                folderName: path.basename(folderPath),
+                type: 'File folder',
+                location: folderPath,
+                sizeBytes: totalSize,
+                sizeOnDiskBytes: totalSize,
+                contains: `${fileCount} files, ${folderCount} folders`,
+                created: created.toLocaleString()
+            };
+        } catch (err) {
+            console.error('[FolderInfo] Error:', err);
+            return null;
+        }
+    }
+
+    ipcMain.handle('get-folder-info', async (_, folderPath) => {
+        return await getFolderInfo(folderPath);
     });
 }
 

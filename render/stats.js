@@ -319,11 +319,36 @@ async function exportToCSV() {
     URL.revokeObjectURL(url);
 }
 
+async function exportStatsAsPNG() {
+    const dashboard = document.querySelector('.stats-dashboard');
+    if (!dashboard) return;
+    try {
+        // Use global html2canvas from CDN
+        const canvas = await html2canvas(dashboard, {
+            scale: 2,
+            backgroundColor: null,
+            logging: false,
+            useCORS: true
+        });
+        const link = document.createElement('a');
+        link.download = 'nexus-stats.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    } catch (err) {
+        console.error('Export failed:', err);
+        if (window.showToast) window.showToast('error', 'Export failed', err.message, 3000);
+    }
+}
+
 // -----------------------------------------------------------------------------
 // INIT
 // -----------------------------------------------------------------------------
 export async function initStatsPage() {
     await loadGameList();
+
+    // Export PNG button
+    const exportPngBtn = document.getElementById('exportStatsPngBtn');
+    if (exportPngBtn) exportPngBtn.addEventListener('click', exportStatsAsPNG);
 
     // Period buttons
     document.querySelectorAll('.period-btn').forEach(btn => {
@@ -343,7 +368,7 @@ export async function initStatsPage() {
         updateOverallStats(currentPeriodDays);
     });
 
-    // Export button
+    // Export CSV button
     document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
 
     // Refresh when a game stops
@@ -355,7 +380,7 @@ export async function initStatsPage() {
         });
     }
 
-    // Watch theme changes to redraw charts with correct grid colors
+    // Watch theme changes to redraw charts
     const observer = new MutationObserver(() => {
         if (currentGame) refreshAllStats();
         else updateOverallStats(currentPeriodDays);

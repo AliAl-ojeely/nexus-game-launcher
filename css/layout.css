@@ -150,17 +150,104 @@ body {
 }
 
 .topbar {
-    height: 80px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     padding: 0 40px;
     background: var(--bg-topbar);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     transition: 0.3s;
+    height: 80px;
 }
 
+/* Search box – fixed width, stays left */
+.search-box {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+/* Sort dropdown – sits right after search */
+.sort-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    padding: 6px 12px;
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.sort-dropdown label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.sort-dropdown select {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    padding: 4px 0;
+    font-family: inherit;
+}
+
+.sort-dropdown select:hover {
+    color: var(--accent);
+}
+
+/* Push action buttons to the right */
+.topbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+}
+
+/* RTL: push buttons to the left */
+[dir="rtl"] .topbar-actions {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* Responsive: wrap on small screens */
+@media (max-width: 800px) {
+    .topbar {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 20px;
+        gap: 10px;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .sort-dropdown {
+        flex: 1;
+    }
+
+    .topbar-actions {
+        margin-left: 0;
+        justify-content: flex-end;
+        width: 100%;
+    }
+}
+
+/* RTL adjustments for sort dropdown */
+[dir="rtl"] .sort-dropdown select {
+    text-align: right;
+}
+
+/* =========================================
+   Page Areas & Details (unchanged)
+========================================= */
 .page-area {
     padding: 40px;
     overflow-y: auto;

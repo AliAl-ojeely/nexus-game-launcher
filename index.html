@@ -6,7 +6,7 @@
     <title>Nexus Game Launcher</title>
 
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: local-resource:; connect-src 'self' https://cdn.jsdelivr.net;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: local-resource:; connect-src 'self' https://cdn.jsdelivr.net;">
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.3.5</span>
+            <span class="version-badge">v2.4.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -37,6 +37,11 @@
         <div class="nav-item" data-target="settingsArea">
             <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
         </div>
+        <div class="sidebar-toggle">
+            <button id="sidebarCollapseBtn" class="collapse-btn" title="Collapse Sidebar">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
         <div class="library-stats">
             <span data-i18n="total_games" style="font-size: 13px; font-weight:normal;">Total Installed Games</span>
             <span id="gameCountDisplay" style="font-size: 19px;">0</span>
@@ -50,6 +55,15 @@
                 <i class="fa-solid fa-search"></i>
                 <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder"
                     placeholder="Search your library...">
+            </div>
+            <div class="sort-dropdown">
+                <label data-i18n="sort_by">Sort by:</label>
+                <select id="sortGamesSelect" class="custom-select">
+                    <option value="name_asc" data-i18n="sort_name_asc">Name (A‑Z)</option>
+                    <option value="name_desc" data-i18n="sort_name_desc">Name (Z‑A)</option>
+                    <option value="playtime_desc" data-i18n="sort_playtime_desc">Most Played</option>
+                    <option value="recent_desc" data-i18n="sort_recent_desc">Recently Played</option>
+                </select>
             </div>
             <div class="topbar-actions">
                 <button id="shortcutsBtn" class="shortcuts-btn" title="Keyboard Shortcuts">
@@ -220,6 +234,9 @@
                         <i class="fa-solid fa-download"></i>
                         <span data-i18n="export_csv">Export to CSV</span>
                     </button>
+                    <button id="exportStatsPngBtn" class="export-btn" title="Export as PNG">
+                        <i class="fa-solid fa-camera"></i> <span data-i18n="export_png">Export PNG</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -326,6 +343,16 @@
                             </div>
                             <small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
                         </div>
+                        <div class="form-group">
+                            <label data-i18n="recent_limit_label">Recently Played Limit</label>
+                            <select id="recentLimitSelect" class="custom-select">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                            <small data-i18n="recent_limit_desc">Number of games shown in Recently Played section.</small>
+                        </div>
                     </div>
                 </div>
         
@@ -345,7 +372,6 @@
                         </div>
                     </div>
                 </div>
-        
                 <!-- ===== SECTION 5: BACKUP ===== -->
                 <div class="settings-section">
                     <div class="section-header">
@@ -570,6 +596,42 @@
 
                     <div id="detailsAchievements" style="display: none;"></div>
 
+                    <!-- ── Folder Details Section ── -->
+                    <div class="meta-item" id="folderDetailsContainer" style="display: none;">
+                        <span data-i18n="folder_details">Game Folder Details</span>
+                        <div class="folder-details-grid">
+                            <div class="folder-detail-row">
+                                <i class="fa-solid fa-folder"></i>
+                                <span class="folder-detail-label" data-i18n="folder_name">Folder name:</span>
+                                <strong id="folderName">-</strong>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_type">Type:</span>
+                                <span id="folderType">File folder</span>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_location">Location:</span>
+                                <span id="folderLocation">-</span>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_size">Size:</span>
+                                <span id="folderSize">-</span>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_size_on_disk">Size on disk:</span>
+                                <span id="folderSizeOnDisk">-</span>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_contains">Contains:</span>
+                                <span id="folderContains">-</span>
+                            </div>
+                            <div class="folder-detail-row">
+                                <span class="folder-detail-label" data-i18n="folder_created">Created:</span>
+                                <span id="folderCreated">-</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ── Backup Section ── -->
                     <div class="meta-item"
                         style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
@@ -585,6 +647,24 @@
                         </button>
 
                         <div id="backupListContainer" style="display:none; margin-top:12px;"></div>
+                    </div>
+                    <!-- ── Notes Section ── -->
+                    <div class="meta-item" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <span data-i18n="game_notes_label">Personal Notes</span>
+                        <div id="notesDisplay" class="notes-display">
+                            <p id="notesText" class="notes-text">—</p>
+                            <button id="editNotesBtn" class="edit-notes-btn" title="Edit Notes">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                        </div>
+                        <div id="notesEditArea" style="display: none;">
+                            <textarea id="notesInput" rows="4" class="notes-textarea"
+                                placeholder="Write your personal notes here..."></textarea>
+                            <div class="notes-actions">
+                                <button id="saveNotesBtn" class="save-notes-btn">Save</button>
+                                <button id="cancelNotesBtn" class="cancel-notes-btn">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -784,7 +864,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.3.5</p>
+                <p style="text-align: center;">version 2.4.0</p>
             </div>
         </div>
     </div>
@@ -840,6 +920,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="src/translations.js"></script>

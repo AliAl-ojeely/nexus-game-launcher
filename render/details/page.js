@@ -4,6 +4,14 @@ import { updateBackupSidebarUI } from '../details-components.js';
 import { formatPlaytime } from '../details-utils.js';
 import { t } from './helpers.js';
 
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 export async function openGameDetailsPage(game) {
     if (!game || !game.name) return;
 
@@ -75,6 +83,59 @@ export async function openGameDetailsPage(game) {
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // NOTES SECTION – load and set up edit/save handlers
+    // ─────────────────────────────────────────────────────────────────────────
+    const notesText = document.getElementById('notesText');
+    const notesInput = document.getElementById('notesInput');
+    const notesDisplay = document.getElementById('notesDisplay');
+    const notesEditArea = document.getElementById('notesEditArea');
+    const editNotesBtn = document.getElementById('editNotesBtn');
+    const saveNotesBtn = document.getElementById('saveNotesBtn');
+    const cancelNotesBtn = document.getElementById('cancelNotesBtn');
+
+    // Load existing notes into display
+    if (notesText) {
+        notesText.innerText = game.notes && game.notes.trim() ? game.notes : '—';
+    }
+
+    // Edit button – switch to edit mode
+    if (editNotesBtn && notesDisplay && notesEditArea) {
+        editNotesBtn.onclick = () => {
+            notesInput.value = game.notes || '';
+            notesDisplay.style.display = 'none';
+            notesEditArea.style.display = 'block';
+        };
+    }
+
+    // Cancel button – switch back to display mode
+    if (cancelNotesBtn && notesDisplay && notesEditArea) {
+        cancelNotesBtn.onclick = () => {
+            notesDisplay.style.display = 'flex';
+            notesEditArea.style.display = 'none';
+        };
+    }
+
+    // Save button – update notes and persist
+    if (saveNotesBtn && notesDisplay && notesEditArea) {
+        saveNotesBtn.onclick = async () => {
+            const newNotes = notesInput.value.trim();
+            const updatedGame = { ...game, notes: newNotes };
+            await window.api.updateGame(updatedGame);
+            // Update local game reference
+            game.notes = newNotes;
+            // Update displayed text
+            notesText.innerText = newNotes || '—';
+            // Switch back to display mode
+            notesDisplay.style.display = 'flex';
+            notesEditArea.style.display = 'none';
+            // Show success toast
+            if (window.showToast) {
+                window.showToast('success', userSettings.lang === 'ar' ? 'تم حفظ الملاحظات' : 'Notes saved', '', 2000);
+            }
+        };
+    }
+
     // Background fetch if data not cached
     const isCached = !!(
         game.metadata?.description &&
@@ -105,5 +166,31 @@ export async function openGameDetailsPage(game) {
     if (sidebar && bInfo?.lastBackupDate) {
         sidebar.style.display = 'block';
         if (detailsContent) detailsContent.style.gridTemplateColumns = '3fr 1fr';
+    }
+
+    // Load folder details
+    const folderContainer = document.getElementById('folderDetailsContainer');
+    if (folderContainer && game.path) {
+        // Get the folder path (parent directory of the executable) using string methods
+        const lastSlash = Math.max(game.path.lastIndexOf('\\'), game.path.lastIndexOf('/'));
+        const folderPath = lastSlash !== -1 ? game.path.substring(0, lastSlash) : '';
+
+        if (folderPath) {
+            const folderInfo = await window.api.getFolderInfo(folderPath);
+            if (folderInfo) {
+                document.getElementById('folderName').innerText = folderInfo.folderName;
+                document.getElementById('folderType').innerText = folderInfo.type;
+                document.getElementById('folderLocation').innerText = folderInfo.location;
+                document.getElementById('folderSize').innerText = formatFileSize(folderInfo.sizeBytes);
+                document.getElementById('folderSizeOnDisk').innerText = formatFileSize(folderInfo.sizeOnDiskBytes);
+                document.getElementById('folderContains').innerText = folderInfo.contains;
+                document.getElementById('folderCreated').innerText = folderInfo.created;
+                folderContainer.style.display = 'block';
+            } else {
+                folderContainer.style.display = 'none';
+            }
+        } else {
+            folderContainer.style.display = 'none';
+        }
     }
 }

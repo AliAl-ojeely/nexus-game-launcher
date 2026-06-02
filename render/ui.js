@@ -1,5 +1,6 @@
 import { state, userSettings } from './state.js';
 import { showToast } from './details-components.js';
+import { renderGames } from './library.js'; 
 
 // Parse GitHub Markdown release notes to standard HTML
 function parseMarkdown(text) {
@@ -162,6 +163,10 @@ export function initUI() {
 
             if (showTitlesToggle) {
                 localStorage.setItem('showTitles', showTitlesToggle.checked);
+            }
+
+            if (recentLimitSelect) {
+                localStorage.setItem('recentLimit', recentLimitSelect.value);
             }
 
             setText('sidebarLogoName', newName);
@@ -370,6 +375,56 @@ export function initUI() {
                 updateModal.classList.remove('active');
                 resetUpdateUI();
             }
+        });
+    }
+
+    // Sidebar collapse toggle
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+    const sidebar = document.querySelector('.sidebar');
+
+    function setSidebarState(collapsed) {
+        if (collapsed) {
+            sidebar.classList.add('collapsed');
+            localStorage.setItem('sidebarCollapsed', 'true');
+        } else {
+            sidebar.classList.remove('collapsed');
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+    }
+
+    // Load saved state
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState === 'true') setSidebarState(true);
+    else setSidebarState(false);
+
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            setSidebarState(!isCollapsed);
+        });
+    }
+
+    const sortSelect = document.getElementById('sortGamesSelect');
+    if (sortSelect) {
+        // Load saved value
+        const savedSort = localStorage.getItem('librarySort') || 'name_asc';
+        sortSelect.value = savedSort;
+        // Add change listener
+        sortSelect.addEventListener('change', (e) => {
+            const newValue = e.target.value;
+            localStorage.setItem('librarySort', newValue);
+            console.log('[Sort] Changed to:', newValue);
+            renderGames();  // re-render library with new sort
+        });
+    }
+
+    const recentLimitSelect = document.getElementById('recentLimitSelect');
+    if (recentLimitSelect) {
+        const savedLimit = localStorage.getItem('recentLimit') || '10';
+        recentLimitSelect.value = savedLimit;
+        recentLimitSelect.addEventListener('change', () => {
+            localStorage.setItem('recentLimit', recentLimitSelect.value);
+            renderGames();  // re-render recently played
         });
     }
 }

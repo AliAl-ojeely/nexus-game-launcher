@@ -220,6 +220,7 @@ export async function renderGames() {
         // 1. RECENTLY PLAYED (merged with playtimeMap)
         // ─────────────────────────────────────────────────────────────────────
         if (recentlyPlayedContainer) {
+            const recentLimit = parseInt(localStorage.getItem('recentLimit') || '10');
             const gamesWithLastPlayed = games.map(game => {
                 const pt = playtimeMap[game.name];
                 return {
@@ -228,38 +229,67 @@ export async function renderGames() {
                 };
             });
 
-            const recentGames = gamesWithLastPlayed
+            const recentPlayedGames = gamesWithLastPlayed
                 .filter(g => g.lastPlayed && typeof g.lastPlayed === 'string')
                 .sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed))
-                .slice(0, 10);
+                .slice(0, recentLimit);
 
-            if (recentGames.length > 0) {
-                recentGames.forEach((game, idx) => {
-                    recentlyPlayedContainer.appendChild(createGameCard(game, idx, true)); // hideActions = true
+            if (recentPlayedGames.length > 0) {
+                recentPlayedGames.forEach((game, idx) => {
+                    recentlyPlayedContainer.appendChild(createGameCard(game, idx, true));
                 });
             } else {
                 const isAr = userSettings.lang === 'ar';
                 recentlyPlayedContainer.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
-                        <i class="fa-solid fa-ghost" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <p style="margin: 0; font-size: 16px; font-weight: 500;">
-                            ${isAr ? 'لا توجد ألعاب تم تشغيلها مؤخراً' : 'No recently played games found.'}
-                        </p>
-                        <small style="opacity: 0.7;">
-                            ${isAr ? 'قم بتشغيل أي لعبة من مكتبتك لتظهر هنا!' : 'Launch a game from your library to see it here!'}
-                        </small>
-                    </div>
-                `;
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                <i class="fa-solid fa-ghost" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                <p style="margin: 0; font-size: 16px; font-weight: 500;">
+                    ${isAr ? 'لا توجد ألعاب تم تشغيلها مؤخراً' : 'No recently played games found.'}
+                </p>
+                <small style="opacity: 0.7;">
+                    ${isAr ? 'قم بتشغيل أي لعبة من مكتبتك لتظهر هنا!' : 'Launch a game from your library to see it here!'}
+                </small>
+            </div>
+        `;
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 2. MAIN LIBRARY (with full controls: fav, edit, delete)
-        // ─────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────────
+        // 2. MAIN LIBRARY – apply sorting if active
+        // ─────────────────────────────────────────────────────────────────────────────
         if (gamesContainer) {
-            const savedOrder = await loadOrder('main');
-            const orderedGames = applyOrder(games, savedOrder);   // ✅ orderedGames defined here
-            orderedGames.forEach((game, index) => {
+            const sortSelect = document.getElementById('sortGamesSelect');
+            let sortedGames = [...games];
+            const sortValue = sortSelect ? sortSelect.value : 'name_asc';
+
+            switch (sortValue) {
+                case 'name_asc':
+                    sortedGames.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'name_desc':
+                    sortedGames.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+                case 'playtime_desc':
+                    sortedGames.sort((a, b) => {
+                        const ptA = playtimeMap[a.name]?.minutes || 0;
+                        const ptB = playtimeMap[b.name]?.minutes || 0;
+                        return ptB - ptA;
+                    });
+                    break;
+                case 'recent_desc':
+                    sortedGames.sort((a, b) => {
+                        const dateA = playtimeMap[a.name]?.lastPlayed ? new Date(playtimeMap[a.name].lastPlayed) : 0;
+                        const dateB = playtimeMap[b.name]?.lastPlayed ? new Date(playtimeMap[b.name].lastPlayed) : 0;
+                        return dateB - dateA;
+                    });
+                    break;
+                default:
+                    // manual order fallback
+                    const savedOrder = await loadOrder('main');
+                    sortedGames = applyOrder(sortedGames, savedOrder);
+            }
+
+            sortedGames.forEach((game, index) => {
                 gamesContainer.appendChild(createGameCard(game, index, false, false, false));
             });
         }

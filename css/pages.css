@@ -1182,3 +1182,129 @@ html[lang="ar"] .stat-card h3 {
 .stats-main::-webkit-scrollbar {
     display: none;
 }
+
+/* Notes Section in Details Sidebar */
+.notes-display {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    background: var(--bg-input);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.notes-text {
+    flex: 1;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.edit-notes-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.edit-notes-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+}
+
+.notes-textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.notes-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.save-notes-btn,
+.cancel-notes-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    border: none;
+}
+
+.save-notes-btn {
+    background: var(--accent);
+    color: white;
+}
+
+.save-notes-btn:hover {
+    filter: brightness(0.85);
+    transform: translateY(-1px);
+}
+
+.cancel-notes-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.cancel-notes-btn:hover {
+    background: var(--bg-hover);
+}
+
+/* Folder Details Grid */
+.folder-details-grid {
+    margin-top: 8px;
+    background: var(--bg-input);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+}
+
+.folder-detail-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.folder-detail-row i {
+    width: 16px;
+    color: var(--accent);
+}
+
+.folder-detail-label {
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 90px;
+}
+
+.folder-detail-row span:not(.folder-detail-label),
+.folder-detail-row strong {
+    color: var(--text-main);
+    word-break: break-all;
+}
+
+[dir="rtl"] .folder-detail-row .folder-detail-label {
+    text-align: right;
+}

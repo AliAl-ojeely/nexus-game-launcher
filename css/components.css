@@ -671,3 +671,99 @@ body.darker-mode .toast {
 .stats-header h2 i {
     color: var(--accent);
 }
+
+/* Sidebar as flex column */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    overflow-x: hidden;
+}
+
+/* Push bottom content to the bottom */
+.sidebar-bottom {
+    margin-top: auto;
+    width: 100%;
+}
+
+/* Expanded sidebar width */
+.sidebar {
+    width: 260px;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+/* Hide text labels when collapsed */
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .version-badge,
+.sidebar.collapsed .library-stats span:first-child {
+    display: none;
+}
+
+/* In collapsed mode, show only the number, centered, at full width */
+.sidebar.collapsed .library-stats {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.sidebar.collapsed #gameCountDisplay {
+    display: inline-block;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+/* Center icons in collapsed mode */
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px 0;
+}
+
+.sidebar.collapsed .logo {
+    justify-content: center;
+    gap: 0;
+}
+
+/* Collapse button – left aligned expanded, centered collapsed */
+.sidebar-toggle {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    justify-content: center;
+}
+
+.collapse-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.collapse-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+}
+
+/* Rotate icon when collapsed */
+.sidebar.collapsed .collapse-btn i {
+    transform: rotate(180deg);
+}
+
+[dir="rtl"] .sidebar.collapsed .collapse-btn i {
+    transform: rotate(-180deg);
+}

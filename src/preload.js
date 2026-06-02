@@ -85,6 +85,8 @@ contextBridge.exposeInMainWorld('api', {
 
     // ── User Path Data ──────────────────────────────────────────────────────────────
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),
+    getFolderInfo: (folderPath) => ipcRenderer.invoke('get-folder-info', folderPath),
+
 
     // ── Updates ───────────────────────────────────────────────────────────────
     checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
