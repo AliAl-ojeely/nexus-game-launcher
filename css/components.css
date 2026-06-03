@@ -767,3 +767,11 @@ body.darker-mode .toast {
 [dir="rtl"] .sidebar.collapsed .collapse-btn i {
     transform: rotate(-180deg);
 }
+
+/* Selected game card highlight */
+.game-card.selected {
+    outline: 3px solid var(--accent);
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+    z-index: 5;
+}

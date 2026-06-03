@@ -104,6 +104,7 @@ contextBridge.exposeInMainWorld('api', {
     onFolderCreated: (callback) => ipcRenderer.on('folder-created', (_, data) => callback(data)),
     getImmediateSubfolders: (folderPath) => ipcRenderer.invoke('get-immediate-subfolders', folderPath),
     gameExistsInFolder: (folderPath) => ipcRenderer.invoke('game-exists-in-folder', folderPath),
+    toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
 
     // ── Window App Size ──────────────────────────────────────────────────────────────
     getWindowSize: () => ipcRenderer.invoke('app:getWindowSize'),

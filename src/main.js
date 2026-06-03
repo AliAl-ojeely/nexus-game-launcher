@@ -185,6 +185,11 @@ ipcMain.handle('timer:resume', () => {
     return launcher.resumeTimer();
 });
 
+ipcMain.handle('toggle-fullscreen', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.setFullScreen(!win.isFullScreen());
+});
+
 ipcMain.handle('app:getSystemSpecs', async () => {
     try {
         const cpu = await si.cpu();

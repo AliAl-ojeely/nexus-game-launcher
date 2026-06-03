@@ -262,6 +262,66 @@ export function initShortcuts() {
             return;
         }
 
+        // G key for random game picker
+        if (event.key === 'g' || event.key === 'G') {
+            event.preventDefault();
+            const randomBtn = document.getElementById('randomGameBtn');
+            if (randomBtn) randomBtn.click();
+            return;
+        }
+
+        // M for reorder mode (drag & drop)
+        if (event.key === 'm' || event.key === 'M') {
+            event.preventDefault();
+            const reorderBtn = document.getElementById('reorderModeBtn');
+            if (reorderBtn) reorderBtn.click();
+            return;
+        }
+
+        // F11 – Toggle fullscreen
+        if (event.key === 'F11') {
+            event.preventDefault();
+            if (window.api && window.api.toggleFullscreen) {
+                window.api.toggleFullscreen();
+            } else {
+                console.warn('[Shortcut] Fullscreen toggle not available');
+            }
+            return;
+        }
+
+        // Arrow Up / Down for grid navigation (only on library/recent/favorites pages)
+        const activePage = state.currentTab;
+        const isGridPage = activePage && ['libraryArea', 'recentArea', 'favoritesArea'].includes(activePage);
+        const lightboxOpen = document.getElementById('imageLightbox').classList.contains('show');
+        const isInputFocused = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';
+
+        if (!lightboxOpen && !isInputFocused && isGridPage) {
+            const container = document.getElementById(activePage);
+            if (!container) return;
+            const grid = container.querySelector('.games-grid');
+            if (!grid) return;
+
+            const cards = Array.from(grid.querySelectorAll('.game-card'));
+            if (cards.length === 0) return;
+
+            let currentIndex = cards.findIndex(card => card.classList.contains('selected'));
+            if (currentIndex === -1) currentIndex = 0;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                const nextIndex = (currentIndex + 1) % cards.length;
+                cards[currentIndex].classList.remove('selected');
+                cards[nextIndex].classList.add('selected');
+                cards[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
+                cards[currentIndex].classList.remove('selected');
+                cards[prevIndex].classList.add('selected');
+                cards[prevIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
         // Ignore if typing in input/textarea
         if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
 
@@ -278,13 +338,35 @@ export function initShortcuts() {
             case 'Backspace':
                 if (!isImageViewerOpen) handleGoBack();
                 break;
-            case 'Enter': {
+            case 'Enter':
+                event.preventDefault();
+                // First, check if game details page is open
                 const detailsArea = document.getElementById('gameDetailsArea');
-                if (detailsArea && detailsArea.classList.contains('active') && !isImageViewerOpen) {
-                    document.getElementById('detailsPlayBtn')?.click();
+                if (detailsArea && detailsArea.classList.contains('active')) {
+                    const playBtn = document.getElementById('detailsPlayBtn');
+                    if (playBtn) playBtn.click();
+                    return;
+                }
+                // Otherwise, handle grid page selection (Library, Recent, Favorites)
+                const currentPage = state.currentTab;
+                const isGrid = currentPage && ['libraryArea', 'recentArea', 'favoritesArea'].includes(currentPage);
+                if (isGrid) {
+                    const container = document.getElementById(currentPage);
+                    if (container) {
+                        let selectedCard = container.querySelector('.game-card.selected');
+                        if (!selectedCard) {
+                            const firstCard = container.querySelector('.game-card');
+                            if (firstCard) {
+                                firstCard.classList.add('selected');
+                                selectedCard = firstCard;
+                            }
+                        }
+                        if (selectedCard) {
+                            selectedCard.click();
+                        }
+                    }
                 }
                 break;
-            }
             case 'p':
             case 'P':
                 event.preventDefault();
