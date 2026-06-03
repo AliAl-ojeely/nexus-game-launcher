@@ -467,6 +467,140 @@ function registerApiIPC() {
             throw err;
         }
     });
+
+    ipcMain.handle('scan-for-games', async (_, folderPath) => {
+        const fs = require('fs').promises;
+        const path = require('path');
+        const existingGames = db.getGames();
+        const existingPaths = new Set(existingGames.map(g => path.normalize(g.path).toLowerCase()));
+
+        const games = [];
+
+        async function scanImmediateSubfolders(dir) {
+            try {
+                const entries = await fs.readdir(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    if (entry.isDirectory()) {
+                        const subDir = path.join(dir, entry.name);
+                        const gameFolderName = entry.name;
+
+                        // Look for an executable inside the folder (first .exe or .bat)
+                        let foundExecutable = null;
+                        try {
+                            const subEntries = await fs.readdir(subDir);
+                            for (const file of subEntries) {
+                                const ext = path.extname(file).toLowerCase();
+                                if (ext === '.exe' || ext === '.bat') {
+                                    foundExecutable = path.join(subDir, file);
+                                    break;
+                                }
+                            }
+                        } catch (err) {
+                            console.warn(`[Scan] Error reading ${subDir}:`, err.message);
+                        }
+
+                        const normalizedPath = foundExecutable ? path.normalize(foundExecutable).toLowerCase() : null;
+                        const alreadyExists = normalizedPath && existingPaths.has(normalizedPath);
+
+                        if (!alreadyExists) {
+                            games.push({
+                                folderPath: subDir,
+                                suggestedName: gameFolderName,
+                                executablePath: foundExecutable || null // may be null if no exe/bat found
+                            });
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('[Scan] Error reading folder:', err);
+            }
+        }
+
+        await scanImmediateSubfolders(folderPath);
+        return games;
+    });
+
+    // Inside registerApiIPC() – add these handlers
+
+    let activeWatcher = null;
+    let processedFolders = new Set();
+
+    ipcMain.handle('start-folder-watcher', async (_, folderPath) => {
+        if (activeWatcher) {
+            activeWatcher.close();
+            activeWatcher = null;
+        }
+        if (!folderPath || !require('fs').existsSync(folderPath)) return false;
+
+        // Initialize processed folders with existing ones
+        processedFolders.clear();
+        const fs = require('fs').promises;
+        const entries = await fs.readdir(folderPath, { withFileTypes: true });
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                processedFolders.add(entry.name);
+            }
+        }
+
+        activeWatcher = require('fs').watch(folderPath, { persistent: true }, async (eventType, filename) => {
+            if (eventType === 'rename' && filename) {
+                // Check if it's a new directory (not a file and not already processed)
+                const fullPath = require('path').join(folderPath, filename);
+                try {
+                    const stat = await fs.stat(fullPath);
+                    if (stat.isDirectory() && !processedFolders.has(filename)) {
+                        processedFolders.add(filename);
+                        // Send to all windows
+                        const windows = require('electron').BrowserWindow.getAllWindows();
+                        windows.forEach(win => {
+                            win.webContents.send('folder-created', { folderPath: fullPath, folderName: filename });
+                        });
+                    }
+                } catch (err) {
+                    console.error('[Watcher] Error checking new folder:', err);
+                }
+            }
+        });
+        return true;
+    });
+
+    ipcMain.handle('stop-folder-watcher', () => {
+        if (activeWatcher) {
+            activeWatcher.close();
+            activeWatcher = null;
+        }
+        processedFolders.clear();
+        return true;
+    });
+
+    ipcMain.handle('get-immediate-subfolders', async (_, folderPath) => {
+        const fs = require('fs').promises;
+        const path = require('path');
+        try {
+            const entries = await fs.readdir(folderPath, { withFileTypes: true });
+            const subfolders = [];
+            for (const entry of entries) {
+                if (entry.isDirectory()) {
+                    subfolders.push(path.join(folderPath, entry.name));
+                }
+            }
+            return subfolders;
+        } catch (err) {
+            console.error('[Subfolders] Error:', err);
+            return [];
+        }
+    });
+
+    ipcMain.handle('game-exists-in-folder', async (_, folderPath) => {
+        const existingGames = db.getGames();
+        for (const game of existingGames) {
+            const gameFolder = path.dirname(game.path);
+            if (path.normalize(gameFolder).toLowerCase() === path.normalize(folderPath).toLowerCase()) {
+                return true;
+            }
+        }
+        return false;
+    });
 }
 
 module.exports = { registerApiIPC };

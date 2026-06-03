@@ -97,6 +97,14 @@ contextBridge.exposeInMainWorld('api', {
     onAutoUpdateAvailable: (callback) => ipcRenderer.on('auto-update:available', (_, data) => callback(data)),
     backupUserData: (savePath) => ipcRenderer.invoke('backup-user-data', savePath),
 
+    // ── Scan For Games ──────────────────────────────────────────────────────────────
+    scanForGames: (folderPath) => ipcRenderer.invoke('scan-for-games', folderPath),
+    startFolderWatcher: (folderPath) => ipcRenderer.invoke('start-folder-watcher', folderPath),
+    stopFolderWatcher: () => ipcRenderer.invoke('stop-folder-watcher'),
+    onFolderCreated: (callback) => ipcRenderer.on('folder-created', (_, data) => callback(data)),
+    getImmediateSubfolders: (folderPath) => ipcRenderer.invoke('get-immediate-subfolders', folderPath),
+    gameExistsInFolder: (folderPath) => ipcRenderer.invoke('game-exists-in-folder', folderPath),
+
     // ── Window App Size ──────────────────────────────────────────────────────────────
     getWindowSize: () => ipcRenderer.invoke('app:getWindowSize'),
     setWindowSize: (width, height) => ipcRenderer.invoke('app:setWindowSize', width, height),

@@ -6,9 +6,27 @@ import { t } from './helpers.js';
 
 function getMainGameFolder(exePath) {
     const subfolderPatterns = [
-        'bin', 'binaries', 'x64', 'x86', 'win32', 'win64',
-        'data', 'engine', 'content', 'plugins', 'saves', 'config', 'logs',
-        'redist', 'common', 'built', 'binary', 'executable'
+        // Common binary/executable folders
+        'bin', 'binaries', 'x64', 'x86', 'win32', 'win64', 'win', 'windows',
+        'winmd', 'winrt', 'uwp', 'windowsnoeditor', 'windowsclient', 'windowsserver',
+        'macnoeditor', 'linuxnoeditor', 'shipping', 'development', 'release', 'debug',
+
+        // Engine / framework folders
+        'engine', 'content', 'plugins', 'intermediate', 'saved', 'config', 'logs',
+        'crashes', 'data', 'assets', 'resources', 'streamingassets', 'managed', 'mono',
+        'dotnet', 'scripts', 'dll', 'lib', 'library', 'shared', 'common', 'redist',
+        'runtimes', 'support', 'tools', 'utilities', 'launcher', 'patcher', 'update',
+        'installer', 'cache', 'temp', 'tmp', 'download', 'downloads', 'packages',
+
+        // Game-specific content folders (not root)
+        'bbq', 'cooked', 'pak', 'paks', 'patch', 'dlc', 'mods', 'overrides',
+        'localization', 'movies', 'sound', 'music', 'video', 'cinematics', 'ui',
+        'fonts', 'shaders', 'configs', 'settings', 'userdata', 'profile', 'saves',
+        'backup', 'savegames', 'savedata', 'profiles', 'logs', 'crashreports',
+
+        // Platform / store folders
+        'steam', 'epic', 'gog', 'origin', 'uwp', 'windowsapps', 'xboxlive',
+        'ps4', 'ps5', 'switch', 'android', 'ios'
     ];
     // Get directory of the executable
     const lastSlash = Math.max(exePath.lastIndexOf('\\'), exePath.lastIndexOf('/'));

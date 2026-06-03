@@ -8,6 +8,18 @@ import { initReorderButton } from './library.js';
 import { showToast } from './details-components.js';
 import { handleCanIRunItCheck } from './details/handlers.js';
 import { initStatsPage } from './stats.js';
+import { initAutoDetector } from './auto-detector.js';
+
+// Helper: escape HTML to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
 
 function parseMarkdown(text) {
     if (!text) return '';
@@ -39,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDetails();
     initModal();
     initShortcuts();
+    initAutoDetector();
 
     await initSettingsPage();
 
@@ -49,25 +62,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const runItBtn = document.getElementById('runItCheckBtn');
     if (runItBtn) runItBtn.addEventListener('click', handleCanIRunItCheck);
 
-    // Listen for auto-update available event
+    // ─────────────────────────────────────────────────────────────────────────
+    // Auto‑update listener (if enabled)
+    // ─────────────────────────────────────────────────────────────────────────
     if (window.api.onAutoUpdateAvailable) {
         window.api.onAutoUpdateAvailable(async (result) => {
-            // Reuse existing update modal
             const updateModal = document.getElementById('updateModal');
             if (!updateModal) return;
-
-            // Fill modal with release data
             document.getElementById('newVersionTag').innerText = result.latestVersion;
             document.getElementById('currentVersionTag').innerText = result.currentVersion;
             const releaseNotesDiv = document.getElementById('releaseNotesText');
-            if (releaseNotesDiv) {
-                releaseNotesDiv.innerHTML = parseMarkdown(result.releaseNotes || 'No release notes provided.');
-            }
-
-            // Show modal
+            if (releaseNotesDiv) releaseNotesDiv.innerHTML = parseMarkdown(result.releaseNotes || 'No release notes provided.');
             updateModal.classList.add('active');
-
-            // Optional: auto-focus download button
             const downloadBtn = document.getElementById('downloadUpdateBtn');
             if (downloadBtn) downloadBtn.focus();
         });
@@ -76,13 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const autoUpdateEnabled = localStorage.getItem('autoUpdate') === 'true';
     if (autoUpdateEnabled) {
         const checkBtn = document.getElementById('checkForUpdatesBtn');
-        if (checkBtn) {
-            // Small delay to let UI fully initialise
-            setTimeout(() => checkBtn.click(), 500);
-        }
+        if (checkBtn) setTimeout(() => checkBtn.click(), 500);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Random game picker
+    // ─────────────────────────────────────────────────────────────────────────
     const randomGameBtn = document.getElementById('randomGameBtn');
     if (randomGameBtn) {
         randomGameBtn.addEventListener('click', () => {
@@ -93,7 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const randomIndex = Math.floor(Math.random() * games.length);
             const randomGame = games[randomIndex];
-            // Open game details page
             import('./details.js').then(({ openGameDetailsPage }) => {
                 openGameDetailsPage(randomGame);
             });
@@ -101,7 +105,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Export library to CSV
+    // ─────────────────────────────────────────────────────────────────────────
     const exportLibraryBtn = document.getElementById('exportLibraryCsvBtn');
     if (exportLibraryBtn) {
         exportLibraryBtn.addEventListener('click', async () => {
@@ -109,20 +115,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const games = await window.api.getGames();
                 const playtimeMap = await window.api.getAllPlaytime();
-
                 if (!games || games.length === 0) {
                     showToast('info', isAr ? 'لا توجد ألعاب للتصدير' : 'No games to export', '', 2000);
                     return;
                 }
-
-                // Prepare CSV headers
                 const headers = [
                     'ID', 'Name', 'Executable Path', 'Arguments', 'Favorite',
                     'Total Playtime (minutes)', 'Total Playtime (seconds)',
                     'Last Played', 'Notes', 'Poster URL', 'Logo URL', 'Background URL', 'Icon URL'
                 ];
-
-                // Build rows
                 const rows = games.map(game => {
                     const pt = playtimeMap[game.name] || { minutes: 0, seconds: 0, lastPlayed: null };
                     return [
@@ -141,7 +142,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         game.assets?.icon || ''
                     ];
                 });
-
                 const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
                 const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
@@ -150,7 +150,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 a.download = `nexus_library_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
-
                 showToast('success', isAr ? 'تم تصدير المكتبة بنجاح' : 'Library exported successfully', '', 3000);
             } catch (err) {
                 console.error('[Export] Failed:', err);
@@ -159,26 +158,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Backup all user data
+    // ─────────────────────────────────────────────────────────────────────────
+    // Full user data backup
+    // ─────────────────────────────────────────────────────────────────────────
     const backupUserDataBtn = document.getElementById('backupUserDataBtn');
     if (backupUserDataBtn) {
         backupUserDataBtn.addEventListener('click', async () => {
             const originalHTML = backupUserDataBtn.innerHTML;
             const isAr = userSettings.lang === 'ar';
             const creatingText = isAr ? 'جاري إنشاء النسخ الاحتياطي...' : 'Creating backup...';
-
             try {
                 const result = await window.api.selectFolder();
                 if (!result) return;
-
                 const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
                 const backupPath = `${result}/nexus_launcher_backup_${timestamp}.zip`;
-
                 backupUserDataBtn.disabled = true;
                 backupUserDataBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${creatingText}</span>`;
-
                 await window.api.backupUserData(backupPath);
-
                 showToast('success', isAr ? 'تم إنشاء النسخ الاحتياطي بنجاح!' : 'Backup created successfully!', `Saved to: ${backupPath}`, 5000);
             } catch (err) {
                 console.error('[Backup] Failed:', err);
@@ -187,6 +183,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 backupUserDataBtn.disabled = false;
                 backupUserDataBtn.innerHTML = originalHTML;
             }
+        });
+    }
+
+    // Refresh library button
+    const refreshBtn = document.getElementById('refreshLibraryBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            renderGames();
+            const isAr = userSettings.lang === 'ar';
+            const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
+            showToast('success', msg, '', 1500);
         });
     }
 });
@@ -412,4 +419,35 @@ async function initSettingsPage() {
             if (saveSettingsBtn) saveSettingsBtn.click();
         }
     });
+
+    // ── Auto game detector path selector (add if not present)
+    const selectAutoDetectPathBtn = document.getElementById('selectAutoDetectPathBtn');
+    const autoDetectPathInput = document.getElementById('autoDetectPath');
+    if (selectAutoDetectPathBtn && autoDetectPathInput) {
+        const newBtn = selectAutoDetectPathBtn.cloneNode(true);
+        selectAutoDetectPathBtn.parentNode.replaceChild(newBtn, selectAutoDetectPathBtn);
+
+        const savedPath = localStorage.getItem('autoDetectPath') || '';
+        autoDetectPathInput.value = savedPath;
+
+        newBtn.addEventListener('click', async () => {
+            const folder = await window.api.selectFolder();
+            if (folder) {
+                autoDetectPathInput.value = folder;
+                localStorage.setItem('autoDetectPath', folder);
+            }
+        });
+    }
+
+    const disableInitialScanToggle = document.getElementById('disableInitialScanToggle');
+    if (disableInitialScanToggle) {
+        // Load saved state
+        const saved = localStorage.getItem('disableInitialScan') === 'true';
+        disableInitialScanToggle.checked = saved;
+        // Save on change
+        disableInitialScanToggle.addEventListener('change', (e) => {
+            localStorage.setItem('disableInitialScan', e.target.checked);
+            // If you want to re-run initial scan immediately when enabled, you can call something, but not necessary.
+        });
+    }
 }

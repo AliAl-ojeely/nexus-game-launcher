@@ -1,5 +1,7 @@
 import { state } from './state.js';
 import { handleGoBack } from './ui.js';
+import { renderGames } from './library.js';
+import { showToast } from './details-components.js';
 
 let slideshowInterval = null;
 let isSlideshowRunning = false;
@@ -22,12 +24,10 @@ function updateLightboxImage(newIndex) {
     setTimeout(() => {
         img.src = state.currentScreenshotsList[state.currentScreenshotIndex];
         img.style.opacity = '1';
-        // Reset pan & zoom when image changes
         resetPanAndZoom();
     }, 300);
 }
 
-// Reset pan offset and zoom level
 function resetPanAndZoom() {
     const img = document.getElementById('lightboxImage');
     if (!img) return;
@@ -38,7 +38,6 @@ function resetPanAndZoom() {
     if (img.style.cursor) img.style.cursor = 'zoom-in';
 }
 
-// Apply transform based on current scale and pan offset
 function applyTransform(img) {
     if (currentScale === 1) {
         img.style.transform = '';
@@ -47,29 +46,15 @@ function applyTransform(img) {
     }
 }
 
-// Toggle zoom (double‑click)
 function toggleZoom(e) {
     const img = document.getElementById('lightboxImage');
     if (!img) return;
     e.stopPropagation();
 
     if (currentScale === 1) {
-        // Zoom in
         currentScale = ZOOM_SCALE;
         img.classList.add('zoomed');
-        // Optional: center pan on click point (uncomment for smooth experience)
-        // const rect = img.getBoundingClientRect();
-        // const clickX = e.clientX - rect.left;
-        // const clickY = e.clientY - rect.top;
-        // const imgWidth = img.naturalWidth;
-        // const imgHeight = img.naturalHeight;
-        // const viewWidth = rect.width;
-        // const viewHeight = rect.height;
-        // const targetX = (clickX / viewWidth) * imgWidth * currentScale - viewWidth / 2;
-        // const targetY = (clickY / viewHeight) * imgHeight * currentScale - viewHeight / 2;
-        // panOffset = { x: -targetX, y: -targetY };
     } else {
-        // Zoom out
         currentScale = 1;
         img.classList.remove('zoomed');
         panOffset = { x: 0, y: 0 };
@@ -78,7 +63,6 @@ function toggleZoom(e) {
     img.style.cursor = currentScale === 1 ? 'zoom-in' : 'grab';
 }
 
-// Mouse drag to pan (only when zoomed)
 function startPan(e) {
     const img = document.getElementById('lightboxImage');
     if (!img || currentScale === 1) return;
@@ -102,7 +86,6 @@ function stopPan() {
     img.style.cursor = currentScale === 1 ? 'zoom-in' : 'grab';
 }
 
-// --- Slideshow logic ---
 export function toggleSlideshow() {
     const btn = document.getElementById('slideshowBtn');
     if (!btn) return;
@@ -123,12 +106,10 @@ export function toggleSlideshow() {
     }
 }
 
-// --- Initialize lightbox events ---
 function initLightboxEvents() {
     const img = document.getElementById('lightboxImage');
     if (!img) return;
 
-    // Remove any previous listeners to avoid duplicates
     img.removeEventListener('dblclick', toggleZoom);
     img.removeEventListener('mousedown', startPan);
     window.removeEventListener('mousemove', onPan);
@@ -140,7 +121,6 @@ function initLightboxEvents() {
     window.addEventListener('mouseup', stopPan);
 }
 
-// --- Open lightbox with given index ---
 export function openLightbox(index) {
     state.currentScreenshotIndex = index;
     const lightbox = document.getElementById('imageLightbox');
@@ -149,7 +129,6 @@ export function openLightbox(index) {
 
     lightboxImg.src = state.currentScreenshotsList[state.currentScreenshotIndex];
     lightbox.classList.add('show');
-    // Reset pan/zoom when opening
     currentScale = 1;
     panOffset = { x: 0, y: 0 };
     lightboxImg.classList.remove('zoomed');
@@ -158,7 +137,6 @@ export function openLightbox(index) {
     initLightboxEvents();
 }
 
-// --- Reset lightbox state (close) ---
 function resetLightboxState() {
     if (isSlideshowRunning) toggleSlideshow();
     const img = document.getElementById('lightboxImage');
@@ -172,7 +150,6 @@ function resetLightboxState() {
     document.getElementById('imageLightbox').classList.remove('show');
 }
 
-// --- Global shortcuts and initialisation ---
 export function initShortcuts() {
     // Lightbox controls
     const closeBtn = document.getElementById('closeLightbox');
@@ -214,6 +191,7 @@ export function initShortcuts() {
     document.addEventListener('keydown', (event) => {
         if (event.ctrlKey || event.altKey) return;
 
+        // Escape handling
         if (event.key === 'Escape') {
             const searchInput = document.getElementById('searchInput');
             if (document.activeElement === searchInput) {
@@ -225,10 +203,8 @@ export function initShortcuts() {
             if (updateModal && updateModal.classList.contains('active')) {
                 const progressContainer = document.getElementById('updateProgressContainer');
                 const isDownloading = progressContainer && progressContainer.style.display === 'block';
-
-                if (isDownloading) {
-                    return; 
-                } else {
+                if (isDownloading) return;
+                else {
                     updateModal.classList.remove('active');
                     return;
                 }
@@ -255,6 +231,7 @@ export function initShortcuts() {
             return;
         }
 
+        // F1 opens shortcuts modal
         if (event.key === 'F1') {
             event.preventDefault();
             const shortcutsModal = document.getElementById('shortcutsModal');
@@ -262,6 +239,30 @@ export function initShortcuts() {
             return;
         }
 
+        // Number keys 1-6 for page navigation and sidebar toggle
+        if (event.key >= '1' && event.key <= '6') {
+            event.preventDefault();
+            if (event.key === '6') {
+                const sidebarBtn = document.getElementById('sidebarCollapseBtn');
+                if (sidebarBtn) sidebarBtn.click();
+                return;
+            }
+            const pageMap = {
+                '1': 'libraryArea',
+                '2': 'recentArea',
+                '3': 'favoritesArea',
+                '4': 'statsArea',
+                '5': 'settingsArea'
+            };
+            const targetId = pageMap[event.key];
+            if (targetId) {
+                const navItem = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+                if (navItem) navItem.click();
+            }
+            return;
+        }
+
+        // Ignore if typing in input/textarea
         if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
 
         const lightbox = document.getElementById('imageLightbox');
@@ -301,6 +302,14 @@ export function initShortcuts() {
                 event.preventDefault();
                 document.getElementById('searchInput')?.focus();
                 break;
+            case 'r':
+            case 'R':
+                event.preventDefault();
+                renderGames();
+                const isAr = localStorage.getItem('lang') === 'ar';
+                const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
+                showToast('success', msg, '', 1500);
+                break;
             default:
                 break;
         }
@@ -325,7 +334,7 @@ export function initShortcuts() {
         }
     });
 
-    // Shortcuts modal
+    // Shortcuts modal (button)
     const shortcutsBtn = document.getElementById('shortcutsBtn');
     const shortcutsModal = document.getElementById('shortcutsModal');
     if (shortcutsBtn && shortcutsModal) {

@@ -181,6 +181,9 @@ export function initUI() {
                 localStorage.setItem('autoUpdate', autoUpdateToggle.checked);
             }
 
+            if (autoDetectToggle) localStorage.setItem('autoDetect', autoDetectToggle.checked);
+            if (autoDetectPathInput) localStorage.setItem('autoDetectPath', autoDetectPathInput.value);
+
             setText('sidebarLogoName', newName);
             applyThemeClass(newTheme);
             document.documentElement.style.setProperty('--grid-size', newGrid);
@@ -437,6 +440,35 @@ export function initUI() {
         recentLimitSelect.addEventListener('change', () => {
             localStorage.setItem('recentLimit', recentLimitSelect.value);
             renderGames();  // re-render recently played
+        });
+    }
+
+    const autoDetectToggle = document.getElementById('autoDetectToggle');
+    const autoDetectSettings = document.getElementById('autoDetectSettings');
+    const autoDetectPathInput = document.getElementById('autoDetectPath');
+    const selectAutoDetectPathBtn = document.getElementById('selectAutoDetectPathBtn');
+    const scanForGamesBtn = document.getElementById('scanForGamesBtn');
+
+    if (autoDetectToggle) {
+        const saved = localStorage.getItem('autoDetect') === 'true';
+        autoDetectToggle.checked = saved;
+        if (autoDetectSettings) autoDetectSettings.style.display = saved ? 'block' : 'none';
+        autoDetectToggle.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            localStorage.setItem('autoDetect', isChecked);
+            if (autoDetectSettings) autoDetectSettings.style.display = isChecked ? 'block' : 'none';
+        });
+    }
+
+    if (selectAutoDetectPathBtn && autoDetectPathInput) {
+        const savedPath = localStorage.getItem('autoDetectPath') || '';
+        autoDetectPathInput.value = savedPath;
+        selectAutoDetectPathBtn.addEventListener('click', async () => {
+            const folder = await window.api.selectFolder();
+            if (folder) {
+                autoDetectPathInput.value = folder;
+                localStorage.setItem('autoDetectPath', folder);
+            }
         });
     }
 }
