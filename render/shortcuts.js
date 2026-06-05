@@ -13,14 +13,11 @@ let panOffset = { x: 0, y: 0 };
 let currentScale = 1;
 const ZOOM_SCALE = 2;
 
-// Update lightbox image with smooth transition
 function updateLightboxImage(newIndex) {
     state.currentScreenshotIndex = newIndex;
     const img = document.getElementById('lightboxImage');
     if (!img) return;
-
     img.style.opacity = '0';
-
     setTimeout(() => {
         img.src = state.currentScreenshotsList[state.currentScreenshotIndex];
         img.style.opacity = '1';
@@ -50,7 +47,6 @@ function toggleZoom(e) {
     const img = document.getElementById('lightboxImage');
     if (!img) return;
     e.stopPropagation();
-
     if (currentScale === 1) {
         currentScale = ZOOM_SCALE;
         img.classList.add('zoomed');
@@ -89,7 +85,6 @@ function stopPan() {
 export function toggleSlideshow() {
     const btn = document.getElementById('slideshowBtn');
     if (!btn) return;
-
     if (isSlideshowRunning) {
         clearInterval(slideshowInterval);
         btn.innerHTML = '<i class="fa-solid fa-play"></i>';
@@ -109,12 +104,10 @@ export function toggleSlideshow() {
 function initLightboxEvents() {
     const img = document.getElementById('lightboxImage');
     if (!img) return;
-
     img.removeEventListener('dblclick', toggleZoom);
     img.removeEventListener('mousedown', startPan);
     window.removeEventListener('mousemove', onPan);
     window.removeEventListener('mouseup', stopPan);
-
     img.addEventListener('dblclick', toggleZoom);
     img.addEventListener('mousedown', startPan);
     window.addEventListener('mousemove', onPan);
@@ -126,7 +119,6 @@ export function openLightbox(index) {
     const lightbox = document.getElementById('imageLightbox');
     const lightboxImg = document.getElementById('lightboxImage');
     if (!lightbox || !lightboxImg) return;
-
     lightboxImg.src = state.currentScreenshotsList[state.currentScreenshotIndex];
     lightbox.classList.add('show');
     currentScale = 1;
@@ -151,13 +143,11 @@ function resetLightboxState() {
 }
 
 export function initShortcuts() {
-    // Lightbox controls
+    // Lightbox controls (unchanged)
     const closeBtn = document.getElementById('closeLightbox');
     if (closeBtn) closeBtn.addEventListener('click', resetLightboxState);
-
     const slideshowBtn = document.getElementById('slideshowBtn');
     if (slideshowBtn) slideshowBtn.addEventListener('click', toggleSlideshow);
-
     const prevBtn = document.getElementById('prevLightbox');
     if (prevBtn) {
         prevBtn.addEventListener('click', (e) => {
@@ -168,7 +158,6 @@ export function initShortcuts() {
             updateLightboxImage(prevIndex);
         });
     }
-
     const nextBtn = document.getElementById('nextLightbox');
     if (nextBtn) {
         nextBtn.addEventListener('click', (e) => {
@@ -179,7 +168,6 @@ export function initShortcuts() {
             updateLightboxImage(nextIndex);
         });
     }
-
     const lightboxOverlay = document.getElementById('imageLightbox');
     if (lightboxOverlay) {
         lightboxOverlay.addEventListener('click', (e) => {
@@ -189,57 +177,63 @@ export function initShortcuts() {
 
     // Keyboard navigation
     document.addEventListener('keydown', (event) => {
-        if (event.ctrlKey || event.altKey) return;
-
-        // Escape handling
+        // 1. Escape handling (blur search, close modals)
         if (event.key === 'Escape') {
             const searchInput = document.getElementById('searchInput');
             if (document.activeElement === searchInput) {
                 searchInput.blur();
                 return;
             }
-
             const updateModal = document.getElementById('updateModal');
             if (updateModal && updateModal.classList.contains('active')) {
                 const progressContainer = document.getElementById('updateProgressContainer');
                 const isDownloading = progressContainer && progressContainer.style.display === 'block';
                 if (isDownloading) return;
-                else {
-                    updateModal.classList.remove('active');
-                    return;
-                }
+                else { updateModal.classList.remove('active'); return; }
             }
-
             const editModal = document.getElementById('editModal');
-            if (editModal && editModal.style.display === 'flex') {
-                editModal.style.display = 'none';
-                return;
-            }
+            if (editModal && editModal.style.display === 'flex') { editModal.style.display = 'none'; return; }
             const lightbox = document.getElementById('imageLightbox');
-            if (lightbox && lightbox.classList.contains('show')) {
-                resetLightboxState();
-                return;
-            }
+            if (lightbox && lightbox.classList.contains('show')) { resetLightboxState(); return; }
             const shortcutsModal = document.getElementById('shortcutsModal');
-            if (shortcutsModal && shortcutsModal.classList.contains('active')) {
-                shortcutsModal.classList.remove('active');
-                return;
-            }
-            if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
-                handleGoBack();
+            if (shortcutsModal && shortcutsModal.classList.contains('active')) { shortcutsModal.classList.remove('active'); return; }
+            if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') handleGoBack();
+            return;
+        }
+
+        // 2. Disable all other shortcuts when typing in inputs/textareas
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        // 3. Lightbox left/right arrows – highest priority
+        const lightboxOpen = document.getElementById('imageLightbox')?.classList.contains('show') || false;
+        if (lightboxOpen && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+            event.preventDefault();
+            if (event.key === 'ArrowLeft') {
+                document.getElementById('prevLightbox')?.click();
+            } else {
+                document.getElementById('nextLightbox')?.click();
             }
             return;
         }
 
-        // F1 opens shortcuts modal
+        // No modifier keys for remaining shortcuts
+        if (event.ctrlKey || event.altKey) return;
+
+        // Shared variables for page navigation and grid
+        const activePage = state.currentTab;
+        const gridPages = ['libraryArea', 'recentArea', 'favoritesArea'];
+
+        // 4. F1: shortcuts modal
         if (event.key === 'F1') {
             event.preventDefault();
-            const shortcutsModal = document.getElementById('shortcutsModal');
-            if (shortcutsModal) shortcutsModal.classList.add('active');
+            const modal = document.getElementById('shortcutsModal');
+            if (modal) modal.classList.add('active');
             return;
         }
 
-        // Number keys 1-6 for page navigation and sidebar toggle
+        // 5. Number keys 1-6
         if (event.key >= '1' && event.key <= '6') {
             event.preventDefault();
             if (event.key === '6') {
@@ -262,7 +256,7 @@ export function initShortcuts() {
             return;
         }
 
-        // G key for random game picker
+        // 6. G: random game
         if (event.key === 'g' || event.key === 'G') {
             event.preventDefault();
             const randomBtn = document.getElementById('randomGameBtn');
@@ -270,7 +264,7 @@ export function initShortcuts() {
             return;
         }
 
-        // M for reorder mode (drag & drop)
+        // 7. M: reorder mode
         if (event.key === 'm' || event.key === 'M') {
             event.preventDefault();
             const reorderBtn = document.getElementById('reorderModeBtn');
@@ -278,122 +272,163 @@ export function initShortcuts() {
             return;
         }
 
-        // F11 – Toggle fullscreen
+        // 8. F11: fullscreen
         if (event.key === 'F11') {
             event.preventDefault();
-            if (window.api && window.api.toggleFullscreen) {
-                window.api.toggleFullscreen();
-            } else {
-                console.warn('[Shortcut] Fullscreen toggle not available');
+            if (window.api && window.api.toggleFullscreen) window.api.toggleFullscreen();
+            return;
+        }
+
+        // 9. Other keys (backspace, enter, +, s, r, arrows for scrolling/grid)
+        // Backspace
+        if (event.key === 'Backspace') {
+            event.preventDefault();
+            const lightboxNow = document.getElementById('imageLightbox')?.classList.contains('show');
+            if (!lightboxNow) handleGoBack();
+            return;
+        }
+
+        // Enter
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const detailsArea = document.getElementById('gameDetailsArea');
+            if (detailsArea && detailsArea.classList.contains('active')) {
+                const playBtn = document.getElementById('detailsPlayBtn');
+                if (playBtn) playBtn.click();
+                return;
+            }
+            const isGrid = gridPages.includes(activePage);
+            if (isGrid) {
+                const container = document.getElementById(activePage);
+                if (container) {
+                    let selectedCard = container.querySelector('.game-card.selected');
+                    if (!selectedCard) {
+                        const firstCard = container.querySelector('.game-card');
+                        if (firstCard) {
+                            firstCard.classList.add('selected');
+                            selectedCard = firstCard;
+                        }
+                    }
+                    if (selectedCard) selectedCard.click();
+                }
             }
             return;
         }
 
-        // Arrow Up / Down for grid navigation (only on library/recent/favorites pages)
-        const activePage = state.currentTab;
-        const isGridPage = activePage && ['libraryArea', 'recentArea', 'favoritesArea'].includes(activePage);
-        const lightboxOpen = document.getElementById('imageLightbox').classList.contains('show');
-        const isInputFocused = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';
-
-        if (!lightboxOpen && !isInputFocused && isGridPage) {
-            const container = document.getElementById(activePage);
-            if (!container) return;
-            const grid = container.querySelector('.games-grid');
-            if (!grid) return;
-
-            const cards = Array.from(grid.querySelectorAll('.game-card'));
-            if (cards.length === 0) return;
-
-            let currentIndex = cards.findIndex(card => card.classList.contains('selected'));
-            if (currentIndex === -1) currentIndex = 0;
-
-            if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                const nextIndex = (currentIndex + 1) % cards.length;
-                cards[currentIndex].classList.remove('selected');
-                cards[nextIndex].classList.add('selected');
-                cards[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
-                cards[currentIndex].classList.remove('selected');
-                cards[prevIndex].classList.add('selected');
-                cards[prevIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // P: pause timer
+        if (event.key === 'p' || event.key === 'P') {
+            event.preventDefault();
+            if (state.isGameRunning) {
+                const pauseBtn = document.getElementById('pauseTimerBtn');
+                if (pauseBtn && pauseBtn.style.display !== 'none') pauseBtn.click();
             }
+            return;
         }
 
-        // Ignore if typing in input/textarea
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+        // + : add game
+        if (event.key === '+') {
+            event.preventDefault();
+            document.getElementById('addGameBtn')?.click();
+            return;
+        }
 
-        const lightbox = document.getElementById('imageLightbox');
-        const isImageViewerOpen = lightbox && lightbox.classList.contains('show');
+        // S: focus search
+        if (event.key === 's' || event.key === 'S') {
+            event.preventDefault();
+            document.getElementById('searchInput')?.focus();
+            return;
+        }
 
-        switch (event.key) {
-            case 'ArrowRight':
-                if (isImageViewerOpen) document.getElementById('nextLightbox')?.click();
-                break;
-            case 'ArrowLeft':
-                if (isImageViewerOpen) document.getElementById('prevLightbox')?.click();
-                break;
-            case 'Backspace':
-                if (!isImageViewerOpen) handleGoBack();
-                break;
-            case 'Enter':
-                event.preventDefault();
-                // First, check if game details page is open
-                const detailsArea = document.getElementById('gameDetailsArea');
-                if (detailsArea && detailsArea.classList.contains('active')) {
-                    const playBtn = document.getElementById('detailsPlayBtn');
-                    if (playBtn) playBtn.click();
-                    return;
-                }
-                // Otherwise, handle grid page selection (Library, Recent, Favorites)
-                const currentPage = state.currentTab;
-                const isGrid = currentPage && ['libraryArea', 'recentArea', 'favoritesArea'].includes(currentPage);
-                if (isGrid) {
-                    const container = document.getElementById(currentPage);
-                    if (container) {
-                        let selectedCard = container.querySelector('.game-card.selected');
-                        if (!selectedCard) {
-                            const firstCard = container.querySelector('.game-card');
-                            if (firstCard) {
-                                firstCard.classList.add('selected');
-                                selectedCard = firstCard;
-                            }
-                        }
-                        if (selectedCard) {
-                            selectedCard.click();
-                        }
+        // F: toggle favorite (only in game details page)
+        if (event.key === 'f' || event.key === 'F') {
+            event.preventDefault();
+            const detailsArea = document.getElementById('gameDetailsArea');
+            if (detailsArea && detailsArea.classList.contains('active')) {
+                const currentGameId = state.currentGameId;
+                if (currentGameId) {
+                    const game = state.allGamesData.find(g => g.id === currentGameId);
+                    if (game) {
+                        game.isFavorite = !game.isFavorite;
+                        window.api.updateGame(game).then(() => {
+                            renderGames(); // refresh library/favorites grids
+                            const isAr = localStorage.getItem('lang') === 'ar';
+                            const msg = game.isFavorite
+                                ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
+                                : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
+                            showToast('success', msg, '', 1500);
+                        }).catch(err => {
+                            console.error('[Shortcut] Failed to toggle favorite:', err);
+                            showToast('error', 'Failed to update favorite', '', 2000);
+                        });
                     }
                 }
-                break;
-            case 'p':
-            case 'P':
-                event.preventDefault();
-                if (state.isGameRunning) {
-                    const pauseBtn = document.getElementById('pauseTimerBtn');
-                    if (pauseBtn && pauseBtn.style.display !== 'none') pauseBtn.click();
+            }
+            return;
+        }
+
+        // R: refresh library
+        if (event.key === 'r' || event.key === 'R') {
+            event.preventDefault();
+            renderGames();
+            const isAr = localStorage.getItem('lang') === 'ar';
+            const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
+            showToast('success', msg, '', 1500);
+            return;
+        }
+
+        // Arrow keys: left/right for grid navigation (only if lightbox is closed)
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            // Lightbox already handled at the top, so we are safe here
+            if (gridPages.includes(activePage)) {
+                const container = document.getElementById(activePage);
+                if (!container) return;
+                const grid = container.querySelector('.games-grid');
+                if (!grid) return;
+                const cards = Array.from(grid.querySelectorAll('.game-card'));
+                if (cards.length === 0) return;
+                let currentIdx = cards.findIndex(c => c.classList.contains('selected'));
+                if (currentIdx === -1) {
+                    currentIdx = 0;
+                    if (cards[0]) cards[0].classList.add('selected');
                 }
-                break;
-            case '+':
-                event.preventDefault();
-                document.getElementById('addGameBtn')?.click();
-                break;
-            case 's':
-            case 'S':
-                event.preventDefault();
-                document.getElementById('searchInput')?.focus();
-                break;
-            case 'r':
-            case 'R':
-                event.preventDefault();
-                renderGames();
-                const isAr = localStorage.getItem('lang') === 'ar';
-                const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
-                showToast('success', msg, '', 1500);
-                break;
-            default:
-                break;
+                let newIdx = currentIdx;
+                if (event.key === 'ArrowRight') {
+                    newIdx = currentIdx + 1;
+                    if (newIdx >= cards.length) newIdx = 0;
+                } else if (event.key === 'ArrowLeft') {
+                    newIdx = currentIdx - 1;
+                    if (newIdx < 0) newIdx = cards.length - 1;
+                }
+                if (newIdx !== currentIdx) {
+                    cards[currentIdx].classList.remove('selected');
+                    cards[newIdx].classList.add('selected');
+                    cards[newIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+            return;
+        }
+
+        // Arrow Up/Down for scrolling Settings and Statistics pages only
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (activePage === 'settingsArea') {
+                const container = document.querySelector('.settings-container');
+                if (container) {
+                    const delta = event.key === 'ArrowDown' ? 100 : -100;
+                    container.scrollBy({ top: delta, behavior: 'smooth' });
+                }
+                return;
+            }
+            if (activePage === 'statsArea') {
+                const container = document.querySelector('.stats-main');
+                if (container) {
+                    const delta = event.key === 'ArrowDown' ? 100 : -100;
+                    container.scrollBy({ top: delta, behavior: 'smooth' });
+                }
+                return;
+            }
+            return;
         }
     });
 
@@ -416,7 +451,7 @@ export function initShortcuts() {
         }
     });
 
-    // Shortcuts modal (button)
+    // Shortcuts modal button
     const shortcutsBtn = document.getElementById('shortcutsBtn');
     const shortcutsModal = document.getElementById('shortcutsModal');
     if (shortcutsBtn && shortcutsModal) {

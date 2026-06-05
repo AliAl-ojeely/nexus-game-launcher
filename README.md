@@ -3,7 +3,7 @@
 # Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.5.1-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-2.5.2-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,9 +22,9 @@
 
 ---
 
-## What's New in `v2.5.1` – The "Insight & Control" Update
+## What's New in `v2.5.2` – The "Insight & Control" Update
 
-Version `2.5.1` introduces a complete **Game Statistics Dashboard**, library sorting, personal notes, folder details, and many UI/UX improvements.
+Version `2.5.2` introduces a complete **Game Statistics Dashboard**, library sorting, personal notes, folder details, and many UI/UX improvements.
 
 ### Game Statistics Dashboard
 
