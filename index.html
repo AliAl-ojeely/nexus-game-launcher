@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.5.2</span>
+            <span class="version-badge">v2.5.3</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -202,6 +202,9 @@
                         <strong id="firstPlayedDate">-</strong>
                     </div>
                 </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
         
                 <!-- Charts row (weekday + hour) -->
                 <div class="stats-charts-row">
@@ -212,16 +215,45 @@
                         <canvas id="hourChart" width="400" height="200"></canvas>
                     </div>
                 </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
+
+                <!-- Daily Playtime Circles -->
+                <div class="stats-daily-circles">
+                    <h3 data-i18n="daily_playtime_circles">Daily Playtime Circles</h3>
+                    <div id="dailyCirclesContainer" class="daily-circles-container"></div>
+                </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
         
                 <!-- Top games chart -->
                 <div class="stats-chart-container">
+                    <h3 data-i18n="top_games_chart_title">Top 5 Most Played Games</h3>
                     <canvas id="topGamesChart" width="400" height="200"></canvas>
                 </div>
+                
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
 
+                <!-- Playtime Distribution Doughnut Chart -->
+                <div class="stats-chart-container" id="doughnutChartContainer">
+                    <h3 data-i18n="doughnut_chart_title">Playtime Distribution (Top Games)</h3>
+                    <canvas id="doughnutChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
+                
                 <!-- Monthly games chart -->
                 <div class="stats-chart-container">
+                    <h3 data-i18n="monthly_chart_title">Monthly Playtime (Last 12 Months)</h3>
                     <canvas id="monthlyChart" width="400" height="200"></canvas>
                 </div>
+
+                <!-- Horizontal line separator -->
+                <hr class="stats-divider">
         
                 <!-- Session history table -->
                 <div class="stats-history">
@@ -947,7 +979,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.5.2</p>
+                <p style="text-align: center;">version 2.5.3</p>
             </div>
         </div>
     </div>

@@ -7,6 +7,7 @@ let statsChart = null;
 let weekdayChart = null;
 let hourChart = null;
 let topGamesChart = null;
+let doughnutChart = null;
 
 // -----------------------------------------------------------------------------
 // Helper: get grid line color based on current theme
@@ -71,6 +72,8 @@ async function loadGameList() {
 // Refresh all stats when a game is selected
 // -----------------------------------------------------------------------------
 async function refreshAllStats() {
+    const doughnutContainer = document.getElementById('doughnutChartContainer');
+    if (doughnutContainer) doughnutContainer.style.display = 'none';
     await updateStatsForGame(currentGame, currentPeriodDays);
     await loadExtraMetrics(currentGame);
     await loadSessionHistory(currentGame);
@@ -78,6 +81,7 @@ async function refreshAllStats() {
     await loadHourChart(currentGame);
     await loadTopGamesChart(currentPeriodDays);
     await loadMonthlyChart();
+    await loadDailyCircles(currentGame, currentPeriodDays);
 }
 
 // -----------------------------------------------------------------------------
@@ -95,16 +99,25 @@ async function updateStatsForGame(gameName, days) {
 // Overall stats (no game selected)
 // -----------------------------------------------------------------------------
 async function updateOverallStats(days) {
+    const doughnutContainer = document.getElementById('doughnutChartContainer');
+    if (doughnutContainer) doughnutContainer.style.display = 'block';
     const stats = await window.api.getOverallStats(days);
     document.getElementById('statTotalPlaytime').innerText = formatDuration(stats.totalPlaytime);
     document.getElementById('statPlayCount').innerText = stats.totalSessions;
     document.getElementById('statAvgSession').innerText = formatDuration(stats.avgSession);
+
+    const circlesContainer = document.getElementById('dailyCirclesContainer');
+    if (circlesContainer) {
+        const msg = t('daily_circles_no_game_selected', 'Select a game to view daily circles.');
+        circlesContainer.innerHTML = `<div style="text-align:center;">${msg}</div>`;
+    }
     await loadTopGamesChart(days);
     await loadExtraMetrics(null);
     await loadSessionHistory(null);
     await loadWeekdayChart(null);
     await loadHourChart(null);
     await loadMonthlyChart();
+    await loadDoughnutChart(days);
 }
 
 // -----------------------------------------------------------------------------
@@ -364,7 +377,12 @@ export async function initStatsPage() {
     // Overall stats button
     document.getElementById('overallStatsBtn').addEventListener('click', () => {
         currentGame = null;
+        // Clear selected game highlight
         document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
+        // Clear daily circles (overall stats should not show circles)
+        const circlesContainer = document.getElementById('dailyCirclesContainer');
+        if (circlesContainer) circlesContainer.innerHTML = '';
+        // Force refresh of overall stats
         updateOverallStats(currentPeriodDays);
     });
 
@@ -389,4 +407,102 @@ export async function initStatsPage() {
 
     // Initial load
     updateOverallStats(currentPeriodDays);
+}
+
+async function loadDailyCircles(gameName, days) {
+    const dailyData = await window.api.getDailyPlaytimeForGame(gameName, days);
+    const container = document.getElementById('dailyCirclesContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    for (const day of dailyData) {
+        const seconds = day.seconds;
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const formattedTime = `${hours}h ${minutes}m`;
+        const percentOfDay = (seconds / 86400) * 100; // 86400 seconds in a day
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        canvas.className = 'circle-canvas';
+        const ctx = canvas.getContext('2d');
+        drawProgressCircle(ctx, percentOfDay, formattedTime);
+        const div = document.createElement('div');
+        div.className = 'circle-item';
+        div.appendChild(canvas);
+        const label = document.createElement('div');
+        label.className = 'circle-label';
+        label.innerText = day.date;
+        div.appendChild(label);
+        container.appendChild(div);
+    }
+}
+
+function drawProgressCircle(ctx, percent, formattedTime) {
+    const centerX = 50, centerY = 50, radius = 42;
+    const startAngle = -0.5 * Math.PI;
+    const endAngle = startAngle + (percent / 100) * 2 * Math.PI;
+    ctx.clearRect(0, 0, 100, 100);
+    // Background ring (light gray)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#2d2d2d';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    // Progress ring (color based on percent)
+    let ringColor = '#ff4655'; // red
+    if (percent >= 20) ringColor = '#f59e0b';  // orange (4.8h)
+    if (percent >= 30) ringColor = '#3b82f6';  // blue (7.2h)
+    if (percent >= 40) ringColor = '#10b981';  // green (9.6h)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    // Text (hours + minutes)
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px "Poppins", sans-serif';
+    const lines = formattedTime.split(' ');
+    if (lines.length === 3) {
+        ctx.fillText(`${lines[0]} ${lines[1]}`, centerX - 22, centerY - 5);
+        ctx.fillText(`${lines[2]}`, centerX - 15, centerY + 12);
+    } else {
+        ctx.fillText(formattedTime, centerX - 22, centerY + 5);
+    }
+}
+
+async function loadDoughnutChart(periodDays) {
+    const topGames = await window.api.getTopGames(5, periodDays);
+    const labels = topGames.map(g => g.name);
+    const data = topGames.map(g => g.totalSeconds / 3600); // hours
+    if (doughnutChart) doughnutChart.destroy();
+    const ctx = document.getElementById('doughnutChart').getContext('2d');
+    doughnutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: ['#ff4655', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const hours = ctx.raw;
+                            const totalMinutes = hours * 60;
+                            const hrs = Math.floor(totalMinutes / 60);
+                            const mins = Math.round(totalMinutes % 60);
+                            return `${ctx.label}: ${hrs}h ${mins}m`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }

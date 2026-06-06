@@ -207,6 +207,20 @@ function getMonthlyPlaytime(monthsBack = 12) {
     return sorted.map(([month, seconds]) => ({ month, seconds }));
 }
 
+function getDailyPlaytimeForGame(gameName, periodDays) {
+    const sessions = readSessions();
+    const now = Date.now();
+    const cutoff = now - (periodDays * 24 * 60 * 60 * 1000);
+    const relevant = sessions.filter(s => s.gameName === gameName && s.endTime && s.endTime >= cutoff);
+    const daily = {};
+    for (const s of relevant) {
+        const date = new Date(s.endTime).toISOString().split('T')[0];
+        daily[date] = (daily[date] || 0) + s.durationSeconds;
+    }
+    const sorted = Object.entries(daily).sort((a, b) => a[0].localeCompare(b[0]));
+    return sorted.map(([date, seconds]) => ({ date, seconds }));
+}
+
 
 module.exports = {
     initSessionsDB,
@@ -226,4 +240,5 @@ module.exports = {
     getUniqueGamesCount, 
     getFirstPlayedDate, 
     getMonthlyPlaytime,
+    getDailyPlaytimeForGame,
 };

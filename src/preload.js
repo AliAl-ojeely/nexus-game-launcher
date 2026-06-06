@@ -82,6 +82,7 @@ contextBridge.exposeInMainWorld('api', {
     getUniqueGamesCount: () => ipcRenderer.invoke('get-unique-games-count'),
     getFirstPlayedDate: () => ipcRenderer.invoke('get-first-played-date'),
     getMonthlyPlaytime: (months) => ipcRenderer.invoke('get-monthly-playtime', months),
+    getDailyPlaytimeForGame: (gameName, periodDays) => ipcRenderer.invoke('get-daily-playtime-for-game', gameName, periodDays),
 
     // ── User Path Data ──────────────────────────────────────────────────────────────
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),

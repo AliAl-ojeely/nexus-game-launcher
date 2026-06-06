@@ -775,3 +775,20 @@ body.darker-mode .toast {
     transition: all 0.2s ease;
     z-index: 5;
 }
+
+/* Skip All button hover effect */
+.modal-buttons #detectSkipAllBtn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-buttons #detectSkipAllBtn:hover {
+    filter: brightness(0.85);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+.modal-buttons #detectSkipAllBtn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
+}

@@ -601,6 +601,10 @@ function registerApiIPC() {
         }
         return false;
     });
+
+    ipcMain.handle('get-daily-playtime-for-game', (_, gameName, periodDays) => {
+        return sessions.getDailyPlaytimeForGame(gameName, periodDays);
+    });
 }
 
 module.exports = { registerApiIPC };

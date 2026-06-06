@@ -163,6 +163,11 @@ const dictionary = {
         run_it_specs_loaded: "تم جلب المواصفات",
         run_it_specs_loaded_desc: "قارن مواصفاتك يدوياً مع النص المرفق في الجدول.",
         btn_checking: "جاري الفحص...",
+        daily_playtime_circles: "عدد مرات اللعب مع المدة",
+        daily_circles_no_game_selected: "اختر لعبة لعرض الدوائر اليومية.",
+        top_games_chart_title: "أفضل 5 ألعاب من حيث وقت اللعب",
+        monthly_chart_title: "وقت اللعب الشهري (آخر 12 شهراً)",
+        doughnut_chart_title: "توزيع وقت اللعب (أفضل الألعاب)",
 
         nav_stats: "إحصائيات الألعاب",
         title_stats: "لوحة الإحصائيات",
@@ -417,6 +422,11 @@ const dictionary = {
         run_it_specs_loaded: "Specs Loaded",
         run_it_specs_loaded_desc: "Compare your specs manually with the text provided.",
         btn_checking: "Checking...",
+        daily_playtime_circles: "Number of plays and duration",
+        daily_circles_no_game_selected: "Select a game to view daily circles.",
+        top_games_chart_title: "Top 5 Most Played Games",
+        monthly_chart_title: "Monthly Playtime (Last 12 Months)",
+        doughnut_chart_title: "Playtime Distribution (Top Games)",
 
         nav_stats: "Game Statistics",
         title_stats: "Statistics Dashboard",

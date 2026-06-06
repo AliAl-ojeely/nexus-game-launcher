@@ -1161,6 +1161,24 @@ html[lang="ar"] .stat-card h3 {
     transform: translateY(-2px);
 }
 
+/* Make stats divider visible in darker mode */
+.darker-mode .stats-divider {
+    background: linear-gradient(90deg, transparent, #6b7280, transparent);
+}
+
+.light-mode .stats-divider {
+    background: linear-gradient(90deg, transparent, #6b7280, transparent);
+}
+
+.stats-chart-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: center;
+}
+
 .stats-divider {
     margin: 30px 0 20px 0;
     border: none;
@@ -1178,6 +1196,10 @@ html[lang="ar"] .stat-card h3 {
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+.stats-layout {
+    height: auto;
 }
 
 .stats-main::-webkit-scrollbar {
@@ -1322,4 +1344,50 @@ html[lang="ar"] .stat-card h3 {
 .darker-mode .custom-select,
 .darker-mode .toggle-container {
     border: 1px solid #1d1d1d !important;
+}
+
+/* Daily circles */
+.stats-daily-circles {
+    margin-top: 30px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.daily-circles-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.circle-item {
+    text-align: center;
+    width: 110px;
+}
+
+.circle-canvas {
+    width: 100px;
+    height: 100px;
+}
+
+.circle-label {
+    font-size: 12px;
+    margin-top: 8px;
+    color: var(--text-muted);
+}
+
+.daily-goal-setting {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+#doughnutChart {
+    max-height: 300px;
+    margin: 0 auto;
 }
