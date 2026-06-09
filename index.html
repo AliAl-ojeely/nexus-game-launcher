@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.5.3</span>
+            <span class="version-badge">v2.5.4</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -553,6 +553,9 @@
                         <img id="detailsHeaderIcon" class="details-header-icon" src="" alt="" style="display:none;">
                         <span id="detailsHeaderName"></span>
                     </div>
+                    <button id="detailsHeaderFavBtn" class="details-fav-btn" style="display: none;" title="Favorite">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
                 </div>
 
                 <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
@@ -763,17 +766,18 @@
 
                         <div id="backupListContainer" style="display:none; margin-top:12px;"></div>
                     </div>
+                    
                     <!-- ── Notes Section ── -->
                     <div class="meta-item" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
                         <span data-i18n="game_notes_label">Personal Notes</span>
                         <div id="notesDisplay" class="notes-display">
-                            <p id="notesText" class="notes-text">—</p>
+                            <p id="notesText" class="notes-text" dir="auto">—</p>
                             <button id="editNotesBtn" class="edit-notes-btn" title="Edit Notes">
                                 <i class="fa-solid fa-pencil"></i>
                             </button>
                         </div>
                         <div id="notesEditArea" style="display: none;">
-                            <textarea id="notesInput" rows="4" class="notes-textarea"
+                            <textarea id="notesInput" rows="4" class="notes-textarea" dir="auto"
                                 placeholder="Write your personal notes here..."></textarea>
                             <div class="notes-actions">
                                 <button id="saveNotesBtn" class="save-notes-btn">Save</button>
@@ -979,7 +983,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.5.3</p>
+                <p style="text-align: center;">version 2.5.4</p>
             </div>
         </div>
     </div>

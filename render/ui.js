@@ -222,6 +222,14 @@ export function initUI() {
             if (topbar) {
                 topbar.style.display = hideTopbarPages.includes(targetArea) ? 'none' : 'flex';
             }
+
+            // Exit reorder mode if active and not on Library or Favorites
+            const reorderBtn = document.getElementById('reorderModeBtn');
+            if (reorderBtn && reorderBtn.classList.contains('active')) {
+                if (state.currentTab !== 'libraryArea' && state.currentTab !== 'favoritesArea') {
+                    reorderBtn.click(); // turn off reorder mode
+                }
+            }
         });
     });
 

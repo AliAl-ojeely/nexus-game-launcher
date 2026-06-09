@@ -1,4 +1,3 @@
-// render/reorder.js
 let sortableMain = null;
 let sortableFav = null;
 let isReorderMode = false;
@@ -38,9 +37,17 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
 
     document.body.classList.add('reorder-mode');
 
-    document.querySelectorAll('.game-card').forEach(card => {
-        card.classList.add('shake-animation');
-    });
+    if (mainContainer) {
+        mainContainer.querySelectorAll('.game-card').forEach(card => {
+            card.classList.add('shake-animation');
+        });
+    }
+
+    if (favContainer) {
+        favContainer.querySelectorAll('.game-card').forEach(card => {
+            card.classList.add('shake-animation');
+        });
+    }
 
     if (sortableMain) sortableMain.destroy();
     if (sortableFav) sortableFav.destroy();
@@ -56,7 +63,7 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
         }
     });
 
-    if (favContainer.children.length > 0) {
+    if (favContainer && favContainer.children.length > 0) {
         sortableFav = new Sortable(favContainer, {
             animation: 300,
             handle: '.game-card',
@@ -73,22 +80,38 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
 export function disableReorderMode() {
     if (!isReorderMode) return;
     isReorderMode = false;
+
     document.body.classList.remove('reorder-mode');
-    if (sortableMain) { sortableMain.destroy(); sortableMain = null; }
-    if (sortableFav) { sortableFav.destroy(); sortableFav = null; }
-    document.querySelectorAll('.game-card').forEach(card => card.classList.remove('shake-animation'));
+    document.querySelectorAll('.game-card').forEach(card => {
+        card.classList.remove('shake-animation');
+    });
+
+    if (sortableMain) {
+        sortableMain.destroy();
+        sortableMain = null;
+    }
+    if (sortableFav) {
+        sortableFav.destroy();
+        sortableFav = null;
+    }
 }
 
 export function toggleReorderMode(mainContainer, favContainer, onOrderChange) {
     if (isReorderMode) {
         disableReorderMode();
+        return false; // now inactive
     } else {
         enableReorderMode(mainContainer, favContainer, onOrderChange);
+        return true; // now active
     }
-    return isReorderMode;
 }
 
 export async function resetOrder(games, mainContainer, favContainer) {
+    // If reorder mode is active, turn it off first
+    if (isReorderMode) {
+        disableReorderMode();
+    }
+
     const defaultOrder = games.map(g => g.id);
     await saveOrder(defaultOrder, 'main');
     await saveOrder([], 'favorites'); // clear custom favorite order

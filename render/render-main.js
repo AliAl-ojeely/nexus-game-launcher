@@ -42,6 +42,61 @@ function parseMarkdown(text) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Background metadata fetcher (for games added offline)
+// ─────────────────────────────────────────────────────────────────────────────
+let isRefreshingMetadata = false;
+
+async function refreshMissingMetadata() {
+    if (isRefreshingMetadata) return;
+    if (!navigator.onLine) {
+        console.log('[Metadata] Offline – skipping background fetch');
+        return;
+    }
+    if (!state.allGamesData || state.allGamesData.length === 0) return;
+
+    const games = state.allGamesData;
+    const missingGames = games.filter(g => !g.assets?.poster && !g.metadata?.description);
+    if (missingGames.length === 0) {
+        console.log('[Metadata] All games have metadata');
+        return;
+    }
+
+    isRefreshingMetadata = true;
+    console.log(`[Metadata] Found ${missingGames.length} games missing metadata, fetching...`);
+    let updated = 0;
+
+    for (const game of missingGames) {
+        try {
+            const details = await window.api.fetchGameDetails(game.name);
+            if (details && (details.assets?.poster || details.metadata?.description)) {
+                const updatedGame = {
+                    ...game,
+                    assets: details.assets || {},
+                    metadata: details.metadata || {}
+                };
+                await window.api.updateGame(updatedGame);
+                Object.assign(game, updatedGame);
+                updated++;
+                await new Promise(resolve => setTimeout(resolve, 500)); // rate limit
+            }
+        } catch (err) {
+            console.warn(`[Metadata] Failed for "${game.name}":`, err.message);
+        }
+    }
+
+    if (updated > 0) {
+        renderGames();
+        const isAr = userSettings.lang === 'ar';
+        const msg = isAr ? `تم تحديث بيانات ${updated} لعبة` : `Updated metadata for ${updated} game(s)`;
+        showToast('success', msg, '', 3000);
+    }
+    isRefreshingMetadata = false;
+}
+
+// Expose globally so shortcuts.js can call it
+window.refreshMissingMetadata = refreshMissingMetadata;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -58,6 +113,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGames();
     initReorderButton();
     initStatsPage();
+
+    // After a short delay (to let games load), start background metadata check
+    setTimeout(() => {
+        refreshMissingMetadata();
+    }, 1000);
 
     const runItBtn = document.getElementById('runItCheckBtn');
     if (runItBtn) runItBtn.addEventListener('click', handleCanIRunItCheck);
@@ -191,6 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
             renderGames();
+            refreshMissingMetadata();   // <-- add this line
             const isAr = userSettings.lang === 'ar';
             const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
             showToast('success', msg, '', 1500);

@@ -2,8 +2,7 @@
    1. Imports (MUST BE AT THE VERY TOP)
 ========================================= */
 @import url('variables.css');
-@import url('layout.css');
-@import url('components.css');
+@import url('Component-layout.css');
 @import url('pages.css');
 @import url('modals.css');
 @import url('backup-ux.css');
@@ -13,24 +12,21 @@
    Custom Scrollbar
 ========================================= */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 4px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
     background: var(--bg-sidebar);
-    /* لون الخلفية */
 }
 
 ::-webkit-scrollbar-thumb {
     background: #475569;
-    /* لون الشريط نفسه */
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent);
-    /* يضيء بلون التطبيق عند تمرير الماوس */
 }
 
 /* =========================================

@@ -357,6 +357,13 @@ export function initReorderButton() {
     }
 
     reorderBtn.onclick = () => {
+        // Disable reorder button on Recently Played page
+        if (state.currentTab === 'recentArea') {
+            const isAr = userSettings.lang === 'ar';
+            const msg = isAr ? 'لا يمكن إعادة ترتيب الألعاب في صفحة الألعاب الحديثة' : 'Cannot reorder games on Recently Played page';
+            if (window.showToast) window.showToast('warning', msg, '', 2000);
+            return;
+        }
         const isActive = toggleReorderMode(gamesContainer, favoritesContainer, (newOrder, type) => {
             console.log(`Order saved for ${type}:`, newOrder);
         });

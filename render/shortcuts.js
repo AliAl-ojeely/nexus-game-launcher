@@ -176,7 +176,16 @@ export function initShortcuts() {
     }
 
     // Keyboard navigation
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', async (event) => {
+        // Disable most shortcuts when reorder mode is active (only allow Escape and M)
+        const reorderBtn = document.getElementById('reorderModeBtn');
+        const isReorderActive = reorderBtn && reorderBtn.classList.contains('active');
+        if (isReorderActive && event.key !== 'Escape' && event.key !== 'm' && event.key !== 'M') {
+            event.preventDefault();
+            // Optional: show a toast once? Not necessary – just block silently.
+            return;
+        }
+
         // 1. Escape handling (blur search, close modals)
         if (event.key === 'Escape') {
             const searchInput = document.getElementById('searchInput');
@@ -264,9 +273,25 @@ export function initShortcuts() {
             return;
         }
 
-        // 7. M: reorder mode
+        // 7. M: reorder mode (drag & drop)
         if (event.key === 'm' || event.key === 'M') {
             event.preventDefault();
+            const activePage = state.currentTab;
+            // Block on Recently Played
+            if (activePage === 'recentArea') {
+                const isAr = localStorage.getItem('lang') === 'ar';
+                const msg = isAr ? 'لا يمكن تفعيل وضع إعادة الترتيب في صفحة الألعاب الحديثة' : 'Reorder mode is not available on Recently Played page';
+                showToast('warning', msg, '', 2000);
+                return;
+            }
+            // Also block on game details page
+            const detailsArea = document.getElementById('gameDetailsArea');
+            if (detailsArea && detailsArea.classList.contains('active')) {
+                const isAr = localStorage.getItem('lang') === 'ar';
+                const msg = isAr ? 'لا يمكن تفعيل وضع إعادة الترتيب في صفحة تفاصيل اللعبة' : 'Cannot enable reorder mode on game details page';
+                showToast('warning', msg, '', 2000);
+                return;
+            }
             const reorderBtn = document.getElementById('reorderModeBtn');
             if (reorderBtn) reorderBtn.click();
             return;
@@ -349,17 +374,27 @@ export function initShortcuts() {
                     const game = state.allGamesData.find(g => g.id === currentGameId);
                     if (game) {
                         game.isFavorite = !game.isFavorite;
-                        window.api.updateGame(game).then(() => {
-                            renderGames(); // refresh library/favorites grids
-                            const isAr = localStorage.getItem('lang') === 'ar';
-                            const msg = game.isFavorite
-                                ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
-                                : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
-                            showToast('success', msg, '', 1500);
-                        }).catch(err => {
-                            console.error('[Shortcut] Failed to toggle favorite:', err);
-                            showToast('error', 'Failed to update favorite', '', 2000);
-                        });
+                        await window.api.updateGame(game);
+                        renderGames(); // refresh library/favorites grids
+
+                        // 🆕 Update the details header heart button
+                        const favBtn = document.getElementById('detailsHeaderFavBtn');
+                        if (favBtn) {
+                            const favIcon = favBtn.querySelector('i');
+                            if (game.isFavorite) {
+                                favIcon.className = 'fa-solid fa-heart';
+                                favBtn.classList.add('active');
+                            } else {
+                                favIcon.className = 'fa-regular fa-heart';
+                                favBtn.classList.remove('active');
+                            }
+                        }
+
+                        const isAr = localStorage.getItem('lang') === 'ar';
+                        const msg = game.isFavorite
+                            ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
+                            : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
+                        showToast('success', msg, '', 1500);
                     }
                 }
             }
@@ -370,6 +405,7 @@ export function initShortcuts() {
         if (event.key === 'r' || event.key === 'R') {
             event.preventDefault();
             renderGames();
+            if (window.refreshMissingMetadata) window.refreshMissingMetadata();
             const isAr = localStorage.getItem('lang') === 'ar';
             const msg = isAr ? 'تم تحديث المكتبة' : 'Library refreshed';
             showToast('success', msg, '', 1500);

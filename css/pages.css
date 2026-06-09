@@ -1391,3 +1391,35 @@ html[lang="ar"] .stat-card h3 {
     max-height: 300px;
     margin: 0 auto;
 }
+
+/* Details page header favorite button */
+.details-fav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    margin-left: auto;
+    /* pushes to the right in LTR */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+[dir="rtl"] .details-fav-btn {
+    margin-left: 0;
+    margin-right: auto;
+    /* pushes to the left in RTL */
+}
+
+.details-fav-btn.active {
+    color: var(--accent);
+}
+
+.details-fav-btn:hover {
+    background: var(--bg-hover);
+    transform: scale(1.1);
+}
