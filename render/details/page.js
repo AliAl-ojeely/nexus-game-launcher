@@ -232,34 +232,19 @@ export async function openGameDetailsPage(game) {
         }
     }
 
-    // Favorite button in header
-    const favBtn = document.getElementById('detailsHeaderFavBtn');
-    if (favBtn) {
+    // Favorite indicator in header (display‑only)
+    const favIconContainer = document.getElementById('detailsHeaderFavIcon');
+    if (favIconContainer) {
         const isFav = game.isFavorite || false;
-        const favIcon = favBtn.querySelector('i');
+        const icon = favIconContainer.querySelector('i');
         if (isFav) {
-            favIcon.className = 'fa-solid fa-heart';
-            favBtn.classList.add('active');
+            icon.className = 'fa-solid fa-heart';
+            favIconContainer.classList.add('active');
         } else {
-            favIcon.className = 'fa-regular fa-heart';
-            favBtn.classList.remove('active');
+            icon.className = 'fa-regular fa-heart';
+            favIconContainer.classList.remove('active');
         }
-        favBtn.style.display = 'flex';
-        favBtn.onclick = async (e) => {
-            e.stopPropagation();
-            game.isFavorite = !game.isFavorite;
-            await window.api.updateGame(game);
-            // Update button icon
-            const newIcon = game.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-            favIcon.className = newIcon;
-            favBtn.classList.toggle('active', game.isFavorite);
-            // Show toast feedback
-            const isAr = userSettings.lang === 'ar';
-            const msg = game.isFavorite
-                ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
-                : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
-            showToast('success', msg, '', 1500);
-            // Also update the library card heart? The card will refresh when user returns.
-        };
+        favIconContainer.style.display = 'flex';
+        // No onclick handler – purely visual
     }
 }

@@ -8,6 +8,10 @@ let weekdayChart = null;
 let hourChart = null;
 let topGamesChart = null;
 let doughnutChart = null;
+let monthlyLineChart = null;
+let cumulativeChart = null;
+let growthChart = null;
+let heatmapCanvas = null;
 
 // -----------------------------------------------------------------------------
 // Helper: get grid line color based on current theme
@@ -23,6 +27,11 @@ function getGridColor() {
     }
     // Default dark mode: light gray (not black)
     return 'rgba(255, 255, 255, 0.25)';
+}
+
+function setDivider(id, visible) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visible ? 'block' : 'none';
 }
 
 // -----------------------------------------------------------------------------
@@ -72,8 +81,43 @@ async function loadGameList() {
 // Refresh all stats when a game is selected
 // -----------------------------------------------------------------------------
 async function refreshAllStats() {
+    // Hide overall‑only containers
     const doughnutContainer = document.getElementById('doughnutChartContainer');
     if (doughnutContainer) doughnutContainer.style.display = 'none';
+    const doughnutDivider = document.getElementById('dividerDoughnut');
+    if (doughnutDivider) doughnutDivider.style.display = 'none';
+
+    // Show game‑specific containers
+    const lineContainer = document.getElementById('monthlyLineChartContainer');
+    if (lineContainer) lineContainer.style.display = 'block';
+    const lineDivider = document.getElementById('dividerMonthlyLine');
+    if (lineDivider) lineDivider.style.display = 'block';
+
+    // Show daily circles container and its divider
+    const dailyCircles = document.getElementById('statsDailyCircles');
+    if (dailyCircles) dailyCircles.style.display = 'block';
+    const circlesDivider = document.getElementById('dividerDailyCircles');
+    if (circlesDivider) circlesDivider.style.display = 'block';
+
+    // Show cumulative chart (per‑game) with its divider
+    const cumContainer = document.getElementById('cumulativeChartContainer');
+    const cumDivider = document.getElementById('dividerCumulative');
+    if (cumContainer) cumContainer.style.display = 'block';
+    if (cumDivider) cumDivider.style.display = 'block';
+    await loadCumulativeChart(currentGame, currentPeriodDays);
+
+    // Hide library growth and heatmap (overall only)
+    const growthContainer = document.getElementById('growthChartContainer');
+    const heatmapContainer = document.getElementById('heatmapContainer');
+    if (growthContainer) growthContainer.style.display = 'none';
+    if (heatmapContainer) heatmapContainer.style.display = 'none';
+    const growthDivider = document.getElementById('dividerGrowth');
+    const heatmapDivider = document.getElementById('dividerHeatmap');
+    if (growthDivider) growthDivider.style.display = 'none';
+    if (heatmapDivider) heatmapDivider.style.display = 'none';
+
+    // Load all data
+    await loadMonthlyLineChart(currentGame);
     await updateStatsForGame(currentGame, currentPeriodDays);
     await loadExtraMetrics(currentGame);
     await loadSessionHistory(currentGame);
@@ -99,18 +143,49 @@ async function updateStatsForGame(gameName, days) {
 // Overall stats (no game selected)
 // -----------------------------------------------------------------------------
 async function updateOverallStats(days) {
+    // Hide game‑specific containers
+    const lineContainer = document.getElementById('monthlyLineChartContainer');
+    if (lineContainer) lineContainer.style.display = 'none';
+    const lineDivider = document.getElementById('dividerMonthlyLine');
+    if (lineDivider) lineDivider.style.display = 'none';
+
+    // Hide daily circles container and its divider
+    const dailyCircles = document.getElementById('statsDailyCircles');
+    if (dailyCircles) dailyCircles.style.display = 'none';
+    const circlesDivider = document.getElementById('dividerDailyCircles');
+    if (circlesDivider) circlesDivider.style.display = 'none';
+
+    // Show overall‑only containers
     const doughnutContainer = document.getElementById('doughnutChartContainer');
     if (doughnutContainer) doughnutContainer.style.display = 'block';
+    const doughnutDivider = document.getElementById('dividerDoughnut');
+    if (doughnutDivider) doughnutDivider.style.display = 'block';
+
+    // Show overall‑only charts (cumulative, growth, heatmap)
+    const cumContainer = document.getElementById('cumulativeChartContainer');
+    const cumDivider = document.getElementById('dividerCumulative');
+    if (cumContainer) cumContainer.style.display = 'block';
+    if (cumDivider) cumDivider.style.display = 'none'; // hide divider for overall
+    await loadCumulativeChart(null, days);
+
+    const growthContainer = document.getElementById('growthChartContainer');
+    if (growthContainer) growthContainer.style.display = 'block';
+    const growthDivider = document.getElementById('dividerGrowth');
+    if (growthDivider) growthDivider.style.display = 'block';
+    await loadGrowthChart();
+
+    const heatmapContainer = document.getElementById('heatmapContainer');
+    if (heatmapContainer) heatmapContainer.style.display = 'block';
+    const heatmapDivider = document.getElementById('dividerHeatmap');
+    if (heatmapDivider) heatmapDivider.style.display = 'block';
+    await loadHeatmap();
+
+    // Load overall data
     const stats = await window.api.getOverallStats(days);
     document.getElementById('statTotalPlaytime').innerText = formatDuration(stats.totalPlaytime);
     document.getElementById('statPlayCount').innerText = stats.totalSessions;
     document.getElementById('statAvgSession').innerText = formatDuration(stats.avgSession);
 
-    const circlesContainer = document.getElementById('dailyCirclesContainer');
-    if (circlesContainer) {
-        const msg = t('daily_circles_no_game_selected', 'Select a game to view daily circles.');
-        circlesContainer.innerHTML = `<div style="text-align:center;">${msg}</div>`;
-    }
     await loadTopGamesChart(days);
     await loadExtraMetrics(null);
     await loadSessionHistory(null);
@@ -298,6 +373,157 @@ async function loadMonthlyChart() {
             scales: { y: { beginAtZero: true, grid: { color: gridColor } }, x: { grid: { color: gridColor } } }
         }
     });
+}
+
+async function loadMonthlyLineChart(gameName) {
+    const data = await window.api.getMonthlyStatsForGame(gameName, 12);
+    const labels = data.map(d => d.label);
+    const hoursData = data.map(d => d.hours);
+    const sessionCounts = data.map(d => d.count);
+
+    if (monthlyLineChart) monthlyLineChart.destroy();
+    const ctx = document.getElementById('monthlyLineChart').getContext('2d');
+    monthlyLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: t('playtime_hours_label', 'Playtime (hours)'),
+                data: hoursData,
+                borderColor: '#ff4655',
+                backgroundColor: 'rgba(255, 70, 85, 0.1)',
+                tension: 0.3,
+                fill: true,
+                yAxisID: 'y'
+            }, {
+                label: t('session_count_label', 'Sessions'),
+                data: sessionCounts,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.3,
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { title: { display: true, text: t('playtime_hours_label', 'Hours') }, beginAtZero: true },
+                y1: { position: 'right', title: { text: t('session_count_label', 'Sessions') }, beginAtZero: true, grid: { drawOnChartArea: false } }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            let label = context.dataset.label || '';
+                            let value = context.raw;
+                            if (context.datasetIndex === 0) {
+                                return `${label}: ${value.toFixed(1)} hours`;
+                            } else {
+                                return `${label}: ${value} sessions`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    console.log('[LineChart] Data received:', data);
+}
+
+async function loadCumulativeChart(gameName, days) {
+    const data = await window.api.getCumulativeStats(gameName, days);
+    const labels = data.map(d => d.date);
+    const hours = data.map(d => d.cumulativeHours);
+    if (cumulativeChart) cumulativeChart.destroy();
+    const ctx = document.getElementById('cumulativeChart').getContext('2d');
+    cumulativeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: t('cumulative_label', 'Cumulative Playtime (hours)'),
+                data: hours,
+                borderColor: '#ff4655',
+                backgroundColor: 'transparent',
+                tension: 0.1,
+                fill: false,
+                pointRadius: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: { y: { beginAtZero: true, title: { display: true, text: t('cumulative_label', 'Hours') } } }
+        }
+    });
+}
+
+async function loadGrowthChart() {
+    const data = await window.api.getLibraryGrowth();
+    const labels = data.map(d => d.month);
+    const counts = data.map(d => d.count);
+    if (growthChart) growthChart.destroy();
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    growthChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: t('growth_label', 'Games Added'),
+                data: counts,
+                backgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: { y: { beginAtZero: true, stepSize: 1, title: { display: true, text: t('growth_label', 'Count') } } }
+        }
+    });
+}
+
+async function loadHeatmap() {
+    const data = await window.api.getHeatmapData();
+    const dateMap = new Map(data.map(d => [d.date, d.hours]));
+    const now = new Date();
+    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 364); // 365 days including today
+    const days = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        const hours = dateMap.get(dateStr) || 0;
+        days.push({ date: dateStr, hours });
+    }
+    const canvas = document.getElementById('heatmapCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cellSize = 15;
+    const cols = 53; // approx weeks
+    const rows = 7;
+    canvas.width = cols * cellSize;
+    canvas.height = rows * cellSize;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < days.length; i++) {
+        const day = days[i];
+        const col = Math.floor(i / rows);
+        const row = i % rows;
+        const x = col * cellSize;
+        const y = row * cellSize;
+        let intensity = Math.min(1, day.hours / 10); // max 10 hours = darkest
+        let color;
+        if (day.hours === 0) color = '#2d2d2d';
+        else if (day.hours < 1) color = '#1f4d2e';
+        else if (day.hours < 3) color = '#2e6b3e';
+        else if (day.hours < 6) color = '#3e8e4e';
+        else color = '#4fae5e';
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
+    }
 }
 
 // -----------------------------------------------------------------------------

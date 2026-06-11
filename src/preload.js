@@ -83,6 +83,10 @@ contextBridge.exposeInMainWorld('api', {
     getFirstPlayedDate: () => ipcRenderer.invoke('get-first-played-date'),
     getMonthlyPlaytime: (months) => ipcRenderer.invoke('get-monthly-playtime', months),
     getDailyPlaytimeForGame: (gameName, periodDays) => ipcRenderer.invoke('get-daily-playtime-for-game', gameName, periodDays),
+    getMonthlyStatsForGame: (gameName, months) => ipcRenderer.invoke('get-monthly-stats-for-game', gameName, months),
+    getCumulativeStats: (gameName, days) => ipcRenderer.invoke('get-cumulative-stats', gameName, days),
+    getLibraryGrowth: () => ipcRenderer.invoke('get-library-growth'),
+    getHeatmapData: () => ipcRenderer.invoke('get-heatmap-data'),
 
     // ── User Path Data ──────────────────────────────────────────────────────────────
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const db = require('./database');
 
 const SESSIONS_PATH = path.join(app.getPath('userData'), 'playSessions.json');
 
@@ -207,6 +208,104 @@ function getMonthlyPlaytime(monthsBack = 12) {
     return sorted.map(([month, seconds]) => ({ month, seconds }));
 }
 
+function getMonthlyStatsForGame(gameName, monthsBack = 12) {
+    const sessions = readSessions();
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+    const monthly = {};
+
+    for (const s of sessions) {
+        if (s.gameName !== gameName || !s.endTime) continue;
+        const date = new Date(s.endTime);
+        if (date < startDate) continue;
+        const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        if (!monthly[key]) {
+            monthly[key] = { seconds: 0, count: 0 };
+        }
+        monthly[key].seconds += s.durationSeconds;
+        monthly[key].count += 1;
+    }
+
+    const result = [];
+    for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+        const data = monthly[key] || { seconds: 0, count: 0 };
+        result.push({
+            month: key,
+            label: d.toLocaleString('default', { month: 'short', year: 'numeric' }),
+            seconds: data.seconds,
+            hours: data.seconds / 3600,
+            count: data.count,
+        });
+    }
+    return result;
+}
+
+// Cumulative playtime over time (returns array of { date, cumulativeSeconds })
+function getCumulativeStats(gameName, days) {
+    const sessions = readSessions();
+    const now = Date.now();
+    const cutoff = now - (days * 24 * 60 * 60 * 1000);
+    const filtered = sessions.filter(s => {
+        if (!s.endTime) return false;
+        if (gameName && s.gameName !== gameName) return false;
+        return s.endTime >= cutoff;
+    });
+    // group by date (YYYY-MM-DD)
+    const dailyTotal = {};
+    for (const s of filtered) {
+        const date = new Date(s.endTime).toISOString().split('T')[0];
+        dailyTotal[date] = (dailyTotal[date] || 0) + s.durationSeconds;
+    }
+    // generate all dates in range
+    const result = [];
+    let currentDate = new Date(cutoff);
+    while (currentDate <= new Date(now)) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const seconds = dailyTotal[dateStr] || 0;
+        result.push({ date: dateStr, seconds });
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    // compute cumulative sum
+    let cumulative = 0;
+    const cumulativeData = result.map(day => {
+        cumulative += day.seconds;
+        return { date: day.date, cumulativeHours: cumulative / 3600 };
+    });
+    return cumulativeData;
+}
+
+// Game library growth (monthly count of added games)
+function getLibraryGrowth() {
+    const games = db.getGames(); // from database.js – careful: we need to import db or pass it
+    const monthly = {};
+    for (const game of games) {
+        const date = new Date(game.id); // game.id is a timestamp (milliseconds)
+        if (isNaN(date.getTime())) continue;
+        const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        monthly[key] = (monthly[key] || 0) + 1;
+    }
+    // sort by date
+    const sorted = Object.entries(monthly).sort((a, b) => a[0].localeCompare(b[0]));
+    return sorted.map(([month, count]) => ({ month, count }));
+}
+
+// Heatmap data: { date: string, count: number } for last 365 days
+function getHeatmapData() {
+    const sessions = readSessions();
+    const now = Date.now();
+    const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+    const filtered = sessions.filter(s => s.endTime && s.endTime >= oneYearAgo);
+    const daily = {};
+    for (const s of filtered) {
+        const date = new Date(s.endTime).toISOString().split('T')[0];
+        daily[date] = (daily[date] || 0) + s.durationSeconds;
+    }
+    // convert to array of { date, hours }
+    return Object.entries(daily).map(([date, seconds]) => ({ date, hours: seconds / 3600 }));
+}
+
 function getDailyPlaytimeForGame(gameName, periodDays) {
     const sessions = readSessions();
     const now = Date.now();
@@ -241,4 +340,8 @@ module.exports = {
     getFirstPlayedDate, 
     getMonthlyPlaytime,
     getDailyPlaytimeForGame,
+    getMonthlyStatsForGame,
+    getCumulativeStats,
+    getLibraryGrowth,
+    getHeatmapData,
 };

@@ -18,7 +18,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.5.4</span>
+            <span class="version-badge">v2.5.5</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -161,7 +161,8 @@
                 </div>
 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerMetrics" class="stats-divider" style="display: block;">
+
         
                 <!-- Additional metrics grid (outside the main layout, full width) -->
                 <div class="stats-metrics-grid">
@@ -204,7 +205,7 @@
                 </div>
 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerAfterCharts" class="stats-divider" style="display: block;">
         
                 <!-- Charts row (weekday + hour) -->
                 <div class="stats-charts-row">
@@ -217,16 +218,16 @@
                 </div>
 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerDailyCircles" class="stats-divider" style="display: none;">
 
                 <!-- Daily Playtime Circles -->
-                <div class="stats-daily-circles">
+                <div class="stats-daily-circles" id="statsDailyCircles">
                     <h3 data-i18n="daily_playtime_circles">Daily Playtime Circles</h3>
                     <div id="dailyCirclesContainer" class="daily-circles-container"></div>
                 </div>
 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerTopGames" class="stats-divider" style="display: block;">
         
                 <!-- Top games chart -->
                 <div class="stats-chart-container">
@@ -235,7 +236,7 @@
                 </div>
                 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerDoughnut" class="stats-divider" style="display: none;">
 
                 <!-- Playtime Distribution Doughnut Chart -->
                 <div class="stats-chart-container" id="doughnutChartContainer">
@@ -244,7 +245,7 @@
                 </div>
 
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerMonthlyBar" class="stats-divider" style="display: block;">
                 
                 <!-- Monthly games chart -->
                 <div class="stats-chart-container">
@@ -252,8 +253,39 @@
                     <canvas id="monthlyChart" width="400" height="200"></canvas>
                 </div>
 
+                <hr id="dividerSessionHistory" class="stats-divider" style="display: block;">
+
+                <!-- Monthly Playtime Trend (Line Chart) -->
+                <div class="stats-chart-container" id="monthlyLineChartContainer" style="display: none;">
+                    <h3 data-i18n="monthly_line_chart_title">Monthly Playtime Trend (Last 12 Months)</h3>
+                    <canvas id="monthlyLineChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Cumulative Playtime Chart -->
+                <hr id="dividerCumulative" class="stats-divider" style="display: none;">
+                <div class="stats-chart-container" id="cumulativeChartContainer" style="display: none;">
+                    <h3 data-i18n="cumulative_chart_title">Cumulative Playtime</h3>
+                    <canvas id="cumulativeChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Library Growth Chart (Overall only) -->
+                <hr id="dividerGrowth" class="stats-divider" style="display: none;">
+                <div class="stats-chart-container" id="growthChartContainer" style="display: none;">
+                    <h3 data-i18n="growth_chart_title">Game Library Growth</h3>
+                    <canvas id="growthChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Heatmap Calendar -->
+                <hr id="dividerHeatmap" class="stats-divider" style="display: none;">
+                <div class="stats-chart-container" id="heatmapContainer" style="display: none;">
+                    <h3 data-i18n="heatmap_title">Playtime Heatmap (Last Year)</h3>
+                    <div id="heatmapCanvasContainer" style="width: 100%; overflow-x: auto;">
+                        <canvas id="heatmapCanvas" width="1000" height="200"></canvas>
+                    </div>
+                </div>
+
                 <!-- Horizontal line separator -->
-                <hr class="stats-divider">
+                <hr id="dividerSessionHistory" class="stats-divider" style="display: block;">
         
                 <!-- Session history table -->
                 <div class="stats-history">
@@ -553,9 +585,9 @@
                         <img id="detailsHeaderIcon" class="details-header-icon" src="" alt="" style="display:none;">
                         <span id="detailsHeaderName"></span>
                     </div>
-                    <button id="detailsHeaderFavBtn" class="details-fav-btn" style="display: none;" title="Favorite">
-                        <i class="fa-regular fa-heart"></i>
-                    </button>
+                    <div id="detailsHeaderFavIcon" class="details-fav-icon" style="display: none;">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
                 </div>
 
                 <img id="detailsLogo" class="game-logo-floating" src="" alt="Game Logo" style="display: none;">
@@ -983,7 +1015,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.5.4</p>
+                <p style="text-align: center;">version 2.5.5</p>
             </div>
         </div>
     </div>

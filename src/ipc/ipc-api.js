@@ -605,6 +605,22 @@ function registerApiIPC() {
     ipcMain.handle('get-daily-playtime-for-game', (_, gameName, periodDays) => {
         return sessions.getDailyPlaytimeForGame(gameName, periodDays);
     });
+
+    ipcMain.handle('get-monthly-stats-for-game', (_, gameName, months) => {
+        return sessions.getMonthlyStatsForGame(gameName, months);
+    });
+
+    ipcMain.handle('get-cumulative-stats', (_, gameName, days) => {
+        return sessions.getCumulativeStats(gameName, days);
+    });
+
+    ipcMain.handle('get-library-growth', () => {
+        return sessions.getLibraryGrowth();
+    });
+
+    ipcMain.handle('get-heatmap-data', () => {
+        return sessions.getHeatmapData();
+    });
 }
 
 module.exports = { registerApiIPC };

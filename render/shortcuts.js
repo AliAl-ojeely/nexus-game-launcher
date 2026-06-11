@@ -367,37 +367,61 @@ export function initShortcuts() {
         // F: toggle favorite (only in game details page)
         if (event.key === 'f' || event.key === 'F') {
             event.preventDefault();
+            console.log('[Shortcut] F pressed');
+
             const detailsArea = document.getElementById('gameDetailsArea');
-            if (detailsArea && detailsArea.classList.contains('active')) {
-                const currentGameId = state.currentGameId;
-                if (currentGameId) {
-                    const game = state.allGamesData.find(g => g.id === currentGameId);
-                    if (game) {
-                        game.isFavorite = !game.isFavorite;
-                        await window.api.updateGame(game);
-                        renderGames(); // refresh library/favorites grids
+            if (!detailsArea || !detailsArea.classList.contains('active')) {
+                console.log('[Shortcut] Game details page not active');
+                return;
+            }
+            console.log('[Shortcut] Game details page active');
 
-                        // 🆕 Update the details header heart button
-                        const favBtn = document.getElementById('detailsHeaderFavBtn');
-                        if (favBtn) {
-                            const favIcon = favBtn.querySelector('i');
-                            if (game.isFavorite) {
-                                favIcon.className = 'fa-solid fa-heart';
-                                favBtn.classList.add('active');
-                            } else {
-                                favIcon.className = 'fa-regular fa-heart';
-                                favBtn.classList.remove('active');
-                            }
-                        }
+            // Try to get game from state.currentGameId
+            let game = null;
+            if (state.currentGameId) {
+                game = state.allGamesData.find(g => g.id === state.currentGameId);
+                console.log('[Shortcut] Found by ID:', game ? game.name : 'not found');
+            }
+            // Fallback: try to find by the game title in the header
+            if (!game) {
+                const titleElem = document.getElementById('detailsGameTitle');
+                if (titleElem) {
+                    const gameName = titleElem.innerText;
+                    game = state.allGamesData.find(g => g.name === gameName);
+                    console.log('[Shortcut] Found by title:', game ? game.name : 'not found');
+                }
+            }
+            if (!game) {
+                console.warn('[Shortcut] Could not determine current game');
+                return;
+            }
 
-                        const isAr = localStorage.getItem('lang') === 'ar';
-                        const msg = game.isFavorite
-                            ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
-                            : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
-                        showToast('success', msg, '', 1500);
+            // Toggle favourite
+            game.isFavorite = !game.isFavorite;
+            await window.api.updateGame(game);
+            renderGames(); // refresh library/favorites grids
+
+            // Update the header heart icon (display only)
+            const favIconContainer = document.getElementById('detailsHeaderFavIcon');
+            if (favIconContainer) {
+                const icon = favIconContainer.querySelector('i');
+                if (icon) {
+                    if (game.isFavorite) {
+                        icon.className = 'fa-solid fa-heart';
+                        favIconContainer.classList.add('active');
+                    } else {
+                        icon.className = 'fa-regular fa-heart';
+                        favIconContainer.classList.remove('active');
                     }
                 }
             }
+
+            const isAr = localStorage.getItem('lang') === 'ar';
+            const msg = game.isFavorite
+                ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
+                : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
+            showToast('success', msg, '', 1500);
+
             return;
         }
 
