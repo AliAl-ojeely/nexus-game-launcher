@@ -1,6 +1,7 @@
 import { state, userSettings } from './state.js';
 import { openGameDetailsPage } from './details.js';
 import { loadOrder, applyOrder, toggleReorderMode, resetOrder } from './reorder.js';
+import { showToast } from './details-components.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER — convert backslashes to forward slashes for browser URLs
@@ -169,16 +170,43 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
 
         // Favorite button (always present)
         const favBtn = card.querySelector('.fav-btn');
-        if (favBtn) {
-            favBtn.addEventListener('click', async (e) => {
+            if (favBtn) {
+                favBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 game.isFavorite = !game.isFavorite;
                 await window.api.updateGame(game);
+
+                // Update the header heart icon if the game details page is open and showing this game
+                if (state.currentGameId === game.id) {
+                    const favIconContainer = document.getElementById('detailsHeaderFavIcon');
+                    if (favIconContainer) {
+                        const icon = favIconContainer.querySelector('i');
+                        if (icon) {
+                            if (game.isFavorite) {
+                                icon.className = 'fa-solid fa-heart';
+                                favIconContainer.classList.add('active');
+                            }   
+                            else {
+                            icon.className = 'fa-regular fa-heart';
+                            favIconContainer.classList.remove('active');
+                            }
+                        }
+                    }
+                }
+
+                // Show toast message
+                const isAr = userSettings.lang === 'ar';
+                const msg = game.isFavorite
+                    ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
+                    : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
+                showToast('success', msg, '', 1500);
+
+                // Refresh the library grid to update the card's heart icon
                 renderGames();
             });
         }
+        
     }
-
     return card;
 }
 
