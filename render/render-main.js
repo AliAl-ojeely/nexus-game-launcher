@@ -257,6 +257,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             showToast('success', msg, '', 1500);
         });
     }
+
+    // Wait a minimum of 10 seconds (or until everything is rendered)
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+
+    Promise.all([minLoadingTime]).then(() => {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('fade-out');
+            setTimeout(() => overlay.remove(), 500);
+        }
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

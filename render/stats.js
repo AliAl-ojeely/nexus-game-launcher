@@ -1,5 +1,6 @@
 import { state, userSettings } from './state.js';
 import { toSafeUrl } from './library.js';
+import { showToast } from './details-components.js';
 
 let currentGame = null;
 let currentPeriodDays = 1;
@@ -544,38 +545,74 @@ function escapeHtml(str) {
 // Export to CSV
 // -----------------------------------------------------------------------------
 async function exportToCSV() {
-    let sessions = await window.api.getAllSessions();
-    if (currentGame) sessions = sessions.filter(s => s.gameName === currentGame);
-    const headers = ['Game Name', 'Start Time', 'End Time', 'Duration (seconds)'];
-    const rows = sessions.map(s => [s.gameName, new Date(s.startTime).toISOString(), s.endTime ? new Date(s.endTime).toISOString() : '', s.durationSeconds]);
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sessions_${currentGame || 'all'}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const isAr = userSettings.lang === 'ar';
+    let loadingToast = null;
+    try {
+        loadingToast = showToast('info', isAr ? 'جاري تحضير ملف CSV للجلسات...' : 'Preparing session CSV...', '', 0);
+
+        let sessions = await window.api.getAllSessions();
+        if (currentGame) sessions = sessions.filter(s => s.gameName === currentGame);
+
+        if (!sessions || sessions.length === 0) {
+            if (loadingToast && loadingToast.remove) loadingToast.remove();
+            showToast('info', isAr ? 'لا توجد جلسات للتصدير' : 'No sessions to export', '', 2000);
+            return;
+        }
+
+        const headers = ['Game Name', 'Start Time', 'End Time', 'Duration (seconds)'];
+        const rows = sessions.map(s => [
+            s.gameName,
+            new Date(s.startTime).toISOString(),
+            s.endTime ? new Date(s.endTime).toISOString() : '',
+            s.durationSeconds
+        ]);
+        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sessions_${currentGame || 'all'}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        if (loadingToast && loadingToast.remove) loadingToast.remove();
+        showToast('success', isAr ? 'تم تصدير الجلسات بنجاح' : 'Sessions exported successfully', '', 3000);
+    } catch (err) {
+        console.error('[Export CSV] Failed:', err);
+        if (loadingToast && loadingToast.remove) loadingToast.remove();
+        showToast('error', isAr ? 'فشل تصدير الجلسات' : 'Session export failed', err.message, 4000);
+    }
 }
 
+// -----------------------------------------------------------------------------
+// Export to PNG
+// -----------------------------------------------------------------------------
 async function exportStatsAsPNG() {
-    const dashboard = document.querySelector('.stats-dashboard');
-    if (!dashboard) return;
+    const isAr = userSettings.lang === 'ar';
     try {
-        // Use global html2canvas from CDN
-        const canvas = await html2canvas(dashboard, {
-            scale: 2,
-            backgroundColor: null,
-            logging: false,
-            useCORS: true
-        });
-        const link = document.createElement('a');
-        link.download = 'nexus-stats.png';
-        link.href = canvas.toDataURL();
-        link.click();
+        if (window.api.exportStatsAsPNG) {
+            await window.api.exportStatsAsPNG(currentGame);
+            showToast('success', isAr ? 'تم تصدير الصورة بنجاح' : 'Stats exported as PNG successfully', '', 3000);
+            return;
+        }
+
+        const canvas = document.getElementById('monthlyLineChart');
+        if (canvas) {
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stats_${currentGame || 'overall'}.png`;
+            a.click();
+            showToast('success', isAr ? 'تم تصدير الصورة بنجاح' : 'Stats exported as PNG successfully', '', 3000);
+            return;
+        }
+
+        console.warn('[Export PNG] Function triggered but no export logic is active.');
+        showToast('info', isAr ? 'ميزة التصدير كصورة غير متوفرة حالياً' : 'PNG export feature is not available yet', '', 3000);
+
     } catch (err) {
-        console.error('Export failed:', err);
-        if (window.showToast) window.showToast('error', 'Export failed', err.message, 3000);
+        console.error('[Export PNG] Failed:', err);
+        showToast('error', isAr ? 'فشل تصدير الصورة' : 'PNG export failed', err.message, 4000);
     }
 }
 
@@ -601,22 +638,25 @@ export async function initStatsPage() {
     });
 
     // Overall stats button
-    document.getElementById('overallStatsBtn').addEventListener('click', () => {
-        currentGame = null;
-        // Clear selected game highlight
-        document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
-        // Clear daily circles (overall stats should not show circles)
-        const circlesContainer = document.getElementById('dailyCirclesContainer');
-        if (circlesContainer) circlesContainer.innerHTML = '';
-        // Force refresh of overall stats
-        updateOverallStats(currentPeriodDays);
-    });
+    const overallStatsBtn = document.getElementById('overallStatsBtn');
+    if (overallStatsBtn) {
+        overallStatsBtn.addEventListener('click', () => {
+            currentGame = null;
+            document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
+            const circlesContainer = document.getElementById('dailyCirclesContainer');
+            if (circlesContainer) circlesContainer.innerHTML = '';
+            updateOverallStats(currentPeriodDays);
+        });
+    }
 
     // Export CSV button
-    document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', exportToCSV);
+    }
 
     // Refresh when a game stops
-    if (window.api.onGameStopped) {
+    if (window.api && window.api.onGameStopped) {
         window.api.onGameStopped(async () => {
             await loadGameList();
             if (currentGame) refreshAllStats();

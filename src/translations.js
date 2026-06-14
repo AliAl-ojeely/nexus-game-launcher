@@ -148,6 +148,14 @@ const dictionary = {
 
         disable_initial_scan_label: "تعطيل المسح الأولي عند التشغيل",
         disable_initial_scan_desc: "منع مسح المجلدات الجديدة عند بدء تشغيل التطبيق",
+        export_png_success: "تم تصدير الصورة بنجاح",
+        export_png_failed: "فشل تصدير الصورة",
+        export_png_preparing: "جاري تحضير الصورة...",
+        export_csv_success: "تم تصدير المكتبة بنجاح",
+        export_csv_failed: "فشل التصدير",
+        export_no_games: "لا توجد ألعاب للتصدير",
+
+        loading_message: "جاري تحميل Nexus Game Launcher...",
 
         scan_now_btn: "مسح الآن",
 
@@ -443,6 +451,13 @@ const dictionary = {
         growth_label: "Games Added",
         cumulative_chart_title: "Cumulative Playtime",
         cumulative_label: "Cumulative Playtime (hours)",
+        export_png_success: "PNG exported successfully",
+        export_png_failed: "PNG export failed",
+        export_png_preparing: "Preparing image...",
+        export_csv_success: "Library exported successfully",
+        export_csv_failed: "Export failed",
+        export_no_games: "No games to export",
+        loading_message: "Loading Nexus Game Launcher...",
 
         nav_stats: "Game Statistics",
         title_stats: "Statistics Dashboard",
