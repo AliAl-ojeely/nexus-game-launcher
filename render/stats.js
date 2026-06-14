@@ -589,27 +589,25 @@ async function exportToCSV() {
 // -----------------------------------------------------------------------------
 async function exportStatsAsPNG() {
     const isAr = userSettings.lang === 'ar';
+    const dashboard = document.querySelector('.stats-dashboard');
+    if (!dashboard) {
+        showToast('error', isAr ? 'لم يتم العثور على لوحة الإحصائيات' : 'Statistics dashboard not found', '', 3000);
+        return;
+    }
     try {
-        if (window.api.exportStatsAsPNG) {
-            await window.api.exportStatsAsPNG(currentGame);
-            showToast('success', isAr ? 'تم تصدير الصورة بنجاح' : 'Stats exported as PNG successfully', '', 3000);
-            return;
-        }
-
-        const canvas = document.getElementById('monthlyLineChart');
-        if (canvas) {
-            const url = canvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `stats_${currentGame || 'overall'}.png`;
-            a.click();
-            showToast('success', isAr ? 'تم تصدير الصورة بنجاح' : 'Stats exported as PNG successfully', '', 3000);
-            return;
-        }
-
-        console.warn('[Export PNG] Function triggered but no export logic is active.');
-        showToast('info', isAr ? 'ميزة التصدير كصورة غير متوفرة حالياً' : 'PNG export feature is not available yet', '', 3000);
-
+        const loadingToast = showToast('info', isAr ? 'جاري تحضير الصورة...' : 'Preparing image...', '', 0);
+        const canvas = await html2canvas(dashboard, {
+            scale: 2,
+            backgroundColor: null,
+            logging: false,
+            useCORS: true
+        });
+        if (loadingToast && loadingToast.remove) loadingToast.remove();
+        const link = document.createElement('a');
+        link.download = `nexus-stats-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        showToast('success', isAr ? 'تم تصدير الصورة بنجاح' : 'PNG exported successfully', '', 3000);
     } catch (err) {
         console.error('[Export PNG] Failed:', err);
         showToast('error', isAr ? 'فشل تصدير الصورة' : 'PNG export failed', err.message, 4000);
