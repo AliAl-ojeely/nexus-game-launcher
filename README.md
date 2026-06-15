@@ -10,7 +10,7 @@
 
 <br>
 
-<img src="assets/main-library-en.png" alt="Nexus Game Launcher Main Interface" width="750" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+<img src="assets/main-library-en.webp" alt="Nexus Game Launcher Main Interface" width="750" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
 
 <br>
 
@@ -37,7 +37,7 @@ A powerful analytics page that tracks every gaming session:
 - Export current stats as PNG image (sharable)
 
 <p align="center">
-  <img src="assets/statistics-dashboard.png" alt="Statistics Dashboard" width="80%">
+  <img src="assets/statistics-dashboard.webp" alt="Statistics Dashboard" width="80%">
 </p>
 
 ### 🎮 Library Sorting
@@ -70,7 +70,7 @@ Choose how many games appear in the "Recently Played" section (5, 10, 20, 50) �
 The built‑in update checker now shows a download progress bar and allows cancellation. The entire update process is more transparent.
 
 <p align="center">
-  <img src="assets/check-for-updates downloader.png" alt="Update Downloader" width="60%">
+  <img src="assets/check-for-updates downloader.webp" alt="Update Downloader" width="80%">
 </p>
 
 ### 🖼️ Recently Played Section (Redesigned)
@@ -78,7 +78,7 @@ The built‑in update checker now shows a download progress bar and allows cance
 The “Recently Played” view now correctly uses session timestamps and respects the user‑defined limit. Action buttons on recent cards are replaced with a clean “Remove from recent” icon.
 
 <p align="center">
-  <img src="assets/recently-played.png" alt="Recently Played View" width="80%">
+  <img src="assets/recently-played.webp" alt="Recently Played View" width="80%">
 </p>
 
 ### Technical Overhauls
@@ -100,7 +100,7 @@ Effortlessly manage your collection with dedicated views for your **entire libra
 **New:** Sort by name, playtime, or recent play – or drag & drop to reorder manually.
 
 <p align="center">
-  <img src="assets/favorites-view.png" alt="Favorites View" width="80%">
+  <img src="assets/favorites-view.webp" alt="Favorites View" width="80%">
 </p>
 
 ### Game Details View
@@ -108,7 +108,7 @@ Effortlessly manage your collection with dedicated views for your **entire libra
 Immerse yourself in a cinematic game overview with dynamic banners, animated logos, screenshots, trailers, and system requirements – all beautifully laid out.
 
 <p align="center">
-  <img src="assets/game-details-cinematic.png" alt="Game Details Cinematic View" width="80%">
+  <img src="assets/game-details-cinematic.webp" alt="Game Details Cinematic View" width="80%">
 </p>
 
 ### Full Customization & Localization
@@ -117,8 +117,8 @@ Customize the experience with dark/light/darker themes, adjustable grid layouts,
 **New:** Edit every visual asset (poster, logo, background, icon) – and remove them to revert to auto‑downloaded versions.
 
 <p align="center">
-  <img src="assets/settings-page.png" alt="Settings Page" width="48%">
-  <img src="assets/main-library-ar.png" alt="Arabic RTL Interface" width="48%">
+  <img src="assets/settings-page.webp" alt="Settings Page" width="48%">
+  <img src="assets/main-library-ar.webp" alt="Arabic RTL Interface" width="48%">
 </p>
 
 ### Game Statistics Dashboard
@@ -126,7 +126,7 @@ Customize the experience with dark/light/darker themes, adjustable grid layouts,
 Gain deep insights into your gaming habits with interactive charts and exportable data.
 
 <p align="center">
-  <img src="assets/statistics-dashboard.png" alt="Statistics Dashboard" width="80%">
+  <img src="assets/statistics-dashboard.webp" alt="Statistics Dashboard" width="80%">
 </p>
 
 ### Recently Played (Improved)
@@ -134,7 +134,7 @@ Gain deep insights into your gaming habits with interactive charts and exportabl
 See your most recently launched games at a glance, with the ability to remove entries from the list without deleting the game.
 
 <p align="center">
-  <img src="assets/recently-played.png" alt="Recently Played" width="80%">
+  <img src="assets/recently-played.webp" alt="Recently Played" width="80%">
 </p>
 
 ### Update Checker with Download Progress
@@ -142,7 +142,7 @@ See your most recently launched games at a glance, with the ability to remove en
 Never miss a new version – the built‑in updater shows download progress and lets you cancel mid‑download.
 
 <p align="center">
-  <img src="assets/check-for-updates downloader.png" alt="Update Downloader" width="60%">
+  <img src="assets/check-for-updates downloader.webp" alt="Update Downloader" width="80%">
 </p>
 
 ---
@@ -239,16 +239,16 @@ NEXUS-GAME-LAUNCHER/
 ├── assets/
 │   ├── fonts/
 │   ├── fontawesome/
-│   ├── favorites-view.png
-│   ├── game-details-cinematic.png
+│   ├── favorites-view.webp
+│   ├── game-details-cinematic.webp
 │   ├── icon.ico
-│   ├── icon.png
-│   ├── main-library-ar.png
-│   ├── main-library-en.png
-│   ├── settings-page.png
-│   ├── check-for-updates-downloader.png   
-│   ├── recently-played.png                
-│   └── statistics-dashboard.png           
+│   ├── icon.webp
+│   ├── main-library-ar.webp
+│   ├── main-library-en.webp
+│   ├── settings-page.webp
+│   ├── check-for-updates-downloader.webp   
+│   ├── recently-played.webp                
+│   └── statistics-dashboard.webp           
 ├── css/
 │   ├── components-layout.css
 │   ├── backup-ux.css
