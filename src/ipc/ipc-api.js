@@ -1,4 +1,4 @@
-const { ipcMain, app, shell } = require('electron');
+const { ipcMain, app, shell, BrowserWindow } = require('electron');
 const fs = require('fs');                 // sync methods
 const fsPromises = require('fs').promises; // async methods
 const path = require('path');
@@ -600,6 +600,12 @@ function registerApiIPC() {
             }
         }
         return false;
+    });
+
+    // ── System Tray ──────────────────────────────────────────────────────────────
+    ipcMain.handle('tray:getStatus', () => {
+        const settings = require('../../modules/app-settings').readSettings();
+        return settings.enableSystemTray || false;
     });
 
     ipcMain.handle('get-daily-playtime-for-game', (_, gameName, periodDays) => {

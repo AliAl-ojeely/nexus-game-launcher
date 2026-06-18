@@ -92,6 +92,15 @@ contextBridge.exposeInMainWorld('api', {
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),
     getFolderInfo: (folderPath) => ipcRenderer.invoke('get-folder-info', folderPath),
 
+    // ── App Taskbar Tray ──────────────────────────────────────────────────────────────
+    getTrayStatus: () => ipcRenderer.invoke('tray:getStatus'),
+    setTrayStatus: (enabled) => ipcRenderer.invoke('tray:setStatus', enabled),
+    updateTrayLanguage: (lang) => ipcRenderer.send('tray:update-language', lang),
+    onTrayStatusChanged: (callback) => ipcRenderer.on('tray:status-changed', (_, enabled) => callback(enabled)),
+    onTrayOpenGame: (callback) => ipcRenderer.on('tray:open-game', (_, gameName) => callback(gameName)),
+    onTrayOpenStats: (callback) => ipcRenderer.on('tray:open-stats', () => callback()),
+    onTrayExit: (callback) => ipcRenderer.on('tray:exit-app', () => callback()),
+    onTrayOpenPage: (callback) => ipcRenderer.on('tray:open-page', (_, targetId) => callback(targetId)),
 
     // ── Updates ───────────────────────────────────────────────────────────────
     checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),

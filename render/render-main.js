@@ -101,6 +101,9 @@ window.refreshMissingMetadata = refreshMissingMetadata;
 // ─────────────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (window.api && window.api.updateTrayLanguage) {
+        window.api.updateTrayLanguage(userSettings.lang || localStorage.getItem('lang') || 'en');
+    }
     initUI();
     initLibrary();
     initDetails();
@@ -259,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Wait a minimum of 10 seconds (or until everything is rendered)
-    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
 
     Promise.all([minLoadingTime]).then(() => {
         const overlay = document.getElementById('loadingOverlay');
@@ -268,6 +271,56 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(() => overlay.remove(), 500);
         }
     });
+
+    // Seem Function but It launched depends on the computer not the Timer
+    // requestAnimationFrame(() => {
+    //     requestAnimationFrame(() => {
+    //         const overlay = document.getElementById('loadingOverlay');
+    //         if (overlay) {
+    //             overlay.classList.add('fade-out');
+    //             setTimeout(() => overlay.remove(), 500);
+    //         }
+    //     });
+    // });
+
+    // Tray: open game
+    if (window.api.onTrayOpenGame) {
+        window.api.onTrayOpenGame((gameName) => {
+            const game = state.allGamesData.find(g => g.name === gameName);
+            if (game) {
+                import('./details.js').then(({ openGameDetailsPage }) => {
+                    openGameDetailsPage(game);
+                });
+            }
+        });
+    }
+
+    // Tray: open stats
+    if (window.api.onTrayOpenStats) {
+        window.api.onTrayOpenStats(() => {
+            const statsNav = document.querySelector('.nav-item[data-target="statsArea"]');
+            if (statsNav) statsNav.click();
+        });
+    }
+
+    // Tray: exit app – will be handled by main, but we can also clean up
+    if (window.api.onTrayExit) {
+        window.api.onTrayExit(() => {
+            // optionally save state
+        });
+    }
+
+    // Tray: open page (Library, Favorites, Settings)
+    if (window.api.onTrayOpenPage) {
+        window.api.onTrayOpenPage((targetId) => {
+            const navItem = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+            if (navItem) {
+                navItem.click();
+            } else {
+                console.warn('[Tray] Page target not found:', targetId);
+            }
+        });
+    }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -393,6 +446,10 @@ async function initSettingsPage() {
             document.getElementById('sidebarLogoName').innerText = appName;
             document.documentElement.setAttribute('data-theme', theme);
 
+            if (window.api && window.api.updateTrayLanguage) {
+                window.api.updateTrayLanguage(lang);
+            }
+
             // ── Save global backup path ───────────────────────────────────────
             const globalPath = globalBackupInput?.value?.trim() || '';
             if (globalPath) {
@@ -423,6 +480,11 @@ async function initSettingsPage() {
                 if (!isNaN(newWidth) && !isNaN(newHeight) && newWidth >= 800 && newHeight >= 600) {
                     await window.api.setWindowSize(newWidth, newHeight);
                 }
+            }
+
+            const systemTrayToggle = document.getElementById('systemTrayToggle');
+            if (systemTrayToggle) {
+                await window.api.setTrayStatus(systemTrayToggle.checked);
             }
 
             console.log('[SETTINGS] Settings saved');

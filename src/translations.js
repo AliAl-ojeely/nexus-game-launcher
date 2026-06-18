@@ -157,6 +157,14 @@ const dictionary = {
 
         loading_message: "جاري تحميل Nexus Game Launcher...",
 
+        system_tray_label: "تفعيل شريط المهام",
+        system_tray_desc: "إظهار أيقونة Nexus في شريط المهام",
+        system_tray_note: "سيستمر التطبيق في العمل في الخلفية عند إغلاقه.",
+
+        tray_library: "مكتبة الألعاب",
+        tray_favorites: "المفضلة",
+        tray_settings: "الإعدادات",
+
         scan_now_btn: "مسح الآن",
 
         btn_can_run_it: "هل يمكنني تشغيلها؟",
@@ -458,6 +466,13 @@ const dictionary = {
         export_csv_failed: "Export failed",
         export_no_games: "No games to export",
         loading_message: "Loading Nexus Game Launcher...",
+
+        system_tray_label: "Enable System Tray",
+        system_tray_desc: "Show Nexus icon in system tray (taskbar)",
+        system_tray_note: "The app will stay running in the background when closed.",
+        tray_library: "Game Library",
+        tray_favorites: "Favorites",
+        tray_settings: "Settings",
 
         nav_stats: "Game Statistics",
         title_stats: "Statistics Dashboard",

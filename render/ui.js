@@ -479,4 +479,19 @@ export function initUI() {
             }
         });
     }
+
+    // ── System Tray Toggle ──────────────────────────────────────────────────
+    const systemTrayToggle = document.getElementById('systemTrayToggle');
+    if (systemTrayToggle) {
+        window.api.getTrayStatus().then((enabled) => {
+            systemTrayToggle.checked = enabled;
+        });
+    }
+
+    // Listen for tray status changes from main (if changed elsewhere)
+    if (window.api.onTrayStatusChanged) {
+        window.api.onTrayStatusChanged((enabled) => {
+            if (systemTrayToggle) systemTrayToggle.checked = enabled;
+        });
+    }
 }

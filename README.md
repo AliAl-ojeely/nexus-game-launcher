@@ -3,7 +3,7 @@
 # Nexus Game Launcher
 
 [![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.5.7-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
+[![Version](https://img.shields.io/badge/Version-2.5.8-red?style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely)
 [![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely)
@@ -22,9 +22,9 @@
 
 ---
 
-## What's New in `v2.5.7` – The "Insight & Control" Update
+## What's New in `v2.5.8` – The "Insight & Control" Update
 
-Version `2.5.7` introduces a complete **Game Statistics Dashboard**, library sorting, personal notes, folder details, and many UI/UX improvements.
+Version `2.5.8` introduces a complete **Game Statistics Dashboard**, library sorting, personal notes, folder details, and many UI/UX improvements.
 
 ### Game Statistics Dashboard
 
@@ -242,7 +242,9 @@ NEXUS-GAME-LAUNCHER/
 │   ├── favorites-view.webp
 │   ├── game-details-cinematic.webp
 │   ├── icon.ico
-│   ├── icon.webp
+│   ├── icon.png
+│   ├── icon.icns
+│   ├── icon-white.png
 │   ├── main-library-ar.webp
 │   ├── main-library-en.webp
 │   ├── settings-page.webp
@@ -259,7 +261,8 @@ NEXUS-GAME-LAUNCHER/
 │   └── variables.css
 ├── dist/
 ├── modules/
-│   ├── app-settings.js       
+│   ├── app-settings.js
+│   ├── app-tray.js
 │   ├── assets.js             
 │   ├── backup.js
 │   ├── database.js

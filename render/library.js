@@ -170,8 +170,8 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
 
         // Favorite button (always present)
         const favBtn = card.querySelector('.fav-btn');
-            if (favBtn) {
-                favBtn.addEventListener('click', async (e) => {
+        if (favBtn) {
+            favBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 game.isFavorite = !game.isFavorite;
                 await window.api.updateGame(game);
@@ -185,10 +185,10 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
                             if (game.isFavorite) {
                                 icon.className = 'fa-solid fa-heart';
                                 favIconContainer.classList.add('active');
-                            }   
+                            }
                             else {
-                            icon.className = 'fa-regular fa-heart';
-                            favIconContainer.classList.remove('active');
+                                icon.className = 'fa-regular fa-heart';
+                                favIconContainer.classList.remove('active');
                             }
                         }
                     }
@@ -205,7 +205,7 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
                 renderGames();
             });
         }
-        
+
     }
     return card;
 }
@@ -263,9 +263,11 @@ export async function renderGames() {
                 .slice(0, recentLimit);
 
             if (recentPlayedGames.length > 0) {
+                const recentFragment = document.createDocumentFragment();
                 recentPlayedGames.forEach((game, idx) => {
-                    recentlyPlayedContainer.appendChild(createGameCard(game, idx, true));
+                    recentFragment.appendChild(createGameCard(game, idx, true));
                 });
+                recentlyPlayedContainer.appendChild(recentFragment);
             } else {
                 const isAr = userSettings.lang === 'ar';
                 recentlyPlayedContainer.innerHTML = `
@@ -319,9 +321,11 @@ export async function renderGames() {
                     sortedGames = applyOrder(sortedGames, savedOrder);
             }
 
+            const mainFragment = document.createDocumentFragment();
             sortedGames.forEach((game, index) => {
-                gamesContainer.appendChild(createGameCard(game, index, false, false, false));
+                mainFragment.appendChild(createGameCard(game, index, false, false, false));
             });
+            gamesContainer.appendChild(mainFragment);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -330,10 +334,13 @@ export async function renderGames() {
         if (favoritesContainer) {
             const favGames = games.filter(g => g.isFavorite);
             const savedFavOrder = await loadOrder('favorites');
-            const orderedFavGames = applyOrder(favGames, savedFavOrder); // ✅ orderedFavGames defined here
+            const orderedFavGames = applyOrder(favGames, savedFavOrder);
+
+            const favFragment = document.createDocumentFragment();
             orderedFavGames.forEach((game, index) => {
-                favoritesContainer.appendChild(createGameCard(game, index, false, true, true));
+                favFragment.appendChild(createGameCard(game, index, false, true, true));
             });
+            favoritesContainer.appendChild(favFragment);
         }
 
     } catch (error) {

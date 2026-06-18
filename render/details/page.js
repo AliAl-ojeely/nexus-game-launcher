@@ -232,19 +232,21 @@ export async function openGameDetailsPage(game) {
         }
     }
 
-    // Favorite indicator in header (display‑only)
-    const favIconContainer = document.getElementById('detailsHeaderFavIcon');
-    if (favIconContainer) {
-        const isFav = game.isFavorite || false;
+    // ─────────────────────────────────────────────────────────────────────────
+    // FAVORITE INDICATOR IN HEADER (always fresh from current game)
+    // ─────────────────────────────────────────────────────────────────────────
+    function updateHeaderHeart(game) {
+        const favIconContainer = document.getElementById('detailsHeaderFavIcon');
+        if (!favIconContainer) return;
+        const isFav = !!game.isFavorite; // ensure boolean
         const icon = favIconContainer.querySelector('i');
-        if (isFav) {
-            icon.className = 'fa-solid fa-heart';
-            favIconContainer.classList.add('active');
-        } else {
-            icon.className = 'fa-regular fa-heart';
-            favIconContainer.classList.remove('active');
+        if (icon) {
+            icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            favIconContainer.classList.toggle('active', isFav);
         }
         favIconContainer.style.display = 'flex';
-        // No onclick handler – purely visual
     }
+
+    // Call this right after setting state.currentGameId
+    updateHeaderHeart(game);
 }

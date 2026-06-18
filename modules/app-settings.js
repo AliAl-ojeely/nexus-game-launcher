@@ -1,7 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-
-// app.getPath() is safe to call after app is imported — Electron resolves it lazily
 const { app } = require('electron');
 
 const USER_DATA = app.getPath('userData');
@@ -17,10 +15,25 @@ const USER_DB_PATH = path.join(USER_DATA, 'gameSavePaths.json');
 
 function readSettings() {
     try {
-        if (fs.existsSync(SETTINGS_FILE))
-            return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
-    } catch { }
-    return {};
+        if (fs.existsSync(SETTINGS_FILE)) {
+            const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+            // Ensure defaults for new keys
+            return {
+                lang: 'en',
+                theme: 'dark',
+                appName: 'Nexus Launcher',
+                enableSystemTray: false,   // default to disabled
+                ...data
+            };
+        }
+    } catch { /* ignore */ }
+    // If file doesn't exist, return defaults
+    return {
+        lang: 'en',
+        theme: 'dark',
+        appName: 'Nexus Launcher',
+        enableSystemTray: false,
+    };
 }
 
 function writeSettings(data) {
@@ -42,7 +55,13 @@ function initAppData() {
     }
 
     if (!fs.existsSync(SETTINGS_FILE)) {
-        writeSettings({ lang: 'en', theme: 'dark', appName: 'Nexus Launcher' });
+        // Write default settings (with tray disabled)
+        writeSettings({
+            lang: 'en',
+            theme: 'dark',
+            appName: 'Nexus Launcher',
+            enableSystemTray: false,
+        });
     }
     if (!fs.existsSync(GAMES_FILE)) {
         fs.writeFileSync(GAMES_FILE, JSON.stringify([], null, 2));
