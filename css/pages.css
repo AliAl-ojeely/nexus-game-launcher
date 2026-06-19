@@ -29,7 +29,7 @@
 
 .save-settings-btn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 12px 20px;
     border-radius: 8px;
@@ -262,7 +262,7 @@
 
 .folder-btn-blue {
     background-color: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
@@ -371,12 +371,12 @@
 
 .backup-now-btn:hover {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--btn-text-color, #ffffff);
 }
 
 .backup-now-btn:hover i,
 .backup-now-btn:hover span {
-    color: #ffffff;
+    color: var(--btn-text-color, #ffffff);
 }
 
 /* =========================================
@@ -388,7 +388,7 @@
     border-radius: 6px;
     font-weight: 700;
     font-size: 16px;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     background-color: var(--border-color);
     text-align: center;
     min-width: 40px;
@@ -801,7 +801,7 @@
 .achievements-link-btn:hover {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--btn-text-color, #ffffff);
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(255, 70, 85, 0.2);
 }
@@ -843,7 +843,7 @@
 
 .pause-timer-btn:hover {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
 }
 
 /* Light mode – improve readability of playtime & last played containers */
@@ -897,7 +897,7 @@ html[lang="ar"] .stat-card h3 {
 
 .stats-period-btn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 8px 16px;
     border-radius: 8px;
@@ -979,7 +979,7 @@ html[lang="ar"] .stat-card h3 {
 .period-btn,
 #overallStatsBtn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
@@ -1147,7 +1147,7 @@ html[lang="ar"] .stat-card h3 {
 .export-btn {
     margin-left: 15px;
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 12px 25px;
     border-radius: 8px;
@@ -1275,7 +1275,7 @@ html[lang="ar"] .stat-card h3 {
 
 .save-notes-btn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
 }
 
 .save-notes-btn:hover {

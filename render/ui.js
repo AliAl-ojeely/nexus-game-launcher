@@ -76,6 +76,18 @@ function applyThemeClass(theme) {
     }
 }
 
+function getContrastColor(hex) {
+    if (!hex) return '#ffffff';
+
+    hex = hex.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.88 ? '#000000' : '#ffffff';
+}
+
 export function initUI() {
     // Helper to safely set text content
     function setText(id, value) {
@@ -116,6 +128,7 @@ export function initUI() {
 
     // Apply and set the Accent Color
     document.documentElement.style.setProperty('--accent', userSettings.accentColor);
+    document.documentElement.style.setProperty('--btn-text-color', getContrastColor(userSettings.accentColor));
     const accentInput = document.getElementById('accentColorSetting');
     if (accentInput) accentInput.value = userSettings.accentColor;
 
@@ -188,6 +201,7 @@ export function initUI() {
             applyThemeClass(newTheme);
             document.documentElement.style.setProperty('--grid-size', newGrid);
             document.documentElement.style.setProperty('--accent', newAccent);
+            document.documentElement.style.setProperty('--btn-text-color', getContrastColor(newAccent));
             updateTitleVisibility(newGrid);
             applyLanguage(newLang);
 

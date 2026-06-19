@@ -369,7 +369,7 @@ body {
 .sort-dropdown select option:focus,
 .sort-dropdown select option:checked {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
 }
 
 [dir="rtl"] .sort-dropdown label {
@@ -428,7 +428,7 @@ body {
 ========================================= */
 .add-btn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
@@ -458,7 +458,7 @@ body {
     background: rgba(15, 25, 35, 0.85);
     border-radius: 8px;
     border: none;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     width: 32px;
     height: 32px;
     cursor: pointer;
@@ -542,7 +542,7 @@ body {
 .reset-order-btn:hover,
 .reorder-btn.active {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border-color: var(--accent);
 }
 
@@ -586,7 +586,7 @@ body {
 
 .remove-recent-btn:hover {
     background: #ff6b6b;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
 }
 
 .modal-buttons #detectSkipAllBtn {
@@ -916,7 +916,7 @@ body {
 .lightbox-controls button {
     background: none;
     border: none;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     font-size: 20px;
     cursor: pointer;
     transition: 0.3s;

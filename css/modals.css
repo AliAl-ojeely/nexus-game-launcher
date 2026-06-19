@@ -85,7 +85,7 @@
 
 .folder-btn-blue {
     background-color: var(--accent) !important;
-    color: white !important;
+    color: var(--btn-text-color, #ffffff) !important;
     border: none !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -138,7 +138,7 @@
 .save-btn {
     flex: 2;
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 12px;
     border-radius: 8px;
@@ -220,7 +220,7 @@
     position: absolute;
     top: 20px;
     right: 40px;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     font-size: 40px;
     cursor: pointer;
     transition: color 0.2s;
@@ -235,7 +235,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     font-size: 30px;
     cursor: pointer;
     padding: 20px;
@@ -288,7 +288,7 @@
     background: #ff4444;
     border: none;
     padding: 10px 25px;
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border-radius: 5px;
     cursor: pointer;
 }
@@ -349,7 +349,7 @@
 
 .close-shortcuts-btn {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
@@ -402,6 +402,6 @@
 
 .shortcuts-btn:hover {
     background: var(--accent);
-    color: white;
+    color: var(--btn-text-color, #ffffff);
     border-color: var(--accent);
 }
