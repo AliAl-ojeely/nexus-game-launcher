@@ -1421,3 +1421,32 @@ html[lang="ar"] .stat-card h3 {
     width: 100%;
     height: auto;
 }
+
+/* =========================================
+   Can I Run It Button
+========================================= */
+.run-it-btn {
+    margin: 0 auto;
+    padding: 15px 20px;
+    background-color: var(--accent) !important;
+    color: var(--btn-text-color, #ffffff) !important;
+    border: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.run-it-btn i,
+.run-it-btn span {
+    color: inherit !important;
+}
+
+.run-it-btn:hover {
+    filter: brightness(0.85);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+.run-it-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.75);
+    box-shadow: 0 2px 5px var(--shadow-color);
+}

@@ -458,7 +458,8 @@ body {
     background: rgba(15, 25, 35, 0.85);
     border-radius: 8px;
     border: none;
-    color: var(--btn-text-color, #ffffff);
+    /* color: var(--btn-text-color, #ffffff); */
+    color: #ffffff;
     width: 32px;
     height: 32px;
     cursor: pointer;
@@ -586,7 +587,8 @@ body {
 
 .remove-recent-btn:hover {
     background: #ff6b6b;
-    color: var(--btn-text-color, #ffffff);
+    /* color: var(--btn-text-color, #ffffff); */
+    color: #ffffff;
 }
 
 .modal-buttons #detectSkipAllBtn {
@@ -765,7 +767,7 @@ body {
     position: absolute;
     width: 16px;
     height: 16px;
-    background: white;
+    background: #ffffff;
     border-radius: 50%;
     top: 2px;
     left: 2px;
@@ -775,6 +777,7 @@ body {
 
 .custom-toggle:checked::before {
     left: 22px;
+    background: var(--btn-text-color, #0b131b);
 }
 
 .toggle-label {
@@ -916,7 +919,8 @@ body {
 .lightbox-controls button {
     background: none;
     border: none;
-    color: var(--btn-text-color, #ffffff);
+    /* color: var(--btn-text-color, #ffffff); */
+    color: #ffffff;
     font-size: 20px;
     cursor: pointer;
     transition: 0.3s;

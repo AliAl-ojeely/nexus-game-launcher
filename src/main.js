@@ -67,11 +67,17 @@ function createWindow() {
         ]).popup({ window: win });
     });
 
+    // ─── Close / Hide logic (fixed) ──────────────────────────────────────────
     win.on('close', (event) => {
-        if (!app.isQuitting) {
-            event.preventDefault();
-            win.hide();
+        const settings = readSettings();
+        if (settings.enableSystemTray) {
+            // Tray enabled – hide instead of quit (unless we are intentionally quitting)
+            if (!app.isQuitting) {
+                event.preventDefault();
+                win.hide();
+            }
         }
+        // If tray is disabled, do nothing – allow the window to close normally
     });
 
     mainWindow = win;
