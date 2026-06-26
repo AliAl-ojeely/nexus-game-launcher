@@ -1365,12 +1365,12 @@ html[lang="ar"] .stat-card h3 {
 
 .circle-item {
     text-align: center;
-    width: 110px;
+    width: 170px;
 }
 
 .circle-canvas {
-    width: 100px;
-    height: 100px;
+    display: block;
+    margin: 0 auto;
 }
 
 .circle-label {

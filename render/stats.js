@@ -683,13 +683,24 @@ async function loadDailyCircles(gameName, days) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const formattedTime = `${hours}h ${minutes}m`;
-        const percentOfDay = (seconds / 86400) * 100; // 86400 seconds in a day
+        const percentOfDay = (seconds / 86400) * 100;
+
+        // 🆕 Increase canvas internal resolution for sharpness
         const canvas = document.createElement('canvas');
-        canvas.width = 100;
-        canvas.height = 100;
+        const visualSize = 150; // desired display size in pixels
+        const pixelRatio = 2;   // 2x for retina clarity (adjust to taste)
+        canvas.width = visualSize * pixelRatio;
+        canvas.height = visualSize * pixelRatio;
+        canvas.style.width = `${visualSize}px`;
+        canvas.style.height = `${visualSize}px`;
         canvas.className = 'circle-canvas';
+
         const ctx = canvas.getContext('2d');
-        drawProgressCircle(ctx, percentOfDay, formattedTime);
+        // Scale all drawing operations to match the higher resolution
+        ctx.scale(pixelRatio, pixelRatio);
+
+        drawProgressCircle(ctx, percentOfDay, formattedTime, visualSize);
+
         const div = document.createElement('div');
         div.className = 'circle-item';
         div.appendChild(canvas);
@@ -701,37 +712,40 @@ async function loadDailyCircles(gameName, days) {
     }
 }
 
-function drawProgressCircle(ctx, percent, formattedTime) {
-    const centerX = 50, centerY = 50, radius = 42;
+function drawProgressCircle(ctx, percent, formattedTime, size) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size * 0.42;
     const startAngle = -0.5 * Math.PI;
     const endAngle = startAngle + (percent / 100) * 2 * Math.PI;
-    ctx.clearRect(0, 0, 100, 100);
-    // Background ring (light gray)
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Background ring
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.strokeStyle = '#2d2d2d';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     ctx.stroke();
-    // Progress ring (color based on percent)
-    let ringColor = '#ff4655'; // red
-    if (percent >= 20) ringColor = '#f59e0b';  // orange (4.8h)
-    if (percent >= 30) ringColor = '#3b82f6';  // blue (7.2h)
-    if (percent >= 40) ringColor = '#10b981';  // green (9.6h)
+
+    // Progress ring
+    let ringColor = '#ff4655';
+    if (percent >= 20) ringColor = '#f59e0b';
+    if (percent >= 30) ringColor = '#3b82f6';
+    if (percent >= 40) ringColor = '#10b981';
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, startAngle, endAngle);
     ctx.strokeStyle = ringColor;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     ctx.stroke();
-    // Text (hours + minutes)
+
+    // Text – use larger font for better readability
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px "Poppins", sans-serif';
-    const lines = formattedTime.split(' ');
-    if (lines.length === 3) {
-        ctx.fillText(`${lines[0]} ${lines[1]}`, centerX - 22, centerY - 5);
-        ctx.fillText(`${lines[2]}`, centerX - 15, centerY + 12);
-    } else {
-        ctx.fillText(formattedTime, centerX - 22, centerY + 5);
-    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const fontSize = size * 0.12;
+    ctx.font = `bold ${fontSize}px "Poppins", sans-serif`;
+    ctx.fillText(formattedTime, centerX, centerY);
 }
 
 async function loadDoughnutChart(periodDays) {
