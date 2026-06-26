@@ -20,6 +20,24 @@ const { registerBackupIPC } = require('./ipc/ipc-backup');
 let mainWindow = null;
 let trayInstance = null;
 
+// ─── Single instance lock ──────────────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    // Another instance is already running – exit
+    app.quit();
+} else {
+    // This is the main instance
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance – focus our window instead
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+            mainWindow.show();
+        }
+    });
+}
+
 // ─── Initialisation ─────────────────────────────────────────────────────────
 initAppData();
 db.initDB();
@@ -67,17 +85,16 @@ function createWindow() {
         ]).popup({ window: win });
     });
 
-    // ─── Close / Hide logic (fixed) ──────────────────────────────────────────
+    // ─── Close / Hide logic ──────────────────────────────────────────────────
     win.on('close', (event) => {
         const settings = readSettings();
         if (settings.enableSystemTray) {
-            // Tray enabled – hide instead of quit (unless we are intentionally quitting)
             if (!app.isQuitting) {
                 event.preventDefault();
                 win.hide();
             }
         }
-        // If tray is disabled, do nothing – allow the window to close normally
+        // If tray is disabled, allow the window to close normally
     });
 
     mainWindow = win;
@@ -143,7 +160,7 @@ app.whenReady().then(() => {
         trayInstance = appTray.createTray(win);
     }
 
-    // IPC: tray status changes (triggered by renderer toggle)
+    // IPC: tray status changes
     ipcMain.handle('tray:setStatus', (_, enabled) => {
         const settings = readSettings();
         settings.enableSystemTray = enabled;
