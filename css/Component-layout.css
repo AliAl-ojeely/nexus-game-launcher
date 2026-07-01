@@ -30,6 +30,12 @@ body {
     overflow-y: auto;
     flex: 1;
     display: none;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#libraryArea {
+    padding-top: 100px;
 }
 
 .page-area.active {
@@ -239,6 +245,11 @@ body {
    3. Topbar & Search
 ========================================= */
 .topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -248,6 +259,7 @@ body {
     border-bottom: 1px solid var(--border-color);
     transition: 0.3s;
     height: 80px;
+    box-sizing: border-box;
 }
 
 .search-box {

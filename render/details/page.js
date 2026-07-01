@@ -179,8 +179,8 @@ export async function openGameDetailsPage(game) {
 
     // Background fetch if data not cached
     const isCached = !!(
-        game.metadata?.description &&
-        game.metadata.description.trim() !== '' &&
+        // game.metadata?.description &&
+        // game.metadata.description.trim() !== '' &&
         game.assets?.poster?.startsWith('local-resource://')
     );
 
@@ -191,7 +191,10 @@ export async function openGameDetailsPage(game) {
                 console.log(`[FRONTEND] ✅ Background fetch complete for: ${game.name}`);
                 game.assets = freshData.assets;
                 game.metadata = freshData.metadata;
-                renderGameDetails(game);
+                if (state.currentGameId === game.id)
+                {
+                    renderGameDetails(game);
+                }
                 await window.api.saveGameDetails(game.id, {
                     name: game.name,
                     assets: freshData.assets,

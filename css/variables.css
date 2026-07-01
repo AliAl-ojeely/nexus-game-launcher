@@ -22,7 +22,7 @@
     --bg-body-rgb: 241, 245, 249;
     --bg-body: #f1f5f9;
     --bg-sidebar: #ffffff;
-    --bg-topbar: rgba(241, 245, 249, 0.95);
+    --bg-topbar: rgba(241, 245, 249, 0.65);
     --bg-card: #ffffff;
     --bg-input: #f8fafc;
     --bg-modal: #ffffff;
@@ -39,7 +39,7 @@
     --bg-body-rgb: 0, 0, 0;
     --bg-body: #000000;
     --bg-sidebar: #0a0a0a;
-    --bg-topbar: rgba(0, 0, 0, 0.95);
+    --bg-topbar: rgba(0, 0, 0, 0.65);
     --bg-card: #111111;
     --bg-input: #050505;
     --bg-modal: #0a0a0a;
