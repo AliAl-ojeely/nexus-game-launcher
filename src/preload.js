@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('api', {
     getCumulativeStats: (gameName, days) => ipcRenderer.invoke('get-cumulative-stats', gameName, days),
     getLibraryGrowth: () => ipcRenderer.invoke('get-library-growth'),
     getHeatmapData: () => ipcRenderer.invoke('get-heatmap-data'),
+    deleteGameSessions: (gameName) => ipcRenderer.invoke('delete-game-sessions', gameName),
 
     // ── User Path Data ──────────────────────────────────────────────────────────────
     getUserDataPath: () => ipcRenderer.invoke('app:getUserDataPath'),

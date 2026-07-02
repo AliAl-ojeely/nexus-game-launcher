@@ -320,6 +320,21 @@ function getDailyPlaytimeForGame(gameName, periodDays) {
     return sorted.map(([date, seconds]) => ({ date, seconds }));
 }
 
+/**
+ * Deletes all play sessions for a specific game.
+ * @param {string} gameName
+ */
+function deleteSessionsByGame(gameName) {
+    try {
+        const sessions = readSessions();
+        const filtered = sessions.filter(s => s.gameName !== gameName);
+        fs.writeFileSync(SESSIONS_PATH, JSON.stringify(filtered, null, 2), 'utf-8');
+        return true;
+    } catch (err) {
+        console.error('[Sessions] Error deleting sessions for game:', gameName, err);
+        throw err;
+    }
+}
 
 module.exports = {
     initSessionsDB,
@@ -344,4 +359,5 @@ module.exports = {
     getCumulativeStats,
     getLibraryGrowth,
     getHeatmapData,
+    deleteSessionsByGame,
 };

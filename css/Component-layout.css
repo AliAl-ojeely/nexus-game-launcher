@@ -190,8 +190,9 @@ body {
 
 .nav-item:hover,
 .nav-item.active {
-    background: rgba(255, 70, 85, 0.1);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--accent);
+    transition: all 0.3s ease;
 }
 
 .sidebar.collapsed .nav-item span,

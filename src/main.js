@@ -242,6 +242,17 @@ ipcMain.handle('app:getSystemSpecs', async () => {
     }
 });
 
+ipcMain.handle('delete-game-sessions', async (event, gameName) => {
+    try {
+        sessions.deleteSessionsByGame(gameName);
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to delete game sessions:', error);
+        throw error;
+    }
+});
+console.log('[IPC] delete-game-sessions handler registered');   // temporary debug
+
 // ─── Game Launcher IPC ─────────────────────────────────────────────────────
 ipcMain.on('game:launch', (event, gamePath, showFPS, args, id, name) =>
     launcher.launchGame(event, gamePath, showFPS, args, id, name)

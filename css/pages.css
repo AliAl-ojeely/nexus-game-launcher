@@ -942,13 +942,50 @@ html[lang="ar"] .stat-card h3 {
 
 .stats-game-item {
     display: flex;
+    position: relative;
     align-items: center;
     gap: 12px;
     padding: 10px;
+    padding-right: 40px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 4px;
+}
+
+[dir="rtl"] .stats-game-item {
+    padding-right: 10px;
+    padding-left: 40px;
+}
+
+.delete-stat-btn {
+    position: absolute;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+[dir="rtl"] .delete-stat-btn {
+    right: auto;
+    left: 8px;
+}
+
+.stats-game-item:hover .delete-stat-btn {
+    opacity: 1;
+}
+
+.delete-stat-btn:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
 }
 
 .stats-game-item:hover {

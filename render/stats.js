@@ -64,16 +64,56 @@ async function loadGameList() {
         const div = document.createElement('div');
         div.className = 'stats-game-item';
         div.setAttribute('data-game', game.name);
+
         div.innerHTML = `
             ${logoUrl ? `<img src="${logoUrl}" class="stats-game-logo" onerror="this.style.display='none'">` : '<div class="stats-game-logo" style="background:var(--accent);"></div>'}
             <span class="stats-game-name">${escapeHtml(game.name)}</span>
+            <button class="action-btn delete-stat-btn" title="Delete Stats">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
         `;
+
         div.addEventListener('click', () => {
             document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
             div.classList.add('active');
             currentGame = game.name;
             refreshAllStats();
         });
+
+        const deleteBtn = div.querySelector('.delete-stat-btn');
+        deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+
+            const confirmMsg = userSettings.lang === 'ar'
+                ? 'هل تريد حذف بيانات هذه اللعبة من لوحة الإحصائيات بالكامل؟'
+                : 'Do you want to delete this game Info from the Static Dashboard?';
+
+            if (confirm(confirmMsg)) {
+                try {
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                    if (window.api.deleteGameSessions) {
+                        await window.api.deleteGameSessions(game.name);
+                    }
+
+                    if (window.showToast) {
+                        window.showToast('success', userSettings.lang === 'ar' ? 'تم حذف الإحصائيات' : 'Stats deleted', '', 2000);
+                    }
+
+                    if (currentGame === game.name) {
+                        currentGame = null;
+                        const overallBtn = document.getElementById('overallStatsBtn');
+                        if (overallBtn) overallBtn.click();
+                    }
+
+                    await loadGameList();
+                } catch (err) {
+                    console.error('[FRONTEND] Error deleting stats:', err);
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                }
+            }
+        });
+
         container.appendChild(div);
     });
 }

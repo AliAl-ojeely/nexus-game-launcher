@@ -239,4 +239,65 @@ export function initModal() {
             btn.innerHTML = `<i class="fa-solid fa-check"></i> ${userSettings.lang === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}`;
         }
     });
+
+    // (Refresh Button and Edit Button inside the Game's Page)
+
+    const detailsRefreshBtn = document.getElementById('detailsRefreshBtn');
+    if(detailsRefreshBtn) {
+        detailsRefreshBtn.addEventListener('click', async() => {
+            if(!state.currentGameId) return;
+
+            const game = state.allGamesData.find(g => g.id === state.currentGameId);
+            if(!game) return;
+
+            const originalHTML = detailsRefreshBtn.innerHTML;
+            detailsRefreshBtn.innerHTML = '<<i class="fa-solid fa-spinner fa-spin"></i>';
+            detailsRefreshBtn.disabled = true;
+
+
+            try {
+                const freshDetails = await window.api.fetchGameDetails(game.name);
+
+                if (freshDetails?.assets && freshDetails?.metadata) {
+                    game.assets = freshDetails.assets;
+                    game.metadata = freshDetails.metadata;
+
+                    await window.api.saveGameDetails(game.id, {
+                        name: game.name,
+                        assets: freshDetails.assets,
+                        metadata: freshDetails.metadata,
+                    });
+
+                    import('./page.js').then(module => {
+                        if(module.openGameDetailsPage) module.openGameDetailsPage(game);
+                    });
+
+                    if(window.showToast) {
+                        window.showToast('success', userSettings.lang === 'ar' ? 'تم تحديث صور وبيانات اللعبة' : 'Game assets refreshed', '', 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('[FRONTEND] Refresh failed:', error);
+                if (window.showToast) window.showToast('error', userSettings.lang === 'ar' ? 'فشل التحديث' : 'Refresh failed');
+            } finally {
+                // إعادة الزر لشكله الطبيعي
+                detailsRefreshBtn.innerHTML = originalHTML;
+                detailsRefreshBtn.disabled = false;
+            }
+        });
+    }
+
+    const detailsEditBtn = document.getElementById('detailsEditBtn');
+    if(detailsEditBtn) {
+        detailsEditBtn.addEventListener('click', () => {
+            if(!state.currentGameId) return;
+            const game = state.allGamesData.find(g=> g.id === state.currentGameId);
+
+            if(game) {
+                import('./edit.js').then(module => {
+                    if(module.openEditModal) module.openEditModal(game);
+                });
+            }
+        });
+    }
 }
