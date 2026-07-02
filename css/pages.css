@@ -111,13 +111,11 @@
 
 .details-header-title {
     display: flex;
-    /* removed absolute positioning */
     align-items: center;
     gap: 10px;
     pointer-events: none;
     flex-shrink: 1;
     min-width: 0;
-    /* allows text ellipsis to work */
 }
 
 .details-header-icon {
@@ -916,6 +914,14 @@ html[lang="ar"] .stat-card h3 {
     border-right: 1px solid var(--border-color);
     overflow-y: auto;
     background: var(--bg-card);
+    position: relative;
+
+    /* scroll bar */
+    /* align-items: flex-start;
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto; */
 }
 
 [dir="rtl"] .stats-sidebar {
@@ -925,6 +931,13 @@ html[lang="ar"] .stat-card h3 {
 
 .stats-game-list {
     padding: 12px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .stats-game-item {
@@ -1099,7 +1112,7 @@ html[lang="ar"] .stat-card h3 {
 }
 
 .stat-card-mini span {
-    font-size: 13px;
+    font-size: 16px;
     color: var(--text-muted);
     margin: 0;
     white-space: nowrap;

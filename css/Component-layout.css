@@ -470,7 +470,6 @@ body {
     background: rgba(15, 25, 35, 0.85);
     border-radius: 8px;
     border: none;
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
     width: 32px;
     height: 32px;
@@ -599,7 +598,6 @@ body {
 
 .remove-recent-btn:hover {
     background: #ff6b6b;
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
 }
 
@@ -931,7 +929,6 @@ body {
 .lightbox-controls button {
     background: none;
     border: none;
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
     font-size: 20px;
     cursor: pointer;

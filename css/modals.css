@@ -220,7 +220,6 @@
     position: absolute;
     top: 20px;
     right: 40px;
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
     font-size: 40px;
     cursor: pointer;
@@ -236,7 +235,6 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
     font-size: 30px;
     cursor: pointer;
@@ -290,7 +288,6 @@
     background: #ff4444;
     border: none;
     padding: 10px 25px;
-    /* color: var(--btn-text-color, #ffffff); */
     color: #ffffff;
     border-radius: 5px;
     cursor: pointer;
