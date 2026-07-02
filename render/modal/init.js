@@ -241,19 +241,17 @@ export function initModal() {
     });
 
     // (Refresh Button and Edit Button inside the Game's Page)
-
     const detailsRefreshBtn = document.getElementById('detailsRefreshBtn');
-    if(detailsRefreshBtn) {
-        detailsRefreshBtn.addEventListener('click', async() => {
-            if(!state.currentGameId) return;
+    if (detailsRefreshBtn) {
+        detailsRefreshBtn.addEventListener('click', async () => {
+            if (!state.currentGameId) return;
 
             const game = state.allGamesData.find(g => g.id === state.currentGameId);
-            if(!game) return;
+            if (!game) return;
 
-            const originalHTML = detailsRefreshBtn.innerHTML;
-            detailsRefreshBtn.innerHTML = '<<i class="fa-solid fa-spinner fa-spin"></i>';
+            const iconEl = detailsRefreshBtn.querySelector('i');
+            if (iconEl) iconEl.className = 'fa-solid fa-spinner fa-spin';
             detailsRefreshBtn.disabled = true;
-
 
             try {
                 const freshDetails = await window.api.fetchGameDetails(game.name);
@@ -268,11 +266,17 @@ export function initModal() {
                         metadata: freshDetails.metadata,
                     });
 
-                    import('./page.js').then(module => {
-                        if(module.openGameDetailsPage) module.openGameDetailsPage(game);
-                    });
+                    if (typeof renderGames === 'function') {
+                        await renderGames();
+                    }
 
-                    if(window.showToast) {
+                    const gameCard = document.querySelector(`.game-card[data-id="${game.id}"]`) ||
+                        document.querySelector(`.game-card[data-name="${game.name}"]`);
+                    if (gameCard) {
+                        gameCard.click();
+                    }
+
+                    if (window.showToast) {
                         window.showToast('success', userSettings.lang === 'ar' ? 'تم تحديث صور وبيانات اللعبة' : 'Game assets refreshed', '', 2000);
                     }
                 }
@@ -280,8 +284,7 @@ export function initModal() {
                 console.error('[FRONTEND] Refresh failed:', error);
                 if (window.showToast) window.showToast('error', userSettings.lang === 'ar' ? 'فشل التحديث' : 'Refresh failed');
             } finally {
-                // إعادة الزر لشكله الطبيعي
-                detailsRefreshBtn.innerHTML = originalHTML;
+                if (iconEl) iconEl.className = 'fa-solid fa-arrows-rotate';
                 detailsRefreshBtn.disabled = false;
             }
         });

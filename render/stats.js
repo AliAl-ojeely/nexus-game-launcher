@@ -761,10 +761,21 @@ function drawProgressCircle(ctx, percent, formattedTime, size) {
 
     ctx.clearRect(0, 0, size, size);
 
+    let textColor = '#ffffff';
+    let ringBgColor = '#2d2d2d';
+
+    if (document.body.classList.contains('light-mode')) {
+        textColor = '#1f2937';
+        ringBgColor = '#e5e7eb';
+    } else if (document.body.classList.contains('darker-mode')) {
+        textColor = '#ffffff';
+        ringBgColor = '#1a202c';
+    }
+
     // Background ring
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#2d2d2d';
+    ctx.strokeStyle = ringBgColor;
     ctx.lineWidth = 6;
     ctx.stroke();
 
@@ -780,7 +791,7 @@ function drawProgressCircle(ctx, percent, formattedTime, size) {
     ctx.stroke();
 
     // Text – use larger font for better readability
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = textColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const fontSize = size * 0.12;
