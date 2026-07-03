@@ -171,38 +171,52 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
         // Favorite button (always present)
         const favBtn = card.querySelector('.fav-btn');
         if (favBtn) {
-            favBtn.addEventListener('click', async (e) => {
+            favBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                game.isFavorite = !game.isFavorite;
-                await window.api.updateGame(game);
 
-                // Update the header heart icon if the game details page is open and showing this game
+                // 1. Optimistic UI Update: Toggle state immediately
+                game.isFavorite = !game.isFavorite;
+
+                // 2. Update the card's heart icon instantly (No re-render needed)
+                const cardIcon = favBtn.querySelector('i');
+                if (cardIcon) {
+                    cardIcon.className = game.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                    if (game.isFavorite) {
+                        favBtn.classList.add('active');
+                    } else {
+                        favBtn.classList.remove('active');
+                    }
+                }
+
+                // 3. Update the header heart icon if the game details page is open
                 if (state.currentGameId === game.id) {
                     const favIconContainer = document.getElementById('detailsHeaderFavIcon');
                     if (favIconContainer) {
-                        const icon = favIconContainer.querySelector('i');
-                        if (icon) {
-                            if (game.isFavorite) {
-                                icon.className = 'fa-solid fa-heart';
-                                favIconContainer.classList.add('active');
-                            }
-                            else {
-                                icon.className = 'fa-regular fa-heart';
-                                favIconContainer.classList.remove('active');
-                            }
+                        const headerIcon = favIconContainer.querySelector('i');
+                        if (headerIcon) {
+                            headerIcon.className = game.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                            favIconContainer.classList.toggle('active', game.isFavorite);
                         }
                     }
                 }
 
-                // Show toast message
+                // 4. Show toast message instantly
                 const isAr = userSettings.lang === 'ar';
                 const msg = game.isFavorite
                     ? (isAr ? 'تمت الإضافة إلى المفضلة' : 'Added to favorites')
                     : (isAr ? 'تمت الإزالة من المفضلة' : 'Removed from favorites');
-                showToast('success', msg, '', 1500);
 
-                // Refresh the library grid to update the card's heart icon
-                renderGames();
+                if (typeof showToast === 'function') {
+                    showToast('success', msg, '', 1500);
+                }
+
+                // 5. Save to database in the background (Notice the lack of 'await')
+                window.api.updateGame(game).catch(err => {
+                    console.error('[FRONTEND] Failed to update favorite status in background:', err);
+                });
+
+                // 🚀 REMOVED: renderGames() has been entirely deleted from here.
+                // Re-rendering the entire DOM for one icon was causing the massive lag.
             });
         }
 

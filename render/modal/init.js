@@ -3,6 +3,8 @@ import { renderGames } from '../library.js';
 import { t } from './helpers.js';
 import { showSavePathStatus } from './backup-status.js';
 import { triggerAddGameProcess } from './add-game.js';
+import { showToast } from '../details-components.js';
+
 
 export function initModal() {
     const editModal = document.getElementById('editModal');
@@ -240,50 +242,134 @@ export function initModal() {
         }
     });
 
+    // Random Game Button inside Game Details Page
+    const detailsRandomBtn = document.getElementById('detailsRandomBtn');
+    if (detailsRandomBtn) {
+        detailsRandomBtn.addEventListener('click', () => {
+            const games = state.allGamesData;
+
+            // 1. Check if library is empty
+            if (!games || games.length === 0) {
+                const msg = userSettings.lang === 'ar' ? 'لا توجد ألعاب في مكتبتك' : 'No games in your library';
+                if (typeof showToast === 'function') showToast('info', msg, '', 2000);
+                return;
+            }
+
+            // 2. Filter out the currently opened game so it doesn't pick it again
+            let availableGames = games.filter(g => g.id !== state.currentGameId);
+
+            // Fallback in case the user only has exactly 1 game in the entire library
+            if (availableGames.length === 0) {
+                availableGames = games;
+            }
+
+            // 3. Pick a random game from the filtered list
+            const randomIndex = Math.floor(Math.random() * availableGames.length);
+            const randomGame = availableGames[randomIndex];
+
+            // 4. Animate the button for visual feedback
+            const iconEl = detailsRandomBtn.querySelector('i');
+            if (iconEl) {
+                iconEl.classList.add('fa-spin');
+                setTimeout(() => iconEl.classList.remove('fa-spin'), 500);
+            }
+
+            // 5. Open the newly selected game details (FIXED PATH: added ../)
+            import('../details.js').then(({ openGameDetailsPage }) => {
+                openGameDetailsPage(randomGame);
+            }).catch(err => {
+                console.error('[FRONTEND] Failed to load details module for Randomizer:', err);
+            });
+
+            // 6. Show success toast
+            const toastMsg = userSettings.lang === 'ar' ? `لعبة عشوائية: ${randomGame.name}` : `Random pick: ${randomGame.name}`;
+            if (typeof showToast === 'function') {
+                showToast('success', toastMsg, '', 3000);
+            }
+        });
+    }
+
     // (Refresh Button and Edit Button inside the Game's Page)
     const detailsRefreshBtn = document.getElementById('detailsRefreshBtn');
     if (detailsRefreshBtn) {
         detailsRefreshBtn.addEventListener('click', async () => {
             if (!state.currentGameId) return;
 
+            // 1. Initial Network Check (Hardware level)
+            if (!navigator.onLine) {
+                const errorTitle = userSettings.lang === 'ar' ? 'لا يوجد اتصال بالإنترنت!' : 'No internet connection!';
+                const errorMsg = userSettings.lang === 'ar' ? 'الرجاء التحقق من الشبكة.' : 'Please check your network.';
+                try { showToast('error', errorTitle, errorMsg, 4000); } catch (err) { alert(errorTitle + "\n" + errorMsg); }
+                return;
+            }
+
             const game = state.allGamesData.find(g => g.id === state.currentGameId);
             if (!game) return;
 
+            // 2. Create a secure backup of existing data before fetching
+            const oldAssets = JSON.parse(JSON.stringify(game.assets || {}));
+            const oldMetadata = JSON.parse(JSON.stringify(game.metadata || {}));
+
+            // 3. Update UI to loading state
             const iconEl = detailsRefreshBtn.querySelector('i');
             if (iconEl) iconEl.className = 'fa-solid fa-spinner fa-spin';
             detailsRefreshBtn.disabled = true;
 
             try {
+                // 4. Fetch new details from the API
                 const freshDetails = await window.api.fetchGameDetails(game.name);
 
-                if (freshDetails?.assets && freshDetails?.metadata) {
-                    game.assets = freshDetails.assets;
-                    game.metadata = freshDetails.metadata;
+                // 5. [CRITICAL FIX] Strict Data Validation
+                // We check if the fetched data actually contains real URLs or descriptions
+                // If it's just an empty object due to a dead connection, isValidFetch will be false
+                const hasAssets = freshDetails?.assets && (freshDetails.assets.poster || freshDetails.assets.banner || freshDetails.assets.logo);
+                const hasMetadata = freshDetails?.metadata && (freshDetails.metadata.description || freshDetails.metadata.releaseDate);
 
-                    await window.api.saveGameDetails(game.id, {
-                        name: game.name,
-                        assets: freshDetails.assets,
-                        metadata: freshDetails.metadata,
-                    });
+                const isValidFetch = hasAssets || hasMetadata;
 
-                    if (typeof renderGames === 'function') {
-                        await renderGames();
-                    }
-
-                    const gameCard = document.querySelector(`.game-card[data-id="${game.id}"]`) ||
-                        document.querySelector(`.game-card[data-name="${game.name}"]`);
-                    if (gameCard) {
-                        gameCard.click();
-                    }
-
-                    if (window.showToast) {
-                        window.showToast('success', userSettings.lang === 'ar' ? 'تم تحديث صور وبيانات اللعبة' : 'Game assets refreshed', '', 2000);
-                    }
+                if (!isValidFetch) {
+                    // Force the process to stop and jump to the catch block
+                    throw new Error('API returned empty or invalid data due to network/server issues.');
                 }
+
+                // 6. Data is 100% valid, proceed to save safely
+                game.assets = freshDetails.assets;
+                game.metadata = freshDetails.metadata;
+
+                await window.api.saveGameDetails(game.id, {
+                    name: game.name,
+                    assets: freshDetails.assets,
+                    metadata: freshDetails.metadata,
+                });
+
+                // 7. Update UI smoothly
+                if (typeof renderGames === 'function') {
+                    await renderGames();
+                }
+
+                const gameCard = document.querySelector(`.game-card[data-id="${game.id}"]`) ||
+                    document.querySelector(`.game-card[data-name="${game.name}"]`);
+                if (gameCard) {
+                    gameCard.click();
+                }
+
+                try {
+                    showToast('success', userSettings.lang === 'ar' ? 'تم تحديث صور وبيانات اللعبة' : 'Game assets refreshed', '', 2000);
+                } catch (e) { }
+
             } catch (error) {
-                console.error('[FRONTEND] Refresh failed:', error);
-                if (window.showToast) window.showToast('error', userSettings.lang === 'ar' ? 'فشل التحديث' : 'Refresh failed');
+                console.error('[FRONTEND] Refresh aborted to protect data:', error);
+
+                // 8. [ROLLBACK] Restore the original data immediately if anything fails
+                game.assets = oldAssets;
+                game.metadata = oldMetadata;
+
+                try {
+                    const failMsg = userSettings.lang === 'ar' ? 'فشل التحديث - لا يوجد إنترنت أو الخادم لا يستجيب' : 'Refresh failed - Network or Server Error';
+                    showToast('error', failMsg, '', 3000);
+                } catch (e) { }
             } finally {
+                // 9. Restore the icon
                 if (iconEl) iconEl.className = 'fa-solid fa-arrows-rotate';
                 detailsRefreshBtn.disabled = false;
             }
