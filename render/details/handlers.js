@@ -34,7 +34,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         if (playtimeDisplay && currentGame && state.currentGameExePath === currentGame.path) {
             playtimeDisplay.innerText = formatPlaytime(newTotalPlaytime, userSettings.lang);
         }
-    } else if (elapsedSeconds < 60) {
+    } else {
         const existingTotal = await window.api.getPlaytime(gameName);
         const playtimeDisplay = document.getElementById('totalPlaytimeValue');
         const currentGame = state.allGamesData.find(g => g.name === gameName);
@@ -233,6 +233,8 @@ export async function handleCanIRunItCheck() {
         resultBox.style.display = 'block';
     } catch (err) {
         console.error("Can I Run It Error:", err);
+        const isAr = userSettings.lang === 'ar';
+        showToast('error', isAr ? 'فشل فحص النظام' : 'System Check Failed', err.message, 4000);
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;

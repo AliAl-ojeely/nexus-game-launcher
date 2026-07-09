@@ -79,7 +79,7 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
     card.innerHTML = `
         ${actionsHtml}
         <img class="game-poster" src="${posterUrl}" alt="${game.name}" 
-             onerror="this.style.background='#1e293b'; this.removeAttribute('src');">
+             onerror="this.classList.add('missing-poster'); this.removeAttribute('src');">
         <div class="game-info">
             <div class="game-title">${escapeHtml(game.name)}</div>
         </div>
@@ -322,8 +322,8 @@ export async function renderGames() {
                     break;
                 case 'recent_desc':
                     sortedGames.sort((a, b) => {
-                        const dateA = playtimeMap[a.name]?.lastPlayed ? new Date(playtimeMap[a.name].lastPlayed) : 0;
-                        const dateB = playtimeMap[b.name]?.lastPlayed ? new Date(playtimeMap[b.name].lastPlayed) : 0;
+                        const dateA = playtimeMap[a.name]?.lastPlayed ? new Date(playtimeMap[a.name].lastPlayed).getTime() : 0;
+                        const dateB = playtimeMap[b.name]?.lastPlayed ? new Date(playtimeMap[b.name].lastPlayed).getTime() : 0;
                         return dateB - dateA;
                     });
                     break;
