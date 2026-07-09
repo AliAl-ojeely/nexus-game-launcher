@@ -5,16 +5,12 @@
 export function toSafeUrl(url) {
     if (!url) return '';
 
-    // روابط http/https لا نلمسها
     if (url.startsWith('http')) return url;
 
-    // توحيد الـ backslashes
     const normalized = url.replace(/\\/g, '/');
 
-    // إذا البروتوكول موجود بالصيغة الصحيحة local-resource:///
     if (normalized.startsWith('local-resource:///')) return normalized;
 
-    // إذا كان local-resource:// (بدون /) نصحح
     if (normalized.startsWith('local-resource://')) {
         return normalized.replace('local-resource://', 'local-resource:///');
     }

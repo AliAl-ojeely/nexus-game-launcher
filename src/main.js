@@ -118,17 +118,28 @@ protocol.registerSchemesAsPrivileged([
 // ─── App Ready ──────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
     protocol.handle('local-resource', async (request) => {
-        const raw = request.url.replace(/^local-resource:\/\//, '');
-        const decoded = decodeURI(raw);
-        let filePath = decoded.replace(/\//g, path.sep);
+        let rawPath = request.url.replace(/^local-resource:(?:\/+)/, '');
+        rawPath = decodeURIComponent(rawPath);
+
+        let filePath = rawPath.replace(/\//g, path.sep);
         filePath = path.normalize(filePath);
+
         if (process.platform === 'win32') {
-            const m = filePath.match(/^([a-zA-Z])\\(.*)$/);
-            if (m) filePath = m[1].toUpperCase() + ':\\' + m[2];
+            const match = filePath.match(/^([a-zA-Z])(:?)\\(.*)$/);
+            if (match) {
+                filePath = match[1].toUpperCase() + ':\\' + match[3];
+            }
+        } else {
+            if (!filePath.startsWith('/')) {
+                filePath = '/' + filePath;
+            }
         }
+
         try {
-            const stat = await fs.promises.stat(filePath);
-            if (!stat.isFile()) throw new Error('Not a file');
+            if (!fs.existsSync(filePath)) {
+                throw new Error('File missing');
+            }
+
             const data = await fs.promises.readFile(filePath);
             const ext = path.extname(filePath).toLowerCase();
             const mime = {
@@ -140,13 +151,18 @@ app.whenReady().then(() => {
                 '.svg': 'image/svg+xml',
                 '.ico': 'image/x-icon',
             };
+
             return new Response(data, {
                 status: 200,
                 headers: { 'Content-Type': mime[ext] || 'application/octet-stream' },
             });
+
         } catch (err) {
-            console.error('[Protocol Error]:', err.message, '| Path:', filePath);
-            return new Response('File not found', { status: 404 });
+            const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+            return new Response(transparentPng, {
+                status: 200,
+                headers: { 'Content-Type': 'image/png' }
+            });
         }
     });
 

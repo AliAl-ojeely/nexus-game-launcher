@@ -10,21 +10,19 @@ const youtubeApi = require('./youtube-api');
 function cleanDescription(text) {
     if (!text || typeof text !== 'string') return '';
     let cleaned = text
-        // Remove ###, ##, # anywhere (including attached to words)
         .replace(/#{1,3}/g, '')
-        // Remove ***, ___, --- anywhere
         .replace(/\*{3,}/g, '')
         .replace(/_{3,}/g, '')
         .replace(/-{3,}/g, '')
-        // Remove special symbol groups
         .replace(/\$\$+/g, '')
         .replace(/@@+/g, '')
         .replace(/!!+/g, '')
-        // Collapse multiple spaces and trim
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&#39;/g, "'")
         .replace(/\s+/g, ' ')
         .trim();
-    // Restore single spaces after punctuation (keeps readability)
-    cleaned = cleaned.replace(/\.\s+\./g, '. .'); // optional
+    cleaned = cleaned.replace(/\.\s+\./g, '. .');
     return cleaned;
 }
 
@@ -116,7 +114,10 @@ function mergeMetadata({
 async function fetchAllMetadata(gameName) {
     console.log(`\n--- Starting Metadata Fetch Pipeline for: "${gameName}" ---`);
 
-    const rawgData = await rawgApi.fetchGameDetails(gameName);
+    const rawgData = await rawgApi.fetchGameDetails(gameName).catch(err => {
+        console.warn(`[Pipeline] RAWG API Error:`, err.message);
+        return null;
+    });
 
     let steamData = null;
     let sgAssets = null;
@@ -124,26 +125,27 @@ async function fetchAllMetadata(gameName) {
 
     if (!steamAppId) {
         console.log(`[Pipeline] No Steam AppID from RAWG, searching Steam by name...`);
-        steamAppId = await steamApi.searchAppId(gameName);
+        steamAppId = await steamApi.searchAppId(gameName).catch(() => null);
         if (steamAppId) console.log(`[Pipeline] Found Steam AppID via name search: ${steamAppId}`);
     }
 
     if (steamAppId) {
         console.log(`[Pipeline] Fetching Steam data for AppID ${steamAppId}...`);
         [steamData, sgAssets] = await Promise.all([
-            steamApi.fetchGameDetails(steamAppId),
-            steamGridApi.fetchGameAssets(steamAppId)
+            steamApi.fetchGameDetails(steamAppId).catch(() => null),
+            steamGridApi.fetchGameAssets(steamAppId).catch(() => null)
         ]);
     } else {
         console.log(`[Pipeline] No Steam AppID found, fetching SteamGrid assets by name...`);
-        sgAssets = await steamGridApi.fetchGameAssets(gameName);
+        sgAssets = await steamGridApi.fetchGameAssets(gameName).catch(() => null);
     }
 
     let trailerYouTubeId = rawgData?.media?.trailerYouTubeId || null;
     let trailerThumbnail = rawgData?.media?.trailerThumbnail || null;
+
     if (!trailerYouTubeId) {
         console.log(`[Pipeline] No RAWG clip found. Searching YouTube...`);
-        const ytResult = await youtubeApi.getTrailerData(gameName);
+        const ytResult = await youtubeApi.getTrailerData(gameName).catch(() => null);
         if (ytResult) {
             trailerYouTubeId = ytResult.videoId;
             trailerThumbnail = ytResult.thumbnail;

@@ -3,6 +3,8 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const { app } = require('electron');
+const { net } = require('electron');
+const { pathToFileURL } = require('url');
 
 const gameMonitors = new Map();  // gameId → setInterval (process polling)
 const gameTimers = new Map();    // gameId → setInterval (playtime tick)
@@ -98,32 +100,42 @@ function startTimer(gameId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CROSS‑PLATFORM PROCESS LISTING
+// CROSS‑PLATFORM PROCESS LISTING (Optimized - No PowerShell)
 // ─────────────────────────────────────────────────────────────────────────────
 function getProcesses(callback) {
     if (process.platform === 'win32') {
-        const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process | Select ProcessId,ExecutablePath | ConvertTo-Json"`;
+        const cmd = `wmic process get ProcessId,ExecutablePath`;
         exec(cmd, { windowsHide: true, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
             if (err || !stdout) return callback([]);
             try {
-                let data = JSON.parse(stdout);
-                if (!Array.isArray(data)) data = [data];
-                const processes = data
-                    .filter(p => p.ExecutablePath)
-                    .map(p => ({ pid: p.ProcessId, path: p.ExecutablePath.toLowerCase() }));
+                const processes = [];
+                const lines = stdout.split('\n');
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const match = line.match(/^(.*?)\s+(\d+)$/);
+                    if (match) {
+                        const exePath = match[1].trim().toLowerCase();
+                        const pid = parseInt(match[2], 10);
+                        if (exePath && pid) {
+                            processes.push({ pid, path: exePath });
+                        }
+                    }
+                }
                 callback(processes);
             } catch { callback([]); }
         });
     } else {
-        exec('ps -eo pid,comm', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
+        exec('ps -eo pid,args', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
             if (err || !stdout) return callback([]);
             const lines = stdout.split('\n').slice(1);
             const processes = [];
             for (const line of lines) {
                 const match = line.match(/^\s*(\d+)\s+(.+)$/);
                 if (match) {
-                    const pid = parseInt(match[1]);
-                    let exePath = match[2].trim();
+                    const pid = parseInt(match[1], 10);
+                    let exePath = match[2].trim().split(' ')[0];
                     processes.push({ pid, path: exePath.toLowerCase() });
                 }
             }
@@ -133,11 +145,15 @@ function getProcesses(callback) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SMART MONITOR
+// SMART MONITOR (Optimized with Grace Period)
 // ─────────────────────────────────────────────────────────────────────────────
 function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
     let trackedPid = launcherPid;
     let realGameDetected = false;
+
+    let missingCount = 0;
+    const MAX_MISSING = 7;
+
     console.log(`[BACKEND] Monitoring started for: ${exeName}`);
 
     const interval = setInterval(() => {
@@ -149,24 +165,40 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
                     const procPath = p.path.toLowerCase();
                     return procPath.startsWith(gameDir.toLowerCase()) && !procPath.endsWith(exeName.toLowerCase());
                 });
+
                 if (candidate) {
                     realGameDetected = true;
                     trackedPid = candidate.pid;
+                    missingCount = 0;
                     console.log(`[BACKEND] Real game detected → PID ${trackedPid}`);
                 }
+
                 if (!launcherAlive && !realGameDetected) {
-                    console.log(`[BACKEND] Launcher closed, no game process detected.`);
-                    stopMonitor(gameId);
+                    missingCount++;
+                    console.log(`[BACKEND] Launcher missing. Waiting for real game... (${missingCount}/${MAX_MISSING})`);
+
+                    if (missingCount >= MAX_MISSING) {
+                        console.log(`[BACKEND] Launcher closed, no game process detected after grace period.`);
+                        stopMonitor(gameId);
+                    }
+                } else if (launcherAlive) {
+                    missingCount = 0;
                 }
             } else {
                 const alive = processes.some(p => p.pid === trackedPid);
                 if (!alive) {
-                    console.log(`[BACKEND] Game process ended naturally.`);
-                    stopMonitor(gameId);
+                    missingCount++;
+                    if (missingCount >= 2) {
+                        console.log(`[BACKEND] Game process ended naturally.`);
+                        stopMonitor(gameId);
+                    }
+                } else {
+                    missingCount = 0;
                 }
             }
         });
-    }, 1000);
+    }, 2000);
+
     gameMonitors.set(gameId, interval);
 }
 
@@ -211,11 +243,11 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
                 STEAM_COMPAT_DATA_PATH: compatDataPath,
                 DXVK_HUD: showFPS ? 'compiler,fps' : '0'
             });
-            proc = spawn(protonPath, ['run', gamePath, ...argsArray], { cwd: gameDir, env, detached: true });
+            proc = spawn(protonPath, ['run', gamePath, ...argsArray], { cwd: gameDir, env, detached: true, stdio: 'ignore' });
         } else {
             const lower = gamePath.toLowerCase();
             const isBatOrLnk = lower.endsWith('.bat') || lower.endsWith('.lnk');
-            proc = spawn(gamePath, argsArray, { cwd: gameDir, detached: true, shell: isBatOrLnk });
+            proc = spawn(gamePath, argsArray, { cwd: gameDir, detached: true, shell: isBatOrLnk, stdio: 'ignore' });
         }
 
         proc.on('spawn', () => console.log(`[BACKEND] PID: ${proc.pid}`));

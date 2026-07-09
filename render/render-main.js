@@ -382,9 +382,11 @@ async function initSettingsPage() {
                     toolSelect.innerHTML = tools.map(t => `<option value="${t.name}">${t.name} (${t.type})</option>`).join('');
                     const newTool = tools.find(t => t.name.includes(versionTag));
                     if (newTool) toolSelect.value = newTool.name;
-                    alert(`✅ ${versionTag} installed successfully!`);
+                    const isAr = userSettings.lang === 'ar';
+                    showToast('success', isAr ? `تم تثبيت ${versionTag} بنجاح!` : `${versionTag} installed successfully!`, '', 3000);
                 } else {
-                    alert(`❌ Installation failed: ${result.error}`);
+                    const isAr = userSettings.lang === 'ar';
+                    showToast('error', isAr ? 'فشل التثبيت' : 'Installation failed', result.error, 4000);
                 }
                 downloadBtn.disabled = false;
                 downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download';

@@ -1,5 +1,3 @@
-// render/backup-ui.js
-
 export function updateBackupSidebarUI(bInfo, gameName, lang) {
     const el = document.getElementById('backupStatusValue');
     if (!el) return;
