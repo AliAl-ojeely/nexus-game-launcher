@@ -79,6 +79,7 @@
     },
     "mac": {
       "icon": "assets/icon.icns",
+      "x64ArchFiles": "**/*",
       "target": [
         {
           "target": "dmg",

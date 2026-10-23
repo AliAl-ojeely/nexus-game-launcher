@@ -10,9 +10,10 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-    
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -28,7 +29,7 @@ jobs:
       - name: Create secrets.json file
         shell: bash
         run: |
-              echo "{\"SGDB_API_KEY\":\"${{ secrets.SGDB_API_KEY }}\", \"RAWG_API_KEY\":\"${{ secrets.RAWG_API_KEY }}\", \"YOUTUBE_API_KEY\":\"${{ secrets.YOUTUBE_API_KEY }}\"}" > src/secrets.json
+          echo "{\"SGDB_API_KEY\":\"${{ secrets.SGDB_API_KEY }}\", \"RAWG_API_KEY\":\"${{ secrets.RAWG_API_KEY }}\", \"YOUTUBE_API_KEY\":\"${{ secrets.YOUTUBE_API_KEY }}\"}" > src/secrets.json
 
       - name: Build and Publish for Windows
         if: matrix.os == 'windows-latest'
@@ -46,4 +47,6 @@ jobs:
         if: matrix.os == 'macos-latest'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --mac --universal --publish always
+        run: |
+          npm install --no-save --force @img/sharp-darwin-x64 @img/sharp-libvips-darwin-x64
+          npx electron-builder --mac --universal --publish always
