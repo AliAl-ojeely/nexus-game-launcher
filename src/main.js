@@ -15,6 +15,7 @@ const { initAppData, readSettings, writeSettings } = require('../modules/app-set
 const { registerDatabaseIPC } = require('./ipc/ipc-database');
 const { registerApiIPC } = require('./ipc/ipc-api');
 const { registerBackupIPC } = require('./ipc/ipc-backup');
+const { registerDialogIPC } = require('./ipc/ipc-dialogs');
 
 // ─── Globals ────────────────────────────────────────────────────────────────
 let mainWindow = null;
@@ -291,6 +292,7 @@ ipcMain.handle('timer:resume', () => launcher.resumeTimer());
 registerDatabaseIPC();
 registerApiIPC();
 registerBackupIPC();
+registerDialogIPC();
 
 // ─── App lifecycle ──────────────────────────────────────────────────────────
 app.on('window-all-closed', () => {

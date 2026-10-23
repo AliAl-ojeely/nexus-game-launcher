@@ -1,3 +1,4 @@
+import { confirmDialog, messageDialog } from './dialogs.js';
 export function updateBackupSidebarUI(bInfo, gameName, lang) {
     const el = document.getElementById('backupStatusValue');
     if (!el) return;
@@ -105,7 +106,9 @@ function attachRestoreListeners(lang) {
         const zipPath = btn.dataset.zip;
         const gameName = btn.dataset.game;
 
-        if (!confirm(confirmMessage)) return;
+        if (!await confirmDialog({ variant: 'danger', message: confirmMessage,
+            title: lang === 'ar' ? 'استعادة ملفات الحفظ' : 'Restore game saves',
+            confirmText: lang === 'ar' ? 'استعادة النسخة' : 'Restore backup' })) return;
 
         // Disable button and show spinner
         const originalText = btn.innerHTML;
@@ -122,17 +125,30 @@ function attachRestoreListeners(lang) {
                     5000
                 );
             } else {
+                const detail = [result.code, result.error, result.diagnosticId ? `#${result.diagnosticId}` : '']
+                    .filter(Boolean).join(' · ');
                 showToast('error',
                     lang === 'ar' ? 'فشل الاستعادة' : 'Restore failed',
-                    result.error || '',
-                    5000
+                    detail,
+                    6500
                 );
+                if (result.logged === false) {
+                    await messageDialog({ variant: 'error', message: (lang === 'ar' ? 'تعذر تسجيل الخطأ: ' : 'Logging failed: ') + (result.logError || 'unknown') });
+                }
             }
         } catch (err) {
+            const message = err?.message || String(err);
+            try {
+                const log = await window.api.backup.reportClientIssue('RESTORE_RENDERER_ERROR', message, gameName);
+                if (log?.logged === false) await messageDialog({ variant: 'error', message: (lang === 'ar' ? 'تعذر كتابة سجل الخطأ: ' : 'Logging failed: ') + (log.logError || 'unknown') });
+            } catch (logErr) {
+                console.error('[Backup] Log transport failed', logErr);
+                await messageDialog({ variant: 'error', message: (lang === 'ar' ? 'تعذر كتابة سجل الخطأ: ' : 'Logging failed: ') + logErr.message });
+            }
             showToast('error',
                 lang === 'ar' ? 'خطأ أثناء الاستعادة' : 'Restore error',
-                err.message,
-                5000
+                message,
+                6500
             );
         } finally {
             btn.disabled = false;
@@ -148,7 +164,7 @@ function showToast(type, message, sub, duration) {
         window.showToast(type, message, sub, duration);
     } else {
         console.log(`[Toast] ${type}: ${message} - ${sub}`);
-        alert(message);
+        void messageDialog({ variant: type === 'error' ? 'error' : 'info', message, detail: sub });
     }
 }
 

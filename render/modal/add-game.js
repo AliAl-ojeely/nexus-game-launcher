@@ -32,6 +32,8 @@ export async function triggerAddGameProcess(triggerElement) {
             document.getElementById('customBgInput').value = '';
             document.getElementById('customIconInput').value = '';
             document.getElementById('launchArgsInput').value = '';
+            const installedInput = document.getElementById('gameInstalledInput');
+            if (installedInput) installedInput.checked = true;
 
             const originInput = document.getElementById('editGameOriginPath');
             const backupInput = document.getElementById('editGameBackupPath');

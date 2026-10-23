@@ -123,6 +123,7 @@ function saveGame(newGame) {
             id: newGame.id || Date.now(),
             name: newGame.name,
             path: newGame.path,
+            isInstalled: newGame.isInstalled !== false,
             arguments: newGame.arguments || '',
             isFavorite: newGame.isFavorite || false,
             // ✅ إضافة icon هنا عند الحفظ لأول مرة

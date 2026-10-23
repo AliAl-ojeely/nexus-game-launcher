@@ -147,3 +147,43 @@ body.darker-mode #openBackupFolderBtn {
 body.darker-mode #openBackupFolderBtn:hover {
     background: rgba(99, 102, 241, 0.15);
 }
+/* Nexus Save Discovery – inherits accent and surface from all three themes. */
+.backup-discover-btn {
+    width: 100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:9px 12px; margin-top:8px; border:1px solid var(--border-color);
+    color:var(--text-main); background:var(--bg-input); border-radius:7px;
+    font:inherit; font-size:12px; cursor:pointer; transition:border-color .18s, background .18s;
+}
+.backup-discover-btn:hover, .backup-discover-btn:focus-visible { border-color:var(--accent); }
+.backup-discover-btn i { color:var(--accent); }
+.backup-discover-btn:disabled { opacity:.6; cursor:progress; }
+.backup-discovery-panel { margin-top:10px; border:1px solid var(--border-color);
+    border-radius:10px; background:var(--bg-input); padding:12px;
+    color:var(--text-main); font-size:12px; }
+.backup-discovery-panel[hidden] { display:none !important; }
+.backup-discovery-head { display:flex; align-items:center; gap:8px; font-weight:700;
+    color:var(--text-main); margin-bottom:8px; }
+.backup-discovery-head i { color:var(--accent); }
+.backup-discovery-note { color:var(--text-muted); line-height:1.6; margin:5px 0; }
+.backup-discovery-item { border:1px solid var(--border-color); border-radius:8px;
+    padding:10px; margin-top:8px; background:var(--bg-sidebar); overflow-wrap:anywhere; }
+.backup-discovery-name { font-weight:700; color:var(--text-main); }
+.backup-discovery-path { direction:ltr; text-align:start; unicode-bidi:plaintext;
+    overflow-wrap:anywhere; display:block; font-size:11px; color:var(--text-muted); margin-block:6px; }
+.backup-discovery-use { border:1px solid var(--accent); color:var(--accent);
+    background:transparent; border-radius:6px; padding:7px 9px; width:100%;
+    font:inherit; cursor:pointer; margin-top:8px; }
+.backup-discovery-use:hover { color:var(--btn-text-color, #fff); background:var(--accent); }
+.backup-discovery-use:disabled { opacity:.5; cursor:progress; }
+.backup-discovery-error { color:#fb7185; border-inline-start:3px solid #fb7185;
+    padding-inline-start:8px; overflow-wrap:anywhere; }
+.backup-discovery-warning { color:#e5a43a; overflow-wrap:anywhere; }
+.backup-discovery-success { color:#10b981; overflow-wrap:anywhere; }
+body.light-mode .backup-discovery-error { color:#b91c1c; }
+body.light-mode .backup-discovery-warning { color:#92400e; }
+body.light-mode .backup-discovery-success { color:#047857; }
+
+/* Labels follow the existing htmlRoot.dir language switch, without changing translation.js. */
+#backupDiscoverBtn .backup-discover-en { display:none; }
+:root[dir="ltr"] #backupDiscoverBtn .backup-discover-ar { display:none; }
+:root[dir="ltr"] #backupDiscoverBtn .backup-discover-en { display:inline; }

@@ -1,3 +1,4 @@
+import { confirmDialog, operationError } from './dialogs.js';
 import { state, userSettings } from './state.js';
 import { openGameDetailsPage } from './details.js';
 import { loadOrder, applyOrder, toggleReorderMode, resetOrder } from './reorder.js';
@@ -102,9 +103,15 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
                 const confirmMsg = userSettings.lang === 'ar'
                     ? `هل تريد إزالة "${game.name}" من قائمة الألعاب الحديثة؟`
                     : `Remove "${game.name}" from recently played list?`;
-                if (confirm(confirmMsg)) {
-                    await window.api.clearLastPlayed(game.name);
-                    renderGames();
+                if (await confirmDialog({ variant: 'warning', message: confirmMsg })) {
+                    try {
+                        const result = await window.api.clearLastPlayed(game.name);
+                        if (result === false) throw new Error('Failed to clear the recent-game record');
+                        await renderGames();
+                    } catch (error) {
+                        await operationError({ code: 'RECENT_GAME_REMOVE_FAILED', error,
+                            context: 'library:recent', title: userSettings.lang === 'ar' ? 'تعذر إزالة اللعبة من الحديثة' : 'Could not remove recent game' });
+                    }
                 }
             });
         }
@@ -118,9 +125,17 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
                     const confirmMsg = userSettings.lang === 'ar'
                         ? `حذف "${game.name}"؟`
                         : `Delete "${game.name}"?`;
-                    if (confirm(confirmMsg)) {
-                        await window.api.deleteGame(game.id);
-                        renderGames();
+                    if (await confirmDialog({ variant: 'danger', message: confirmMsg,
+                        title: userSettings.lang === 'ar' ? 'حذف لعبة من المكتبة' : 'Remove game from library',
+                        confirmText: userSettings.lang === 'ar' ? 'حذف اللعبة' : 'Remove game' })) {
+                        try {
+                            const deleted = await window.api.deleteGame(game.id);
+                            if (deleted === false) throw new Error('Database refused to remove the game');
+                            await renderGames();
+                        } catch (error) {
+                            await operationError({ code: 'LIBRARY_GAME_DELETE_FAILED', error,
+                                context: 'library:delete', title: userSettings.lang === 'ar' ? 'فشل حذف اللعبة' : 'Failed to remove game' });
+                        }
                     }
                 });
             }
@@ -137,26 +152,12 @@ export function createGameCard(game, index, hideActions = false, hideEdit = fals
 
                     document.getElementById('gameNameInput').value = game.name;
                     document.getElementById('gamePathInput').value = game.path;
+                    const installedControl = document.getElementById('gameInstalledInput');
+                    if (installedControl) installedControl.checked = game.isInstalled !== false;
+                    // A blank picker means keep the current artwork unchanged.
+                    ['customPosterInput', 'customLogoInput', 'customBgInput', 'customIconInput']
+                        .forEach(id => { document.getElementById(id).value = ''; });
 
-                    const currentPoster = game.assets?.poster || '';
-                    document.getElementById('customPosterInput').value = currentPoster.startsWith('file:///')
-                        ? decodeURIComponent(currentPoster.replace('file:///', ''))
-                        : '';
-
-                    const currentLogo = game.assets?.logo || '';
-                    document.getElementById('customLogoInput').value = currentLogo.startsWith('file:///')
-                        ? decodeURIComponent(currentLogo.replace('file:///', ''))
-                        : '';
-
-                    const currentBg = game.assets?.background || '';
-                    document.getElementById('customBgInput').value = currentBg.startsWith('file:///')
-                        ? decodeURIComponent(currentBg.replace('file:///', ''))
-                        : '';
-
-                    const currentIcon = game.assets?.icon || '';
-                    document.getElementById('customIconInput').value = currentIcon.startsWith('file:///')
-                        ? decodeURIComponent(currentIcon.replace('file:///', ''))
-                        : '';
 
                     document.getElementById('launchArgsInput').value = game.arguments || '';
                     document.getElementById('saveGameModalBtn').innerText = userSettings.lang === 'ar'

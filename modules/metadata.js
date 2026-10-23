@@ -1,6 +1,7 @@
 const rawgApi = require('./rawg-api');
 const steamApi = require('./steam-api');
 const steamGridApi = require('./steamGrid-api');
+const steamArtworkApi = require('./steam-artwork');
 const youtubeApi = require('./youtube-api');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ function mergeMetadata({
     rawgData,
     steamData,
     sgAssets,
+    steamArtwork,
     trailerYouTubeId,
     trailerThumbnail,
 }) {
@@ -47,14 +49,8 @@ function mergeMetadata({
     const publisher = steamData?.publisher || rawgData?.publisher || '';
     const releaseDate = steamData?.releaseDate || rawgData?.releaseDate || '';
 
-    // ── Rating: prefer RAWG Metacritic, fallback to Steam user rating percentage ──
-    let metacritic = rawgData?.metacritic || '';
-    let steamRatingDesc = steamData?.steam_rating || '';
-
-    if (!metacritic && steamData?.steam_rating_percent) {
-        metacritic = String(steamData.steam_rating_percent);
-        console.log(`[Metadata] Using Steam user rating (${metacritic}%) as fallback for "${name}"`);
-    }
+    // Steam user reviews are not critic ratings and must not be labeled Metacritic.
+    const metacritic = rawgData?.metacritic || '';
 
     const genres = rawgData?.genres || steamData?.genres || '';
     const tags = rawgData?.tags || '';
@@ -73,12 +69,18 @@ function mergeMetadata({
         ? steamData.media.screenshots
         : (rawgData?.media?.screenshots || []);
 
-    // ── Raw assets (remote URLs — downloaded locally by assets.js) ────────────
+    // Prefer SGDB, then verified-by-downloader Steam Library artwork, then RAWG.
+    // Candidate lists are intentional: a URL alone does not prove an image exists.
+    // Never substitute screenshots for poster/background/logo/icon.
+    const candidates = (...values) => [...new Set(values.flat(Infinity).filter(
+        x => typeof x === 'string' && /^https:\/\//i.test(x)
+    ))];
     const rawAssets = {
-        poster: sgAssets?.poster || rawgData?.poster || '',
-        background: sgAssets?.background || rawgData?.background || '',
-        logo: sgAssets?.logo || '',
-        icon: sgAssets?.icon || '',
+        // RAWG background_image often is a screenshot, so it is not an art fallback.
+        poster: candidates(sgAssets?.poster, steamArtwork?.poster, steamData?.poster),
+        background: candidates(sgAssets?.background, steamArtwork?.background, steamData?.background),
+        logo: candidates(sgAssets?.logo, steamArtwork?.logo),
+        icon: candidates(sgAssets?.icon, steamArtwork?.icon),
     };
 
     // ── Steam AppID for achievements link ─────────────────────────────────────
@@ -93,6 +95,8 @@ function mergeMetadata({
         releaseDate,
         systemRequirements,
         metacritic,
+        steamRatingPercent: steamData?.steam_rating_percent || 0,
+        steamRatingText: steamData?.steam_rating || '',
         genres,
         tags,
         steamAppId,
@@ -121,6 +125,7 @@ async function fetchAllMetadata(gameName) {
 
     let steamData = null;
     let sgAssets = null;
+    let steamArtwork = null;
     let steamAppId = rawgData?.steamAppId || null;
 
     if (!steamAppId) {
@@ -131,9 +136,10 @@ async function fetchAllMetadata(gameName) {
 
     if (steamAppId) {
         console.log(`[Pipeline] Fetching Steam data for AppID ${steamAppId}...`);
-        [steamData, sgAssets] = await Promise.all([
+        [steamData, sgAssets, steamArtwork] = await Promise.all([
             steamApi.fetchGameDetails(steamAppId).catch(() => null),
-            steamGridApi.fetchGameAssets(steamAppId).catch(() => null)
+            steamGridApi.fetchGameAssets(gameName, steamAppId).catch(() => null),
+            steamArtworkApi.fetchSteamArtwork(steamAppId).catch(() => null)
         ]);
     } else {
         console.log(`[Pipeline] No Steam AppID found, fetching SteamGrid assets by name...`);
@@ -157,6 +163,7 @@ async function fetchAllMetadata(gameName) {
         rawgData,
         steamData,
         sgAssets,
+        steamArtwork,
         trailerYouTubeId,
         trailerThumbnail
     });

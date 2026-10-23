@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('api', {
     selectImage: () => ipcRenderer.invoke('dialog:selectImage'),
     selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
 
+    // ── Global dialog diagnostics ─────────────────────────────────────────────
+    dialogs: {
+        reportError: (issue) => ipcRenderer.invoke('dialogs:reportError', issue),
+    },
+
     // ── Database ──────────────────────────────────────────────────────────────
     getGames: () => ipcRenderer.invoke('db:getGames'),
     saveGame: (game) => ipcRenderer.invoke('db:saveGame', game),
@@ -127,6 +132,9 @@ contextBridge.exposeInMainWorld('api', {
 
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {
+        previewDiscovery: (gameId) => ipcRenderer.invoke('backup:previewDiscovery', gameId),
+        confirmCandidate: (gameId, selectedPath) => ipcRenderer.invoke('backup:confirmCandidate', gameId, selectedPath),
+        reportClientIssue: (code, message, gameName) => ipcRenderer.invoke('backup:reportClientIssue', code, message, gameName),
 
         getInfo: (name) =>
             ipcRenderer.invoke('backup:getInfo', name),

@@ -405,3 +405,225 @@
     color: var(--btn-text-color, #ffffff);
     border-color: var(--accent);
 }
+
+
+/* ======================================================
+   NEXUS GAME LAUNCHER
+   Installed Game Toggle - Modern UI v1.0
+   Scoped to Edit / Add Game Modal
+   No JavaScript changes required
+   ====================================================== */
+
+/* Interactive container */
+#editModal .form-group:has(> label > #gameInstalledInput) {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 16px 18px;
+
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+
+    transition:
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+/* Selected state */
+#editModal .form-group:has(#gameInstalledInput:checked) {
+    background: color-mix(
+        in srgb,
+        var(--accent) 7%,
+        var(--bg-modal)
+    );
+
+    border-color: color-mix(
+        in srgb,
+        var(--accent) 55%,
+        transparent
+    );
+}
+
+/* Hover */
+#editModal .form-group:has(#gameInstalledInput):hover {
+    border-color: color-mix(
+        in srgb,
+        var(--accent) 65%,
+        var(--border-color)
+    );
+}
+
+/* Keyboard accessibility */
+#editModal .form-group:has(#gameInstalledInput:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/* Main label */
+#editModal .form-group:has(#gameInstalledInput) > label {
+    display: flex;
+    align-items: center;
+    gap: 14px !important;
+
+    width: 100%;
+    min-height: 30px;
+
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Make the entire card clickable through the label */
+#editModal .form-group:has(#gameInstalledInput) > label::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+
+    border-radius: inherit;
+    cursor: pointer;
+}
+
+/* Text */
+#editModal .form-group:has(#gameInstalledInput) > label > span {
+    flex: 1;
+    min-width: 0;
+
+    color: var(--text-main);
+    overflow-wrap: anywhere;
+}
+
+/* Toggle track */
+#editModal #gameInstalledInput {
+    -webkit-appearance: none;
+    appearance: none;
+
+    position: relative;
+
+    width: 48px !important;
+    height: 28px !important;
+
+    min-width: 48px;
+    flex: 0 0 48px !important;
+
+    margin: 0;
+
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+
+    background: color-mix(
+        in srgb,
+        var(--text-muted) 28%,
+        var(--bg-input)
+    );
+
+    cursor: pointer;
+    outline: none;
+
+    direction: ltr;
+
+    transition:
+        background-color 220ms ease,
+        border-color 220ms ease;
+
+    box-sizing: border-box;
+}
+
+/* The moving knob */
+#editModal #gameInstalledInput::before {
+    content: "";
+
+    position: absolute;
+
+    top: 3px;
+    left: 3px;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+
+    transform: translateX(0);
+
+    transition: transform 240ms cubic-bezier(
+        0.22, 1, 0.36, 1
+    );
+}
+
+/* Enabled */
+#editModal #gameInstalledInput:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Knob movement */
+#editModal #gameInstalledInput:checked::before {
+    transform: translateX(20px);
+}
+
+/* Helper description */
+#editModal .form-group:has(#gameInstalledInput) > small {
+    display: block;
+
+    margin-top: 8px !important;
+    padding-inline-start: 62px;
+
+    color: var(--text-muted);
+
+    font-size: 11.5px;
+    font-weight: 400;
+    line-height: 1.7;
+
+    overflow-wrap: anywhere;
+}
+
+/* Disabled state */
+#editModal .form-group:has(#gameInstalledInput:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#editModal #gameInstalledInput:disabled {
+    cursor: not-allowed;
+}
+
+/* Small modal widths */
+@media (max-width: 480px) {
+    #editModal .form-group:has(#gameInstalledInput) {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    #editModal .form-group:has(#gameInstalledInput) > label {
+        font-size: 12.5px;
+    }
+
+    #editModal .form-group:has(#gameInstalledInput) > small {
+        font-size: 11px;
+        padding-inline-start: 62px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    #editModal .form-group:has(#gameInstalledInput),
+    #editModal #gameInstalledInput,
+    #editModal #gameInstalledInput::before {
+        transition: none;
+    }
+}

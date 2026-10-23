@@ -36,3 +36,8 @@ Thumbs.db
 
 # Custom/Linux Proton Prefixes
 nexus_proton_prefix/
+
+# Local development and diagnostic tools
+/test/
+/tests/
+/tools/

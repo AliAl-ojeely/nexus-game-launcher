@@ -7,6 +7,7 @@ const backups = require('../../modules/backup');
 const playtimeDB = require('../../modules/playtime');
 
 const { readSettings, ASSETS_DIR } = require('../../modules/app-settings');
+const { KINDS, importManualArtworkSet, discardImportedArtwork } = require('../../modules/manual-artwork');
 const { slugifyName, downloadAsset,
     renameAssetsFolder, updateAssetPaths } = require('../../modules/assets');
 
@@ -18,7 +19,16 @@ function registerDatabaseIPC() {
     // ── Save new game ─────────────────────────────────────────────────────────
     ipcMain.handle('db:saveGame', async (_e, game) => {
         console.log(`[DB] Adding: "${game.name}"`);
-        const result = db.saveGame(game);
+        const { manualAssets = {}, ...payload } = game;
+        const imported = await importManualArtworkSet(game.name, manualAssets);
+        const result = db.saveGame({
+            ...payload,
+            assets: { ...(game.assets || {}), ...imported.assets },
+        });
+        if (!result) {
+            await discardImportedArtwork(imported.createdFiles);
+            return false;
+        }
 
         const settings = readSettings();
         const globalBackupPath = settings.globalBackupPath || '';
@@ -64,34 +74,30 @@ function registerDatabaseIPC() {
         const oldGame = db.getGames().find(g => String(g.id) === String(game.id));
 
         // ... (كود الـ rename كما هو) ...
-
-        // التحقق من وجود روابط remote (تحميل جديد)
-        const hasRemote = game.assets && (
-            (game.assets.poster && game.assets.poster.startsWith('http')) ||
-            (game.assets.background && game.assets.background.startsWith('http')) ||
-            (game.assets.logo && game.assets.logo.startsWith('http')) ||
-            (game.assets.icon && game.assets.icon.startsWith('http'))
-        );
-
-        if (hasRemote) {
-            const gameDir = path.join(ASSETS_DIR, slugifyName(game.name));
-            if (!fs.existsSync(gameDir)) fs.mkdirSync(gameDir, { recursive: true });
-
-            const [poster, background, logo, icon] = await Promise.all([
-                downloadAsset(game.assets.poster || '', gameDir, 'poster'),
-                downloadAsset(game.assets.background || '', gameDir, 'background'),
-                downloadAsset(game.assets.logo || '', gameDir, 'logo'),
-                downloadAsset(game.assets.icon || '', gameDir, 'icon'), // تأكد من وجود الأيقونة هنا
-            ]);
-            game.assets = { poster, background, logo, icon };
-        } else {
-            // ✅ إذا لم يكن هناك تحميل جديد، تأكد أننا لا نمسح الأيقونة القديمة الموجودة في oldGame
-            if (oldGame && oldGame.assets && !game.assets.icon) {
-                game.assets.icon = oldGame.assets.icon;
+        // Per-kind merge: an empty or failed field never erases other artwork.
+        const currentAssets = { ...(oldGame?.assets || {}), ...(game.assets || {}) };
+        const gameDir = path.join(ASSETS_DIR, slugifyName(game.name));
+        let imported = { assets: {}, createdFiles: [] };
+        try {
+            for (const kind of KINDS) {
+                const value = currentAssets[kind];
+                if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) continue;
+                fs.mkdirSync(gameDir, { recursive: true });
+                const local = await downloadAsset(value, gameDir, kind);
+                if (local) currentAssets[kind] = local;
+                else currentAssets[kind] = oldGame?.assets?.[kind] || value;
             }
+            imported = await importManualArtworkSet(game.name, game.manualAssets || {});
+            game = { ...game, assets: { ...currentAssets, ...imported.assets } };
+            delete game.manualAssets;
+        } catch (err) {
+            console.error('[ManualArtwork] Update rejected:', err);
+            return false;
         }
 
+
         const result = db.updateGame(game);
+        if (!result) await discardImportedArtwork(imported.createdFiles);
         console.log(`[DB] ${result ? 'SUCCESS' : 'FAILED'}\n`);
         return result;
     });

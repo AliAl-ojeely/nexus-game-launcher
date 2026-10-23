@@ -1,3 +1,4 @@
+import { confirmDialog, operationError } from './dialogs.js';
 import { state, userSettings } from './state.js';
 import { toSafeUrl } from './library.js';
 import { showToast } from './details-components.js';
@@ -88,7 +89,9 @@ async function loadGameList() {
                 ? 'هل تريد حذف بيانات هذه اللعبة من لوحة الإحصائيات بالكامل؟'
                 : 'Do you want to delete this game Info from the Static Dashboard?';
 
-            if (confirm(confirmMsg)) {
+            if (await confirmDialog({ variant: 'danger', message: confirmMsg,
+                title: userSettings.lang === 'ar' ? 'حذف إحصائيات اللعبة' : 'Delete game statistics',
+                confirmText: userSettings.lang === 'ar' ? 'حذف الإحصائيات' : 'Delete statistics' })) {
                 try {
                     deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -110,6 +113,8 @@ async function loadGameList() {
                 } catch (err) {
                     console.error('[FRONTEND] Error deleting stats:', err);
                     deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                    await operationError({ code: 'STATS_DELETE_FAILED', error: err,
+                        context: 'stats:delete', title: userSettings.lang === 'ar' ? 'فشل حذف الإحصائيات' : 'Failed to delete statistics' });
                 }
             }
         });

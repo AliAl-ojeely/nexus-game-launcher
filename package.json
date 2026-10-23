@@ -1,6 +1,6 @@
 {
   "name": "mygamelauncher",
-  "version": "2.6.9",
+  "version": "2.7.3",
   "description": "A sleek game launcher for managing PC titles",
   "author": "Ali Al-ojeely <alialojeely@gmail.com>",
   "main": "src/main.js",
@@ -12,16 +12,17 @@
     "dist-linux": "electron-builder --linux"
   },
   "devDependencies": {
-    "electron": "^41.0.2",
-    "electron-builder": "^26.8.1"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.5.0"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
-    "axios": "^1.14.0",
+    "adm-zip": "^0.6.1",
+    "axios": "^1.20.0",
     "fs-extra": "^11.3.4",
     "html2canvas": "^1.4.1",
     "js-yaml": "^4.1.1",
     "node-fetch": "^2.7.0",
+    "sharp": "^0.35.5",
     "systeminformation": "^5.31.6"
   },
   "build": {

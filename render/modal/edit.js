@@ -9,6 +9,8 @@ export async function openEditModal(game) {
     document.getElementById('gameNameInput').value = game.name;
     document.getElementById('gamePathInput').value = game.path;
     document.getElementById('launchArgsInput').value = game.arguments || '';
+    const installedInput = document.getElementById('gameInstalledInput');
+    if (installedInput) installedInput.checked = game.isInstalled !== false;
 
     // ── Clear all custom asset inputs first ──
     document.getElementById('customPosterInput').value = '';
@@ -16,19 +18,8 @@ export async function openEditModal(game) {
     document.getElementById('customBgInput').value = '';
     document.getElementById('customIconInput').value = '';
 
-    // ── Then set from the current game ──
-    if (game.assets?.poster?.startsWith('file:///')) {
-        document.getElementById('customPosterInput').value = game.assets.poster.replace('file:///', '').replace(/\//g, '\\');
-    }
-    if (game.assets?.logo?.startsWith('file:///')) {
-        document.getElementById('customLogoInput').value = game.assets.logo.replace('file:///', '').replace(/\//g, '\\');
-    }
-    if (game.assets?.background?.startsWith('file:///')) {
-        document.getElementById('customBgInput').value = game.assets.background.replace('file:///', '').replace(/\//g, '\\');
-    }
-    if (game.assets?.icon?.startsWith('file:///')) {
-        document.getElementById('customIconInput').value = game.assets.icon.replace('file:///', '').replace(/\//g, '\\');
-    }
+    // Empty means keep existing artwork; only a new selection changes it.
+
 
     document.getElementById('saveGameModalBtn').innerHTML =
         `<i class="fa-solid fa-check"></i> ${userSettings.lang === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}`;

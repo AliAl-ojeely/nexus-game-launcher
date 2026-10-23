@@ -1,3 +1,4 @@
+import { confirmDialog, operationError } from './dialogs.js';
 import { toSafeUrl } from './details-utils.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,7 +251,9 @@ function attachRestoreListeners(lang) {
         const zipPath = btn.dataset.zip;
         const gameName = btn.dataset.game;
 
-        if (!confirm(confirmRestore)) return;
+        if (!await confirmDialog({ variant: 'danger', message: confirmRestore,
+            title: safeLang === 'ar' ? 'استعادة ملفات الحفظ' : 'Restore saved game',
+            confirmText: safeLang === 'ar' ? 'استعادة النسخة' : 'Restore backup' })) return;
 
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -268,18 +271,13 @@ function attachRestoreListeners(lang) {
                 const freshInfo = await window.api.backup.getInfo(gameName);
                 updateBackupSidebarUI(freshInfo, gameName, safeLang);
             } else {
-                showToast('error',
-                    safeLang === 'ar' ? 'فشل الاستعادة' : 'Restore failed',
-                    result.error || '',
-                    5000
-                );
+                await operationError({ code: result.code || 'BACKUP_RESTORE_FAILED',
+                    error: result.error || 'Restore rejected by backend', context: 'backup:restore',
+                    title: safeLang === 'ar' ? 'فشل الاستعادة' : 'Restore failed' });
             }
         } catch (err) {
-            showToast('error',
-                safeLang === 'ar' ? 'خطأ أثناء الاستعادة' : 'Restore error',
-                err.message,
-                5000
-            );
+            await operationError({ code: 'BACKUP_RESTORE_EXCEPTION', error: err,
+                context: 'backup:restore', title: safeLang === 'ar' ? 'خطأ أثناء الاستعادة' : 'Restore error' });
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -292,7 +290,9 @@ function attachRestoreListeners(lang) {
         const zipPath = btn.dataset.zip;
         const gameName = btn.dataset.game;
 
-        if (!confirm(confirmDelete)) return;
+        if (!await confirmDialog({ variant: 'danger', message: confirmDelete,
+            title: safeLang === 'ar' ? 'حذف النسخة الاحتياطية' : 'Delete backup archive',
+            confirmText: safeLang === 'ar' ? 'حذف النسخة' : 'Delete backup' })) return;
 
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -310,18 +310,13 @@ function attachRestoreListeners(lang) {
                 const freshInfo = await window.api.backup.getInfo(gameName);
                 updateBackupSidebarUI(freshInfo, gameName, safeLang);
             } else {
-                showToast('error',
-                    safeLang === 'ar' ? 'فشل الحذف' : 'Delete failed',
-                    result.error || '',
-                    5000
-                );
+                await operationError({ code: result.code || 'BACKUP_DELETE_FAILED',
+                    error: result.error || 'Delete rejected by backend', context: 'backup:delete',
+                    title: safeLang === 'ar' ? 'فشل الحذف' : 'Delete failed' });
             }
         } catch (err) {
-            showToast('error',
-                safeLang === 'ar' ? 'خطأ أثناء الحذف' : 'Delete error',
-                err.message,
-                5000
-            );
+            await operationError({ code: 'BACKUP_DELETE_EXCEPTION', error: err,
+                context: 'backup:delete', title: safeLang === 'ar' ? 'خطأ أثناء الحذف' : 'Delete error' });
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;

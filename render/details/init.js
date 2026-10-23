@@ -2,6 +2,7 @@ import { state, userSettings } from '../state.js';
 import { handleGameStop } from './handlers.js';
 import { showToast, updateBackupSidebarUI, pulseBackupSuccess } from '../details-components.js';
 import { formatTime } from '../details-utils.js';
+import { runBackupDiscovery, showBackupError } from '../backup-discovery-ui.js';
 import { t } from './helpers.js';
 import { session, resetSession } from './state.js';
 
@@ -86,6 +87,20 @@ export function initDetails() {
         }, 1200);
     };
 
+    // Read-only discovery + explicit confirmation, using the existing details sidebar.
+    const backupDiscoverBtn = document.getElementById('backupDiscoverBtn');
+    if (backupDiscoverBtn) backupDiscoverBtn.onclick = async () => {
+        const currentGame = state.allGamesData.find(g => String(g.id) === String(state.currentGameId));
+        if (!currentGame) {
+            await showBackupError({ code: 'GAME_NOT_FOUND', error: 'No active game selected' }, '', userSettings.lang);
+            return;
+        }
+        backupDiscoverBtn.disabled = true;
+        try { await runBackupDiscovery(currentGame, userSettings.lang); }
+        catch (err) { await showBackupError(err, currentGame.name, userSettings.lang); }
+        finally { backupDiscoverBtn.disabled = false; }
+    };
+
     // Backup Now button
     const backupNowBtn = document.getElementById('backupNowBtn');
     if (backupNowBtn) {
@@ -96,9 +111,13 @@ export function initDetails() {
             backupNowBtn.disabled = true;
             backupNowBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${t('backing_up', userSettings.lang === 'ar' ? 'جاري الحفظ...' : 'Backing up...')}</span>`;
 
-            const result = await window.api.backup.now(currentGame.name, '', currentGame.path);
-
-            if (result.success) {
+            try {
+                const result = await window.api.backup.now(currentGame.name, '', currentGame.path);
+                if (!result?.success) {
+                    await showBackupError(result || { error: 'Empty backup response', code: 'EMPTY_RESPONSE' }, currentGame.name, userSettings.lang);
+                    return;
+                }
+                {
                 showToast('success',
                     t('backup_created', userSettings.lang === 'ar' ? 'تم الحفظ بنجاح ✅' : 'Backup created ✅'),
                     result.zipPath ? result.zipPath.split('\\').pop() : '',
@@ -107,21 +126,13 @@ export function initDetails() {
                 pulseBackupSuccess();
                 const freshInfo = await window.api.backup.getInfo(currentGame.name);
                 updateBackupSidebarUI(freshInfo, currentGame.name, userSettings.lang);
-            } else {
-                let errorMsg = result.error || '';
-                if (errorMsg === 'No backup path configured') {
-                    showToast('info',
-                        t('backup_no_path', userSettings.lang === 'ar' ? 'لم يتم تحديد مسار النسخ الاحتياطي' : 'No backup path set'),
-                        t('backup_no_path_hint', userSettings.lang === 'ar' ? 'حدد المسار في الإعدادات أو في نافذة تعديل اللعبة' : 'Set a path in Settings or in the game edit modal'),
-                        5000
-                    );
-                } else {
-                    showToast('error', t('backup_failed', 'Backup failed'), errorMsg, 5000);
-                }
             }
-
-            backupNowBtn.disabled = false;
-            backupNowBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span data-i18n="btn_backup_now">${t('btn_backup_now', userSettings.lang === 'ar' ? 'حفظ الآن' : 'Backup Now')}</span>`;
+            } catch (err) {
+                await showBackupError(err, currentGame.name, userSettings.lang);
+            } finally {
+                backupNowBtn.disabled = false;
+                backupNowBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span data-i18n="btn_backup_now">${t('btn_backup_now', userSettings.lang === 'ar' ? 'حفظ الآن' : 'Backup Now')}</span>`;
+            }
         };
     }
 

@@ -14,7 +14,7 @@ async function selectGame() {
 async function selectImage() {
     const result = await dialog.showOpenDialog({
         title: 'Select Cover Image',
-        filters: [{ name: 'Images', extensions: ['jpg', 'png', 'jpeg', 'webp', 'ico'] }],
+        filters: [{ name: 'Image files', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'tif', 'tiff', 'svg', 'ico', 'bmp', 'heic', 'heif'] }, { name: 'All files', extensions: ['*'] }],
         properties: ['openFile']
     });
     return result.canceled ? null : result.filePaths[0];

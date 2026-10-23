@@ -9,6 +9,7 @@ const AdmZip = require('adm-zip');
 const rawg = require('../../modules/rawg-api');
 const steam = require('../../modules/steam-api');
 const steamGrid = require('../../modules/steamGrid-api');
+const steamArtwork = require('../../modules/steam-artwork');
 const youtube = require('../../modules/youtube-api');
 const playtime = require('../../modules/playtime');
 const db = require('../../modules/database');
@@ -68,11 +69,13 @@ function registerApiIPC() {
         // ── Step 3: Steam + SteamGrid ─────────────────────────────────────────
         let steamData = null;
         let sgAssets = null;
+        let steamLibraryAssets = null;
 
         if (resolvedAppId) {
-            [steamData, sgAssets] = await Promise.all([
+            [steamData, sgAssets, steamLibraryAssets] = await Promise.all([
                 steam.fetchGameDetails(resolvedAppId).catch(() => null),
                 steamGrid.fetchGameAssets(name, resolvedAppId).catch(() => null),
+                steamArtwork.fetchSteamArtwork(resolvedAppId).catch(() => null),
             ]);
         } else {
             console.log(`[API] No AppID found — fetching SteamGrid by name only`);
@@ -158,6 +161,7 @@ function registerApiIPC() {
             rawgData: effectiveRawgData,
             steamData,
             sgAssets,
+            steamArtwork: steamLibraryAssets,
             trailerYouTubeId,
             trailerThumbnail,
         });
@@ -179,50 +183,66 @@ function registerApiIPC() {
         };
     });
 
-    // ── Save game details ─────────────────────────────────────────────────────
+    // ── Save game details (non-destructive merge) ────────────────────────────
     ipcMain.handle('save-game-details', async (_e, id, details) => {
         console.log(`[API] save-game-details for id: ${id}`);
-
         const existingGame = db.getGames().find(g => String(g.id) === String(id));
-        const gameName = details?.name || existingGame?.name || '';
+        if (!existingGame) return false;
+        const gameName = existingGame.name;
+        const incoming = details || {};
+        const previous = existingGame.assets || {};
+        const proposed = incoming.assets || {};
+        const gameDir = path.join(ASSETS_DIR, slugifyName(gameName));
 
-        if (!gameName) {
-            console.error('[API] save-game-details: cannot resolve game name for id:', id);
-            return false;
-        }
-
-        if (details?.assets) {
-            const hasRemote =
-                details.assets.poster?.startsWith('http') ||
-                details.assets.background?.startsWith('http') ||
-                details.assets.logo?.startsWith('http') ||
-                details.assets.icon?.startsWith('http');
-
-            if (hasRemote) {
-                const gameDir = path.join(ASSETS_DIR, slugifyName(gameName));
-                if (!fs.existsSync(gameDir)) fs.mkdirSync(gameDir, { recursive: true });
-
-                const [poster, background, logo, icon] = await Promise.all([
-                    downloadAsset(details.assets.poster || '', gameDir, 'poster'),
-                    downloadAsset(details.assets.background || '', gameDir, 'background'),
-                    downloadAsset(details.assets.logo || '', gameDir, 'logo'),
-                    downloadAsset(details.assets.icon || '', gameDir, 'icon'),
-                ]);
-                details.assets = {
-                    poster: poster || '',
-                    background: background || '',
-                    logo: logo || '',
-                    icon: icon || '',
-                };
+        // Do not download every asset just because ONE remote field is present.
+        // An absent/failed result must never erase a manually selected or cached image.
+        const assets = { ...previous };
+        for (const key of ['poster', 'background', 'logo', 'icon']) {
+            const candidate = proposed[key];
+            if (typeof candidate !== 'string' || !candidate.trim()) continue;
+            if (/^https:\/\//i.test(candidate)) {
+                const downloaded = await downloadAsset(candidate, gameDir, key);
+                if (downloaded) assets[key] = downloaded;
+            } else if (/^(local-resource:\/\/|file:\/\/\/)/i.test(candidate)) {
+                // Preserve existing custom images; a local override is explicit.
+                assets[key] = candidate;
             }
         }
 
-        if (!details?.assets?.icon && existingGame?.assets?.icon) {
-            if (!details.assets) details.assets = {};
-            details.assets.icon = existingGame.assets.icon;
+        // Last-resort native Windows icon: use the game's own EXE, never a screenshot.
+        if (!assets.icon && existingGame.path && /\.exe$/i.test(existingGame.path) && fs.existsSync(existingGame.path)) {
+            try {
+                const nativeIcon = await app.getFileIcon(existingGame.path, { size: 'large' });
+                const png = nativeIcon?.toPNG();
+                if (png?.length > 24 && !nativeIcon.isEmpty()) {
+                    fs.mkdirSync(gameDir, { recursive: true });
+                    const destination = path.join(gameDir, 'icon.png');
+                    if (!fs.existsSync(destination)) fs.writeFileSync(destination, png, { flag: 'wx' });
+                    assets.icon = `local-resource:///${destination.replace(/\\/g, '/')}`;
+                }
+            } catch (err) {
+                console.warn(`[Assets] EXE icon fallback failed: ${err.message}`);
+            }
         }
 
-        return db.updateGame({ id, name: gameName, ...details });
+        const prevMeta = existingGame.metadata || {};
+        const nextMeta = incoming.metadata || {};
+        const prevMedia = prevMeta.media || {};
+        const nextMedia = nextMeta.media || {};
+        const media = { ...prevMedia, ...nextMedia };
+        if (!Array.isArray(nextMedia.screenshots) || !nextMedia.screenshots.length) {
+            media.screenshots = prevMedia.screenshots || [];
+        }
+        if (!nextMedia.trailerThumbnail) media.trailerThumbnail = prevMedia.trailerThumbnail || '';
+        if (!nextMedia.trailerYouTubeId) media.trailerYouTubeId = prevMedia.trailerYouTubeId || null;
+        const metadata = { ...prevMeta };
+        for (const [key, val] of Object.entries(nextMeta)) {
+            if (key === 'media') continue;
+            if (val !== null && val !== undefined && val !== '') metadata[key] = val;
+        }
+        metadata.media = media;
+
+        return db.updateGame({ id, name: gameName, assets, metadata });
     });
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -386,35 +406,58 @@ function registerApiIPC() {
     // Folder info handler (size, file count, etc.)
     // ─────────────────────────────────────────────────────────────────────────
     async function getFolderInfo(folderPath) {
-        if (!folderPath || !fs.existsSync(folderPath)) return null;
+        if (typeof folderPath !== 'string' || !folderPath.trim()) return null;
+        const safeFolder = path.resolve(folderPath);
+        // IPC-side protection: never recursively scan a drive or filesystem root.
+        if (safeFolder === path.parse(safeFolder).root) {
+            console.warn('[FolderInfo] Drive root scan rejected:', safeFolder);
+            return null;
+        }
+        if (!fs.existsSync(safeFolder)) return null;
         try {
             let totalSize = 0;
             let fileCount = 0;
             let folderCount = 0;
 
             async function walk(dir) {
-                const entries = await fsPromises.readdir(dir, { withFileTypes: true });
+                let entries;
+                try {
+                    entries = await fsPromises.readdir(dir, { withFileTypes: true });
+                } catch (err) {
+                    if (['ENOENT', 'ENOTDIR', 'EACCES', 'EPERM'].includes(err.code)) {
+                        console.warn('[FolderInfo] Skipping inaccessible folder:', dir, err.code);
+                        return;
+                    }
+                    throw err;
+                }
                 for (const entry of entries) {
                     const fullPath = path.join(dir, entry.name);
+                    // Do not follow directory junctions/symlinks outside the game.
+                    if (entry.isSymbolicLink()) continue;
                     if (entry.isDirectory()) {
                         folderCount++;
                         await walk(fullPath);
                     } else {
-                        fileCount++;
-                        const stat = await fsPromises.stat(fullPath);
-                        totalSize += stat.size;
+                        if (!entry.isFile()) continue;
+                        try {
+                            const stat = await fsPromises.stat(fullPath);
+                            fileCount++;
+                            totalSize += stat.size;
+                        } catch (err) {
+                            if (!['ENOENT', 'EACCES', 'EPERM'].includes(err.code)) throw err;
+                        }
                     }
                 }
             }
-            await walk(folderPath);
+            await walk(safeFolder);
 
-            const stats = await fsPromises.stat(folderPath);
+            const stats = await fsPromises.stat(safeFolder);
             const created = stats.birthtime || stats.ctime;
 
             return {
-                folderName: path.basename(folderPath),
+                folderName: path.basename(safeFolder),
                 type: 'File folder',
-                location: folderPath,
+                location: safeFolder,
                 sizeBytes: totalSize,
                 sizeOnDiskBytes: totalSize,
                 contains: `${fileCount} files, ${folderCount} folders`,
