@@ -254,6 +254,7 @@ NEXUS-GAME-LAUNCHER/
 ├── css/
 │   ├── components-layout.css
 │   ├── backup-ux.css
+│   ├── dialogs.css
 │   ├── main.css
 │   ├── modals.css
 │   ├── pages.css
@@ -263,18 +264,24 @@ NEXUS-GAME-LAUNCHER/
 ├── modules/
 │   ├── app-settings.js
 │   ├── app-tray.js
+│   ├── asset-downloader.js
 │   ├── assets.js             
 │   ├── backup.js
+│   ├── backup-diagnostic.js
+│   ├── backup-discovery.js
 │   ├── database.js
 │   ├── dialogs.js
+│   ├── dialogs-diagnostic.js
 │   ├── updater.js
 │   ├── game-launcher.js
+│   ├── manual-artwork.js
 │   ├── playSessions.js
 │   ├── metadata.js           
 │   ├── playtime.js
 │   ├── rawg-api.js
 │   ├── steam-api.js
 │   ├── steamGrid-api.js
+│   ├── updater.js
 │   └── youtube-api.js
 ├── node_modules/
 ├── render/
@@ -294,8 +301,11 @@ NEXUS-GAME-LAUNCHER/
 │   │   ├── add-game.js
 │   │   ├── edit.js
 │   │   └── init.js
-│   ├── details.js                   ← re‑export
-│   ├── modal.js                     ← re‑export
+│   ├── details.js
+│   ├── dialogs.js
+│   ├── auto-detector.js
+│   ├── backup-discovery-ui.js                   
+│   ├── modal.js                     
 │   ├── backup-ui.js
 │   ├── details-utils.js
 │   ├── details-components.js
@@ -310,7 +320,8 @@ NEXUS-GAME-LAUNCHER/
 │   ├── ipc/                 
 │   │   ├── ipc-api.js        
 │   │   ├── ipc-backup.js     
-│   │   └── ipc-database.js   
+│   │   └── ipc-database.js
+│   │   └── ipc-dialogs.js     
 │   ├── main.js               
 │   ├── preload.js
 │   ├── secrets.json
