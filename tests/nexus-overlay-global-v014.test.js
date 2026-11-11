@@ -56,7 +56,7 @@ test('global OFF blocks auto-attach; ON uses only verified exact game process', 
     const server = { on() { return this; }, listen(_name, callback) { callback(); }, unref() {}, close() {} };
     const context = {
         module: { exports: {} }, __dirname: path.join(root,'modules'),
-        process: { platform: 'win32', pid: 789, env: {} },
+        process: { platform: 'win32', arch: 'x64', pid: 789, env: {} },
         Buffer, String, Number, Date,
         console: { log() {}, warn() {}, error() {} },
         require(name) {
@@ -71,6 +71,7 @@ test('global OFF blocks auto-attach; ON uses only verified exact game process', 
             if (name === 'node:net') return { createServer:()=>server };
             if (name === 'node:path') return path;
             if (name === 'node:crypto') return require('node:crypto');
+            if (name === 'electron') return { app: { isPackaged: false } };
             if (name === './app-settings') return { readSettings:()=>current, SETTINGS_FILE:'C:\\Nexus\\settings.json' };
             if (name === './overlay-config') return config;
             throw new Error('Unexpected import '+name);

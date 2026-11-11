@@ -2,6 +2,12 @@ name: Build and Release Nexus Launcher
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish a new GitHub Release after ALL platform builds pass'
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -98,3 +104,92 @@ jobs:
             dist/*.blockmap
             dist/*.yml
           if-no-files-found: warn
+
+  publish_release:
+    name: Publish release after Windows, Linux and macOS builds pass
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+
+      - name: Validate version, lockfile and release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          if (pkg.version !== '2.7.6' || lock.version !== pkg.version || lock.packages[''].version !== pkg.version) {
+            throw new Error('Release version must be 2.7.6 in package.json and both lockfile records');
+          }
+          NODE
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          if [[ -n "$(git ls-remote --tags origin "refs/tags/${TAG}")" ]]; then
+            echo "Tag ${TAG} already exists; refusing to overwrite." >&2
+            exit 1
+          fi
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; refusing to overwrite." >&2
+            exit 1
+          fi
+          test -s ".github/release-notes/${TAG}.md"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "[NEXUS RELEASE] New version ${TAG} is ready for asset validation."
+
+      - name: Download all platform build artifacts from this run
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nexus-*-${{ github.run_number }}
+          path: release-input
+          merge-multiple: false
+
+      - name: Verify and assemble release assets
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          W="release-input/nexus-windows-2022-${GITHUB_RUN_NUMBER}"
+          L="release-input/nexus-ubuntu-latest-${GITHUB_RUN_NUMBER}"
+          M="release-input/nexus-macos-latest-${GITHUB_RUN_NUMBER}"
+          test -d "$W" && test -d "$L" && test -d "$M"
+          mkdir -p release-assets
+          cp -- "$W/Nexus Game Launcher Setup ${RELEASE_VERSION}.exe" "release-assets/Nexus-Game-Launcher-Setup-${RELEASE_VERSION}.exe"
+          cp -- "$L/Nexus Game Launcher-${RELEASE_VERSION}.AppImage" "release-assets/Nexus-Game-Launcher-${RELEASE_VERSION}.AppImage"
+          cp -- "$L/Nexus Game Launcher-${RELEASE_VERSION}-arm64.AppImage" "release-assets/Nexus-Game-Launcher-${RELEASE_VERSION}-arm64.AppImage"
+          cp -- "$M/Nexus Game Launcher-${RELEASE_VERSION}-universal.dmg" "release-assets/Nexus-Game-Launcher-${RELEASE_VERSION}-universal.dmg"
+          for file in release-assets/*.exe release-assets/*.AppImage release-assets/*.dmg; do
+            test -f "$file" || { echo "Missing release asset: $file" >&2; exit 1; }
+            bytes="$(stat -c%s "$file")"
+            if (( bytes < 20000000 )); then echo "Suspiciously small asset: $file ($bytes bytes)" >&2; exit 1; fi
+            echo "[NEXUS RELEASE] Verified $(basename "$file") ($bytes bytes)"
+          done
+          (cd release-assets && sha256sum *.exe *.AppImage *.dmg > SHA256SUMS.txt)
+          test "$(find release-assets -maxdepth 1 -type f | wc -l)" -eq 5
+          cat release-assets/SHA256SUMS.txt
+
+      - name: Publish the validated GitHub Release
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${RELEASE_VERSION}"
+          gh release create "$TAG" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Nexus Game Launcher ${TAG} - Overlay Installer Hotfix" \
+            --notes-file ".github/release-notes/${TAG}.md" \
+            --target "$GITHUB_SHA" \
+            --fail-on-no-commits \
+            --latest
+          COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets | length')"
+          if [[ "$COUNT" != "5" ]]; then echo "Release assets incomplete: $COUNT / 5" >&2; exit 1; fi
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url,tagName,isDraft,isPrerelease,assets

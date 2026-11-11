@@ -8,7 +8,10 @@ const load = name => fs.readFileSync(path.join(root, name), 'utf8');
 
 test('Windows resources are included only on Windows and outside ASAR', () => {
     const pkg = JSON.parse(load('package.json'));
-    assert.equal(pkg.version, '2.7.5');
+    assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
+    const lock = JSON.parse(load('package-lock.json'));
+    assert.equal(lock.version, pkg.version);
+    assert.equal(lock.packages[''].version, pkg.version);
     assert.deepEqual(pkg.build.win.extraResources, [{from:'build/overlay-runtime',to:'overlay-runtime',filter:['**/*']}]);
     assert.ok(pkg.build.files.includes('overlay/poc/**/*'));
     assert.ok(!pkg.build.extraResources.some(item => item.from === 'build/overlay-runtime'));
