@@ -1,0 +1,88 @@
+/* Modal Overlay editor only; retain the existing Nexus theme tokens and settings shell. */
+#settingsArea #settings-overlay-panel .section-content { padding: clamp(14px, 2vw, 24px); }
+#settingsArea .overlay-editor { display:grid; grid-template-columns:minmax(250px, 340px) minmax(0, 1fr); gap:clamp(14px, 2vw, 26px); align-items:start; }
+#settingsArea .overlay-editor-controls, #settingsArea .overlay-editor-preview { min-width:0; }
+#settingsArea .overlay-options-group { border:0; border-bottom:1px solid var(--border-color); padding:0 0 16px; margin:0 0 17px; min-width:0; }
+#settingsArea .overlay-options-group legend { padding:0 0 11px; color:var(--text-main); font-size:15px; font-weight:700; }
+#settingsArea .overlay-option { display:flex; align-items:center; gap:12px; box-sizing:border-box; margin:0 0 6px; padding:8px 10px; border:1px solid var(--border-color); border-radius:9px; color:var(--text-main); font-size:13px; line-height:1.4; cursor:pointer; user-select:none; }
+#settingsArea .overlay-option:hover { background:var(--bg-hover); }
+#settingsArea .overlay-option input { appearance:none; position:relative; width:36px; height:21px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-input); margin:0; flex:0 0 36px; cursor:pointer; }
+#settingsArea .overlay-option input:before { content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; background:var(--text-muted); border-radius:50%; transition:transform .14s ease; }
+#settingsArea .overlay-option input:checked { background:var(--accent); border-color:transparent; }
+#settingsArea .overlay-option input:checked:before { background:#fff; transform:translateX(15px); }
+#settingsArea .overlay-option input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+#settingsArea .overlay-control { min-width:0; margin:0 0 12px; }
+#settingsArea .overlay-control > label { display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--text-muted); font-size:12px; font-weight:700; margin-bottom:7px; }
+#settingsArea .overlay-control select { box-sizing:border-box; width:100%; min-width:0; }
+#settingsArea .overlay-color-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#settingsArea .overlay-color-controls input[type="color"] { display:block; width:100%; height:38px; border:1px solid var(--border-color); border-radius:7px; padding:3px; background:var(--bg-input); cursor:pointer; }
+#settingsArea #overlayOpacity { display:block; width:100%; accent-color:var(--accent); cursor:pointer; }
+#settingsArea #overlayOpacityValue { color:var(--text-main); font-variant-numeric:tabular-nums; }
+#settingsArea .overlay-editor-footer { display:flex; flex-direction:column; align-items:flex-start; gap:15px; }
+#settingsArea .overlay-reset-button { font-family:inherit; color:var(--text-main); background:var(--bg-input); border:1px solid var(--border-color); padding:10px 13px; border-radius:8px; cursor:pointer; font-size:13px; }
+#settingsArea .overlay-reset-button:hover { background:var(--bg-hover); }
+#settingsArea .overlay-legacy-fps { width:100%; max-width:340px; margin:0; }
+#settingsArea .overlay-preview-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px; color:var(--text-main); font-size:15px; }
+#settingsArea #overlayUnsaved { color:var(--accent); font-size:12px; font-weight:400; }
+#settingsArea .overlay-preview-stage { position:relative; width:100%; height:338px; box-sizing:border-box; border:1px solid var(--border-color); border-radius:14px; overflow:hidden; background:var(--bg-input); }
+#settingsArea #overlayPreviewFrame { width:560px; height:338px; position:absolute; left:0; top:0; transform:scale(var(--nx-preview-scale,1)); transform-origin:top left; border:0; background:transparent; display:block; }
+#settingsArea .overlay-fps-notice { margin:12px 0 0; color:var(--text-muted); font-size:12px; line-height:1.55; }
+@media(max-width:1210px) { #settingsArea .overlay-editor { grid-template-columns:minmax(0,1fr); } #settingsArea .overlay-editor-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:15px; } #settingsArea .overlay-editor-footer { grid-column:1/-1; } }
+@media(max-width:760px) { #settingsArea .overlay-editor-controls { display:block; } }
+@media(prefers-reduced-motion:reduce) { #settingsArea .overlay-option input:before { transition:none; } }
+
+/* Master enable stays visible; editor and preview exist only while enabled. */
+#settingsArea .overlay-master { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:15px 17px; background:var(--bg-input); border:1px solid var(--border-color); border-radius:10px; }
+#settingsArea .overlay-master-label { display:flex; align-items:center; gap:12px; cursor:pointer; color:var(--text-main); font-weight:700; font-size:14px; }
+#settingsArea .overlay-master-label input { margin:0; cursor:pointer; }
+#settingsArea .overlay-master-note { margin:8px 1px 10px; color:var(--text-muted); font-size:12px; line-height:1.6; }
+/* Persistent experimental notice; it is intentionally outside #overlayEditor. */
+#settingsArea #settings-overlay-panel .overlay-experimental-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 1px 19px;
+    padding: 10px 12px;
+    border: 1px solid rgba(229, 170, 75, .24);
+    border-inline-start: 3px solid #d6a253;
+    border-radius: 8px;
+    background: rgba(229, 170, 75, .065);
+    color: var(--text-main);
+    font-size: 12px;
+    line-height: 1.6;
+}
+#settingsArea #settings-overlay-panel .overlay-experimental-warning i {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    color: #d6a253;
+    font-size: 14px;
+}
+#settingsArea #settings-overlay-panel .overlay-experimental-warning span { min-width: 0; }
+#settingsArea .overlay-save-indicator { flex:0 0 auto; color:var(--accent); font-size:12px; }
+#settingsArea #overlayEditor[hidden] { display:none !important; }
+#settingsArea .overlay-preview-stage { display:block; margin:0 auto; max-width:596px; background:linear-gradient(135deg,rgba(131,151,184,.13),rgba(38,53,76,.21) 60%,rgba(131,151,184,.09)); }
+#settingsArea #overlayPreviewFrame { left:var(--nx-preview-left,0px); top:8px; }
+#settingsArea #overlayPreviewError { text-align:center; padding:10px; color:var(--text-muted); font-size:12px; }
+#settingsArea .overlay-preview-heading { max-width:596px; margin-inline:auto; }
+#settingsArea .overlay-fps-notice { max-width:596px; margin:12px auto 0; }
+
+/* The advanced controls use the existing Nexus theme; no new settings shell. */
+#settingsArea .overlay-advanced-controls { width:100%; max-width:596px; margin:18px auto 0; display:grid; gap:19px; }
+#settingsArea .overlay-shortcut-settings > label,
+#settingsArea .overlay-size-settings legend { display:block; padding:0; margin:0 0 9px; font-size:14px; font-weight:700; color:var(--text-main); }
+#settingsArea .overlay-shortcut-row { display:flex; gap:9px; }
+#settingsArea .overlay-shortcut-key { flex:1; min-width:0; text-align:center; padding:11px 12px; border:1px solid var(--border-color); border-radius:9px; background:var(--bg-input); color:var(--text-main); font-family:inherit; font-weight:700; font-size:13px; line-height:1.3; cursor:pointer; font-variant-numeric:tabular-nums; }
+#settingsArea .overlay-shortcut-key[aria-pressed="true"] { border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent); }
+#settingsArea .overlay-shortcut-edit { padding:0 15px; font-family:inherit; font-weight:600; font-size:12px; color:var(--text-main); background:var(--bg-input); border:1px solid var(--border-color); border-radius:9px; cursor:pointer; }
+#settingsArea .overlay-shortcut-key:hover, #settingsArea .overlay-shortcut-edit:hover { background:var(--bg-hover); }
+#settingsArea .overlay-shortcut-status { min-height:17px; margin:8px 1px 0; font-size:11px; color:var(--text-muted); }
+#settingsArea .overlay-shortcut-status[data-error="true"] { color:#ed7878; }
+#settingsArea .overlay-size-settings { min-width:0; margin:0; padding:0; border:0; }
+#settingsArea .overlay-size-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+#settingsArea .overlay-size-choice { display:flex; align-items:center; justify-content:center; padding:15px 7px; min-width:0; color:var(--text-muted); background:var(--bg-input); border:1px solid var(--border-color); border-radius:10px; cursor:pointer; font-size:13px; font-weight:700; transition:background .12s,border-color .12s; }
+#settingsArea .overlay-size-choice input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+#settingsArea .overlay-size-choice:has(input:checked) { color:var(--text-main); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 13%,var(--bg-input)); }
+#settingsArea .overlay-size-choice:has(input:focus-visible) { outline:2px solid var(--accent); outline-offset:3px; }
+#settingsArea .overlay-size-choice:hover { background:var(--bg-hover); }
+#settingsArea .overlay-option[data-mode-locked="true"] { opacity:.62; cursor:not-allowed; }
+@media (max-width:550px) { #settingsArea .overlay-size-options { gap:5px; } #settingsArea .overlay-size-choice { padding:11px 4px; font-size:12px; } }

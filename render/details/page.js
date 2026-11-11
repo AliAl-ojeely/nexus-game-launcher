@@ -176,7 +176,6 @@ export async function openGameDetailsPage(game) {
 
   // Render existing data instantly
   renderGameDetails(game);
-
   // Favorite indicator in header (always fresh from current game)
   function updateHeaderHeart(targetGame) {
     const favIconContainer = document.getElementById("detailsHeaderFavIcon");

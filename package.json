@@ -9,7 +9,9 @@
     "start": "electron .",
     "dist": "electron-builder",
     "dist-win": "electron-builder --win",
-    "dist-linux": "electron-builder --linux"
+    "dist-linux": "electron-builder --linux",
+    "overlay:poc": "electron overlay/poc/host.cjs",
+    "overlay:doctor": "node overlay/poc/doctor.cjs"
   },
   "devDependencies": {
     "electron": "^45.0.0",
@@ -38,6 +40,7 @@
       "render/**/*",
       "css/**/*",
       "modules/**/*",
+      "overlay/poc/**/*",
       "assets/**/*",
       "index.html",
       "package.json"

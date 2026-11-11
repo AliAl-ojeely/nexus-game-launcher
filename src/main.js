@@ -7,6 +7,9 @@ const playtimeDB = require('../modules/playtime');
 const backups = require('../modules/backup');
 const dialogs = require('../modules/dialogs');
 const launcher = require('../modules/game-launcher');
+const overlayManager = require('../modules/overlay-manager');
+const overlayConfig = require('../modules/overlay-config');
+const { buildPreviewHtml } = require('../modules/overlay-preview');
 const si = require('systeminformation');
 const sessions = require('../modules/playSessions');
 const appTray = require('../modules/app-tray');
@@ -118,6 +121,27 @@ protocol.registerSchemesAsPrivileged([
 
 // ─── App Ready ──────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+    overlayManager.start(launcher.applyOverlayTimerAction);
+    // Only the launcher's own renderer may read/write the overlay layout.
+    ipcMain.handle('overlay:get-config', (event) => {
+        if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
+        return overlayConfig.normalize(readSettings().modalOverlay);
+    });
+    ipcMain.handle('overlay:preview-html', (event) => {
+        if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
+        return buildPreviewHtml();
+    });
+    ipcMain.handle('overlay:save-config', (event, incoming) => {
+        if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
+        const next = overlayConfig.normalize(incoming);
+        const settings = readSettings();
+        const wasEnabled = overlayConfig.normalize(settings.modalOverlay).enabled;
+        settings.modalOverlay = next;
+        writeSettings(settings);
+        if (wasEnabled && !next.enabled) overlayManager.stopAll();
+        return { ok: true, config: next };
+    });
+
     protocol.handle('local-resource', async (request) => {
         let rawPath = request.url.replace(/^local-resource:(?:\/+)/, '');
         rawPath = decodeURIComponent(rawPath);
@@ -285,8 +309,8 @@ ipcMain.on('shell:openFolder', (_e, p) => dialogs.openFolder(null, p));
 ipcMain.on('shell:openExternal', (_e, url) => dialogs.openExternal(url));
 
 // ─── Timer IPC ─────────────────────────────────────────────────────────────
-ipcMain.handle('timer:pause', () => launcher.pauseTimer());
-ipcMain.handle('timer:resume', () => launcher.resumeTimer());
+ipcMain.handle('timer:pause', (_event, gameId) => launcher.pauseTimer(gameId));
+ipcMain.handle('timer:resume', (_event, gameId) => launcher.resumeTimer(gameId));
 
 // ─── Feature modules ───────────────────────────────────────────────────────
 registerDatabaseIPC();
@@ -305,6 +329,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+    overlayManager.shutdown();
     app.isQuitting = true;
 });
 

@@ -41,3 +41,29 @@ nexus_proton_prefix/
 /test/
 /tests/
 /tools/
+
+# Nexus generated local files (not needed by GitHub Actions)
+/.nexus-*-backups/
+/.nexus-*backups/
+/.venv/
+/.pytest_cache/
+**/__pycache__/
+*.py[cod]
+CMakeCache.txt
+CMakeFiles/
+native/**/build/
+native/**/out/
+/*.zip
+/settings.json
+/playTime.json
+/playSessions.json
+/gamesBackSave.json
+/order.json
+/order-favorites.json
+/nexus-overlay-session-v1.json
+/Local State
+/Preferences
+/SharedStorage
+
+# Generated native architecture builds
+native/nexus-overlay/build-*/

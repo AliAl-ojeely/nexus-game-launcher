@@ -1,5 +1,7 @@
 import { state, userSettings } from './state.js';
 import { initUI } from './ui.js';
+import { initSettingsNavigation } from './settings-navigation.js';
+import { initOverlayEditor } from './overlay-editor.js';
 import { initLibrary, renderGames } from './library.js';
 import { initDetails } from './details.js';
 import { initModal } from './modal.js';
@@ -105,6 +107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.api.updateTrayLanguage(userSettings.lang || localStorage.getItem('lang') || 'en');
     }
     initUI();
+    initSettingsNavigation();
+    void initOverlayEditor();
     initLibrary();
     initDetails();
     initModal();

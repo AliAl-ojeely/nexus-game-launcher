@@ -10,6 +10,7 @@
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/overlay-editor.css">
 </head>
 
 <body>
@@ -318,274 +319,323 @@
             </div>
         </div>
 
-        <!-- ── Settings ── -->
-        <div id="settingsArea" class="page-area">
-            <div class="settings-container">
-                <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
-        
-                <!-- ===== SECTION 1: GENERAL ===== -->
-                <div class="settings-section">
-                    <div class="section-header">
-                        <i class="fa-solid fa-gear"></i>
-                        <h3 data-i18n="section_general">General</h3>
-                    </div>
-                    <div class="section-content">
-                        <div class="form-group">
-                            <label data-i18n="set_app_name">Launcher Name (Logo):</label>
-                            <input type="text" id="appNameSetting" class="custom-input" placeholder="Nexus Launcher">
-                        </div>
-        
-                        <div class="form-group">
-                            <label data-i18n="open_appdata_label">Application Data Folder</label>
-                            <button id="openAppDataBtn" class="folder-btn-blue">
-                                <i class="fa-solid fa-folder-open"></i>
-                                <span data-i18n="open_appdata_btn">Open AppData Folder</span>
-                            </button>
-                            <small data-i18n="open_appdata_desc">Contains games.json, settings.json, playTime.json, backups
+ <!-- ── Settings ── -->
+<div id="settingsArea" class="page-area">
+  <div class="settings-container settings-shell">
+    <header class="settings-heading">
+      <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="title_settings">Launcher Settings</span></h2>
+    </header>
+    <div class="settings-workspace">
+<nav aria-label="Settings sections" aria-orientation="vertical" class="settings-navigation" role="tablist">
+<button aria-controls="settings-general-panel" aria-selected="true" class="settings-nav-tab is-active" data-settings-tab="general" id="settings-general-tab" role="tab" tabindex="0" type="button">
+<span aria-hidden="true" class="settings-nav-icon"><i class="fa-solid fa-gear"></i></span>
+<span class="settings-nav-copy"><strong data-i18n="section_general">General</strong></span>
+</button>
+<button aria-controls="settings-appearance-panel" aria-selected="false" class="settings-nav-tab" data-settings-tab="appearance" id="settings-appearance-tab" role="tab" tabindex="-1" type="button">
+<span aria-hidden="true" class="settings-nav-icon"><i class="fa-solid fa-palette"></i></span>
+<span class="settings-nav-copy"><strong data-i18n="section_appearance">Appearance</strong></span>
+</button>
+<button aria-controls="settings-overlay-panel" aria-selected="false" class="settings-nav-tab" data-settings-tab="overlay" id="settings-overlay-tab" role="tab" tabindex="-1" type="button">
+<span aria-hidden="true" class="settings-nav-icon"><i class="fa-solid fa-layer-group"></i></span>
+<span class="settings-nav-copy"><strong data-i18n="section_overlay">Modal Overlay</strong></span>
+</button>
+<button aria-controls="settings-backup-panel" aria-selected="false" class="settings-nav-tab" data-settings-tab="backup" id="settings-backup-tab" role="tab" tabindex="-1" type="button">
+<span aria-hidden="true" class="settings-nav-icon"><i class="fa-solid fa-shield-halved"></i></span>
+<span class="settings-nav-copy"><strong data-i18n="section_backup">Backup &amp; Vault</strong></span>
+</button>
+</nav>
+
+      <div class="settings-panel-scroll" id="settingsPanelScroll">
+<section aria-labelledby="settings-general-tab" class="settings-panel" id="settings-general-panel" role="tabpanel" tabindex="0">
+<div class="settings-section">
+
+<div class="section-content">
+<div class="form-group">
+<label data-i18n="set_app_name">Launcher Name (Logo):</label>
+<input class="custom-input" id="appNameSetting" placeholder="Nexus Launcher" type="text"/>
+</div>
+<div class="form-group">
+<label data-i18n="open_appdata_label">Application Data Folder</label>
+<button class="folder-btn-blue" id="openAppDataBtn">
+<i class="fa-solid fa-folder-open"></i>
+<span data-i18n="open_appdata_btn">Open AppData Folder</span>
+</button>
+<small data-i18n="open_appdata_desc">Contains games.json, settings.json, playTime.json, backups
                                 configuration, etc.</small>
-                        </div>
-        
-                        <div class="form-group">
-                            <label data-i18n="check_updates_title">Application Updates</label>
-                            <button id="checkForUpdatesBtn" class="folder-btn-blue"
-                                style="background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                                <span data-i18n="btn_check_updates">Check for Updates</span>
-                            </button>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="auto_update_label">Auto Check for Updates</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="autoUpdateToggle" class="custom-toggle">
-                                <span class="toggle-label" data-i18n="auto_update_desc">Periodically check for new versions (every 6
-                                    hours)</span>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <button id="exportLibraryCsvBtn" class="folder-btn-blue" style="background: var(--accent);">
-                                <i class="fa-solid fa-table-list"></i>
-                                <span data-i18n="export_library_csv">Export Library to CSV</span>
-                            </button>
-                            <small data-i18n="export_library_csv_desc">Export all games (name, path, playtime, notes, etc.) to a CSV
+</div>
+<div class="form-group">
+<label data-i18n="check_updates_title">Application Updates</label>
+<button class="folder-btn-blue" id="checkForUpdatesBtn" style="background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);">
+<i class="fa-solid fa-arrows-rotate"></i>
+<span data-i18n="btn_check_updates">Check for Updates</span>
+</button>
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="auto_update_label">Auto Check for Updates</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="autoUpdateToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="auto_update_desc" for="autoUpdateToggle">Periodically check for new versions (every 6
+                                    hours)</label>
+</div>
+</div>
+<div class="form-group">
+<button class="folder-btn-blue" id="exportLibraryCsvBtn" style="background: var(--accent);">
+<i class="fa-solid fa-table-list"></i>
+<span data-i18n="export_library_csv">Export Library to CSV</span>
+</button>
+<small data-i18n="export_library_csv_desc">Export all games (name, path, playtime, notes, etc.) to a CSV
                                 file.</small>
-                        </div>
-
-                        <div class="form-group">
-                            <button id="backupUserDataBtn" class="folder-btn-blue" style="background: var(--accent);">
-                                <i class="fa-solid fa-database"></i>
-                                <span data-i18n="backup_user_data">Backup All User Data</span>
-                            </button>
-                            <small data-i18n="backup_user_data_desc">Create a ZIP archive of your entire launcher data (games, playtime, notes,
+</div>
+<div class="form-group">
+<button class="folder-btn-blue" id="backupUserDataBtn" style="background: var(--accent);">
+<i class="fa-solid fa-database"></i>
+<span data-i18n="backup_user_data">Backup All User Data</span>
+</button>
+<small data-i18n="backup_user_data_desc">Create a ZIP archive of your entire launcher data (games, playtime, notes,
                                 assets, etc.)</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="system_tray_label">Enable System Tray</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="systemTrayToggle" class="custom-toggle">
-                                <span class="toggle-label" data-i18n="system_tray_desc">Show Nexus icon in system tray (taskbar)</span>
-                            </div>
-                            <small data-i18n="system_tray_note">The app will stay running in the background when closed.</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="auto_detector_enable">Auto Game Detector</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="autoDetectorToggle" class="custom-toggle">
-                                <span class="toggle-label" data-i18n="auto_detector_desc">Enable automatic game detection (scan +
-                                    watcher)</span>
-                            </div>
-                        </div>
-                        
-                        <div id="autoDetectSettings" style="display: none;">
-                            <div class="form-group">
-                                <label data-i18n="auto_detect_path_label">Games Folder Path</label>
-                                <div class="input-with-btn">
-                                    <input type="text" id="autoDetectPath" readonly placeholder="Select a folder containing your games">
-                                    <button id="selectAutoDetectPathBtn" class="folder-btn-blue">
-                                        <i class="fa-solid fa-folder-open"></i>
-                                    </button>
-                                </div>
-                                <small data-i18n="auto_detect_path_desc">The launcher will scan this folder's immediate subfolders for
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="system_tray_label">Enable System Tray</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="systemTrayToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="system_tray_desc" for="systemTrayToggle">Show Nexus icon in system tray (taskbar)</label>
+</div>
+<small data-i18n="system_tray_note">The app will stay running in the background when closed.</small>
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="auto_detector_enable">Auto Game Detector</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="autoDetectorToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="auto_detector_desc" for="autoDetectorToggle">Enable automatic game detection (scan +
+                                    watcher)</label>
+</div>
+</div>
+<div id="autoDetectSettings" style="display: none;">
+<div class="form-group">
+<label data-i18n="auto_detect_path_label">Games Folder Path</label>
+<div class="input-with-btn">
+<input id="autoDetectPath" placeholder="Select a folder containing your games" readonly="" type="text"/>
+<button aria-label="Choose folder" class="folder-btn-blue" id="selectAutoDetectPathBtn">
+<i class="fa-solid fa-folder-open"></i>
+</button>
+</div>
+<small data-i18n="auto_detect_path_desc">The launcher will scan this folder's immediate subfolders for
                                     executables.</small>
-                            </div>
-                        
-                            <div class="form-group">
-                                <label data-i18n="auto_watch_label">Auto‑detect new folders</label>
-                                <div class="toggle-container">
-                                    <input type="checkbox" id="autoWatchToggle" class="custom-toggle">
-                                    <span class="toggle-label" data-i18n="auto_watch_desc">Automatically detect newly created game folders
-                                        (requires scan path)</span>
-                                </div>
-                            </div>
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="auto_watch_label">Auto‑detect new folders</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="autoWatchToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="auto_watch_desc" for="autoWatchToggle">Automatically detect newly created game folders
+                                        (requires scan path)</label>
+</div>
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="disable_initial_scan_label">Disable initial scan on launch</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="disableInitialScanToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="disable_initial_scan_desc" for="disableInitialScanToggle">Prevent scanning for new folders when the app
+                                        starts</label>
+</div>
+</div>
+<div class="form-group">
+<button class="folder-btn-blue" id="scanForGamesBtn" style="background: var(--accent);">
+<i class="fa-solid fa-magnifying-glass"></i>
+<span data-i18n="scan_now_btn">Scan Now</span>
+</button>
+</div>
+</div>
+<div class="form-group">
+<label data-i18n="window_size_title">Window Size (Manual)</label>
+<div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="form-group" style="margin-bottom: 0;">
+<label data-i18n="window_width">Width (px):</label>
+<input class="custom-input" id="windowWidthInput" min="800" step="10" type="number" value="1100"/>
+</div>
+<div class="form-group" style="margin-bottom: 0;">
+<label data-i18n="window_height">Height (px):</label>
+<input class="custom-input" id="windowHeightInput" min="600" step="10" type="number" value="750"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="settings-appearance-tab" class="settings-panel" id="settings-appearance-panel" role="tabpanel" tabindex="0" hidden>
+<div class="settings-section">
 
-                            <div class="form-group">
-                                <label data-i18n="disable_initial_scan_label">Disable initial scan on launch</label>
-                                <div class="toggle-container">
-                                    <input type="checkbox" id="disableInitialScanToggle" class="custom-toggle">
-                                    <span class="toggle-label" data-i18n="disable_initial_scan_desc">Prevent scanning for new folders when the app
-                                        starts</span>
-                                </div>
-                            </div>
-                        
-                            <div class="form-group">
-                                <button id="scanForGamesBtn" class="folder-btn-blue" style="background: var(--accent);">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <span data-i18n="scan_now_btn">Scan Now</span>
-                                </button>
-                            </div>
-                        </div>
-        
-                        <div class="form-group">
-                            <label data-i18n="window_size_title">Window Size (Manual)</label>
-                            <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label data-i18n="window_width">Width (px):</label>
-                                    <input type="number" id="windowWidthInput" class="custom-input" min="800" step="10"
-                                        value="1100">
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label data-i18n="window_height">Height (px):</label>
-                                    <input type="number" id="windowHeightInput" class="custom-input" min="600" step="10"
-                                        value="750">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        
-                <!-- ===== SECTION 2: APPEARANCE ===== -->
-                <div class="settings-section">
-                    <div class="section-header">
-                        <i class="fa-solid fa-palette"></i>
-                        <h3 data-i18n="section_appearance">Appearance</h3>
-                    </div>
-                    <div class="section-content">
-                        <div class="settings-grid">
-                            <div class="form-group">
-                                <label data-i18n="set_theme">Theme:</label>
-                                <select id="themeSetting" class="custom-select">
-                                    <option value="dark" data-i18n="theme_dark">Dark</option>
-                                    <option value="darker" data-i18n="theme_darker">Darker</option>
-                                    <option value="light" data-i18n="theme_light">Light</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label data-i18n="set_lang">Language:</label>
-                                <select id="langSetting" class="custom-select">
-                                    <option value="ar">العربية</option>
-                                    <option value="en">English</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label data-i18n="set_grid">Grid Size:</label>
-                                <select id="gridSizeSetting" class="custom-select">
-                                    <option value="150px" data-i18n="grid_very_small">Very Small</option>
-                                    <option value="200px" data-i18n="grid_small">Small</option>
-                                    <option value="260px" data-i18n="grid_medium" selected>Medium</option>
-                                    <option value="320px" data-i18n="grid_large">Large</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="set_accent_color">Accent Color:</label>
-                            <input type="color" id="accentColorSetting" class="custom-color-input"
-                                style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-                        </div>
-        
-                        <div class="form-group">
-                            <label data-i18n="show_titles_label">Show Game Titles on Cards</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="showTitlesToggle" class="custom-toggle" checked>
-                                <span class="toggle-label" data-i18n="show_titles_desc">Display game names under posters</span>
-                            </div>
-                            <small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="recent_limit_label">Recently Played Limit</label>
-                            <select id="recentLimitSelect" class="custom-select">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                            </select>
-                            <small data-i18n="recent_limit_desc">Number of games shown in Recently Played section.</small>
-                        </div>
-                    </div>
-                </div>
-        
-                <!-- ===== SECTION 4: PERFORMANCE ===== -->
-                <div class="settings-section">
-                    <div class="section-header">
-                        <i class="fa-solid fa-gauge-high"></i>
-                        <h3 data-i18n="section_performance">Performance</h3>
-                    </div>
-                    <div class="section-content">
-                        <div class="form-group">
-                            <label data-i18n="set_fps">Show Performance HUD:</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="fpsToggle" class="custom-toggle">
-                                <span class="toggle-label" data-i18n="fps_desc">Enable FPS Counter</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- ===== SECTION 5: BACKUP ===== -->
-                <div class="settings-section">
-                    <div class="section-header">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <h3 data-i18n="section_backup">Backup & Vault</h3>
-                    </div>
-                    <div class="section-content">
-                        <div class="form-group">
-                            <label data-i18n="auto_backup_title">Auto Backup on Game Close:</label>
-                            <div class="toggle-container">
-                                <input type="checkbox" id="autoBackupToggle" class="custom-toggle">
-                                <span class="toggle-label" data-i18n="auto_backup_desc">Automatically backup save data when a
-                                    game closes</span>
-                            </div>
-                        </div>
-        
-                        <div class="form-group" style="margin-top: 20px;">
-                            <label data-i18n="settings_backup_title">Global Backup Vault</label>
-                            <div class="form-group">
-                                <label data-i18n="settings_backup_desc">Default folder for save backups (Non-C drive
-                                    recommended):</label>
-                                <div class="input-with-btn">
-                                    <input type="text" id="globalBackupPath" readonly
-                                        placeholder="Select a safe backup location...">
-                                    <button id="selectGlobalBackupBtn" class="folder-btn-blue">
-                                        <i class="fa-solid fa-folder-open"></i>
-                                    </button>
-                                </div>
-                                <button id="scanVaultBtn" class="folder-btn-blue"
-                                    style="gap:7px; font-size:12px; padding: 8px 15px; margin-top: 10px;">
-                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                    <span data-i18n="scan_vault_title">Scan Vault & Re-link Backups</span>
-                                </button>
-                                <small
-                                    style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px;">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                    <span data-i18n="scan_vault_desc">Use this after reinstalling Windows or moving your games
-                                        to automatically link existing backup files to your current library.</span>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        
-                <!-- Save Button -->
-                <button class="save-settings-btn" id="saveGeneralSettings">
-                    <i class="fa-solid fa-floppy-disk"></i>
-                    <span data-i18n="btn_save_settings">Save Settings</span>
-                </button>
-            </div>
+<div class="section-content">
+<div class="settings-grid">
+<div class="form-group">
+<label data-i18n="set_theme">Theme:</label>
+<select class="custom-select" id="themeSetting">
+<option data-i18n="theme_dark" value="dark">Dark</option>
+<option data-i18n="theme_darker" value="darker">Darker</option>
+<option data-i18n="theme_light" value="light">Light</option>
+</select>
+</div>
+<div class="form-group">
+<label data-i18n="set_lang">Language:</label>
+<select class="custom-select" id="langSetting">
+<option value="ar">العربية</option>
+<option value="en">English</option>
+</select>
+</div>
+<div class="form-group">
+<label data-i18n="set_grid">Grid Size:</label>
+<select class="custom-select" id="gridSizeSetting">
+<option data-i18n="grid_very_small" value="150px">Very Small</option>
+<option data-i18n="grid_small" value="200px">Small</option>
+<option data-i18n="grid_medium" selected="" value="260px">Medium</option>
+<option data-i18n="grid_large" value="320px">Large</option>
+</select>
+</div>
+</div>
+<div class="form-group">
+<label data-i18n="set_accent_color">Accent Color:</label>
+<input class="custom-color-input" id="accentColorSetting" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" type="color"/>
+</div>
+<div class="form-group">
+<span class="settings-control-title" data-i18n="show_titles_label">Show Game Titles on Cards</span>
+<div class="toggle-container">
+<input checked="" class="custom-toggle" id="showTitlesToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="show_titles_desc" for="showTitlesToggle">Display game names under posters</label>
+</div>
+<small data-i18n="show_titles_note">Titles are always hidden in “Very Small” grid mode.</small>
+</div>
+<div class="form-group">
+<label data-i18n="recent_limit_label">Recently Played Limit</label>
+<select class="custom-select" id="recentLimitSelect">
+<option value="5">5</option>
+<option selected="" value="10">10</option>
+<option value="20">20</option>
+<option value="50">50</option>
+</select>
+<small data-i18n="recent_limit_desc">Number of games shown in Recently Played section.</small>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="settings-overlay-tab" class="settings-panel" id="settings-overlay-panel" role="tabpanel" tabindex="0" hidden>
+<div class="settings-section">
+<div class="section-content">
+<div class="overlay-master">
+  <label class="overlay-master-label" for="overlayEnabled"><input type="checkbox" class="custom-toggle" id="overlayEnabled"><span data-i18n="overlay_enable">Enable Modal Overlay</span></label>
+  <span id="overlayUnsaved" class="overlay-save-indicator" data-i18n="overlay_unsaved" hidden>Unsaved</span>
+</div>
+<p class="overlay-master-note" data-i18n="overlay_enable_note">For offline games without anti-cheat. Applies to supported games managed by Nexus.</p>
+<div class="overlay-experimental-warning" role="note">
+  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+  <span data-i18n="overlay_experimental_warning">Experimental — Modal Overlay is still being tested, is not fully supported, and may change significantly in future updates.</span>
+</div>
+<div class="overlay-editor" id="overlayEditor" hidden>
+  <div class="overlay-editor-controls">
+    <fieldset class="overlay-options-group">
+      <legend data-i18n="overlay_elements">Elements</legend>
+      <label class="overlay-option"><input type="checkbox" id="overlaySession" data-overlay-option="metrics.session"><span data-i18n="overlay_session">Session Time</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayTotal" data-overlay-option="metrics.total"><span data-i18n="overlay_total">Total Playtime</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayClock" data-overlay-option="metrics.clock"><span data-i18n="overlay_clock">Local Time</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayFPS" data-overlay-option="metrics.fps"><span data-i18n="overlay_game_fps">Game FPS</span></label>
+    </fieldset>
+    <fieldset class="overlay-options-group">
+      <legend data-i18n="overlay_buttons">Buttons</legend>
+      <label class="overlay-option"><input type="checkbox" id="overlayResume" data-overlay-option="buttons.resume"><span data-i18n="overlay_resume">Resume Game</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayTimer" data-overlay-option="buttons.timer"><span data-i18n="overlay_pause">Pause / Resume Timer</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayTest" data-overlay-option="buttons.test"><span data-i18n="overlay_test">Test Button</span></label>
+    </fieldset>
+    <fieldset class="overlay-options-group">
+      <legend data-i18n="overlay_appearance">Appearance</legend>
+      <div class="overlay-control"><label for="overlayBgStyle" data-i18n="overlay_bg_style">Background</label>
+        <select class="custom-select" id="overlayBgStyle"><option value="glassy" data-i18n="overlay_glassy">Glassy</option><option value="solid" data-i18n="overlay_solid">Solid</option><option value="minimal" data-i18n="overlay_minimal">Minimal</option></select></div>
+      <div class="overlay-color-controls">
+        <div class="overlay-control"><label for="overlayBgColor" data-i18n="overlay_bg_color">Background Color</label><input type="color" id="overlayBgColor" value="#000000"></div>
+        <div class="overlay-control"><label for="overlayAccent" data-i18n="overlay_accent">Accent Color</label><input type="color" id="overlayAccent" value="#78abf8"></div>
+      </div>
+      <div class="overlay-control"><label for="overlayOpacity"><span data-i18n="overlay_opacity">Opacity</span> <output id="overlayOpacityValue" for="overlayOpacity">45%</output></label><input id="overlayOpacity" type="range" min="45" max="100" step="1" value="45"></div>
+    </fieldset>
+    <div class="overlay-editor-footer">
+      <button type="button" class="overlay-reset-button" id="overlayReset"><i class="fa-solid fa-arrow-rotate-left"></i> <span data-i18n="overlay_restore">Restore Default</span></button>
+      <div class="form-group overlay-legacy-fps"><span class="settings-control-title" data-i18n="set_fps">Show Performance HUD:</span>
+        <div class="toggle-container"><input class="custom-toggle" id="fpsToggle" type="checkbox"/><label class="toggle-label" data-i18n="fps_desc" for="fpsToggle">Enable FPS Counter in-game</label></div>
+      </div>
+    </div>
+  </div>
+  <div class="overlay-editor-preview">
+    <div class="overlay-preview-heading"><strong data-i18n="overlay_preview">Preview</strong></div>
+    <div class="overlay-preview-stage" id="overlayPreviewStage"><iframe id="overlayPreviewFrame" sandbox="allow-scripts" title="Modal Overlay Preview" scrolling="no"></iframe></div><p id="overlayPreviewError" hidden></p>
+    <div class="overlay-advanced-controls">
+      <div class="overlay-shortcut-settings">
+        <label for="overlayShortcutCapture" data-i18n="overlay_shortcut">Keyboard Shortcut</label>
+        <div class="overlay-shortcut-row">
+          <button type="button" id="overlayShortcutCapture" class="overlay-shortcut-key" aria-describedby="overlayShortcutStatus">Ctrl + Shift + O</button>
+          <button type="button" id="overlayShortcutReset" class="overlay-shortcut-edit" data-i18n="overlay_shortcut_reset">Reset</button>
         </div>
+        <p id="overlayShortcutStatus" class="overlay-shortcut-status" aria-live="polite" data-i18n="overlay_shortcut_hint">Click the shortcut, then press the new keys.</p>
+      </div>
+      <fieldset class="overlay-size-settings">
+        <legend data-i18n="overlay_size">Modal Size</legend>
+        <div class="overlay-size-options" role="radiogroup" aria-label="Overlay size">
+          <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="full" checked><span data-i18n="overlay_size_full">Full</span></label>
+          <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="medium"><span data-i18n="overlay_size_medium">Medium</span></label>
+          <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="minimal"><span data-i18n="overlay_size_minimal">Minimal</span></label>
+        </div>
+      </fieldset>
+    </div>
+    <p class="overlay-fps-notice" data-i18n="overlay_fps_notice">Game FPS shows N/A until a game FPS source is connected.</p>
+  </div>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="settings-backup-tab" class="settings-panel" id="settings-backup-panel" role="tabpanel" tabindex="0" hidden>
+<div class="settings-section">
 
-        <!-- ── Game Details ── -->
+<div class="section-content">
+<div class="form-group">
+<span class="settings-control-title" data-i18n="auto_backup_title">Auto Backup on Game Close:</span>
+<div class="toggle-container">
+<input class="custom-toggle" id="autoBackupToggle" type="checkbox"/>
+<label class="toggle-label" data-i18n="auto_backup_desc" for="autoBackupToggle">Automatically backup save data when a
+                                    game closes</label>
+</div>
+</div>
+<div class="form-group" style="margin-top: 20px;">
+<label data-i18n="settings_backup_title">Global Backup Vault</label>
+<div class="form-group">
+<label data-i18n="settings_backup_desc">Default folder for save backups (Non-C drive
+                                    recommended):</label>
+<div class="input-with-btn">
+<input id="globalBackupPath" placeholder="Select a safe backup location..." readonly="" type="text"/>
+<button aria-label="Choose folder" class="folder-btn-blue" id="selectGlobalBackupBtn">
+<i class="fa-solid fa-folder-open"></i>
+</button>
+</div>
+<button class="folder-btn-blue" id="scanVaultBtn" style="gap:7px; font-size:12px; padding: 8px 15px; margin-top: 10px;">
+<i class="fa-solid fa-magnifying-glass-chart"></i>
+<span data-i18n="scan_vault_title">Scan Vault &amp; Re-link Backups</span>
+</button>
+<small style="display:block; margin-top:8px; color:var(--text-muted); opacity:0.7; font-size:11px;">
+<i class="fa-solid fa-circle-info"></i>
+<span data-i18n="scan_vault_desc">Use this after reinstalling Windows or moving your games
+                                        to automatically link existing backup files to your current library.</span>
+</small>
+</div>
+</div>
+</div>
+</div>
+</section>
+      </div>
+    </div>
+<footer class="settings-footer">
+<button class="save-settings-btn" id="saveGeneralSettings">
+<i class="fa-solid fa-floppy-disk"></i>
+<span data-i18n="btn_save_settings">Save Settings</span>
+</button>
+</footer>
+  </div>
+</div>
+
+<!-- ── Game Details ── -->
         <div id="gameDetailsArea" class="page-area" style="padding: 0;">
 
             <!-- ── Details Header Bar ── -->
@@ -1175,6 +1225,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="src/translations.js"></script>
+    <script src="modules/overlay-config.js"></script>
     <script type="module" src="render/render-main.js"></script>
 </body>
 

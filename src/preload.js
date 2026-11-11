@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('api', {
     // ── Game Launcher ─────────────────────────────────────────────────────────
     launchGame: (path, showFPS, args, id, name) => ipcRenderer.send('game:launch', path, showFPS, args, id, name),
     forceStopGame: (id) => ipcRenderer.send('game:force-stop', id),
+    overlayGetConfig: () => ipcRenderer.invoke('overlay:get-config'),
+    overlayGetPreviewHtml: () => ipcRenderer.invoke('overlay:preview-html'),
+    overlaySaveConfig: config => ipcRenderer.invoke('overlay:save-config', config),
 
     // ── External APIs ─────────────────────────────────────────────────────────
     fetchGameInfo: (name) => ipcRenderer.invoke('api:fetchGameInfo', name),
@@ -57,12 +60,13 @@ contextBridge.exposeInMainWorld('api', {
 
     getPlaytimeInfo: (gameName) => ipcRenderer.invoke('db:getPlaytimeInfo', gameName),
 
-    pauseTimer: () => ipcRenderer.invoke('timer:pause'),
-    resumeTimer: () => ipcRenderer.invoke('timer:resume'),
+    pauseTimer: (gameId) => ipcRenderer.invoke('timer:pause', gameId),
+    resumeTimer: (gameId) => ipcRenderer.invoke('timer:resume', gameId),
 
     onGameStarted: (cb) => ipcRenderer.on('game:started', (_e, data) => cb(data)),
 
     onGameTick: (cb) => ipcRenderer.on('game:tick', (_e, data) => cb(data)),
+    onTimerState: (cb) => ipcRenderer.on('game:timer-state', (_e, data) => cb(data)),
     removeGameTickListener: () => ipcRenderer.removeAllListeners('game:tick'),
 
     getIconDataURL: (path) => ipcRenderer.invoke('get-icon-dataurl', path),

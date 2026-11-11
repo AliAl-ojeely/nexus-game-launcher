@@ -94,12 +94,25 @@ export function initDetails() {
   });
 
   window.api.onGameError((data) => {
-    console.error(`[FRONTEND] ❌ Launch error: ${data.message}`);
-    showToast("error", data.message || "Launch failed", "", 5000);
-    const currentGame = state.allGamesData.find(
-      (g) => g.id === state.currentGameId,
-    );
-    if (currentGame && state.isGameRunning) handleGameStop(currentGame.name);
+    console.error(`[FRONTEND] Launch error: ${data.message}`);
+    // Ignore a delayed failure from another game/details page.
+    if (data.gameId != null && String(data.gameId) !== String(state.currentGameId)) return;
+    showToast("error", data.message || "Launch failed", "", 7000);
+    // Launch errors are NOT completed play sessions. In particular, never
+    // call handleGameStop() here: it would write a false 0-second Last Played.
+    state.isGameRunning = false;
+    resetSession();
+    const timerContainer = document.getElementById("sessionTimerContainer");
+    if (timerContainer) timerContainer.style.display = "none";
+    const pauseButton = document.getElementById("pauseTimerBtn");
+    if (pauseButton) pauseButton.style.display = "none";
+    const playButton = document.getElementById("detailsPlayBtn");
+    if (playButton) {
+      playButton.disabled = false;
+      playButton.style.cssText = "";
+      playButton.classList.remove("play-btn-running", "play-btn-stopping", "play-btn-securing");
+      playButton.innerHTML = `<i class="fa-solid fa-play"></i> ${t("btn_play", userSettings.lang === "ar" ? "إلعب الآن" : "Play")}`;
+    }
   });
 
   // Folder button
@@ -194,29 +207,33 @@ export function initDetails() {
     };
   }
 
-  // Pause and Resume Timer
-  const pauseBtn = document.getElementById("pauseTimerBtn");
+  // Pause/Resume button stays in sync even when the native overlay changes it.
+  const pauseBtn = document.getElementById('pauseTimerBtn');
   let timerPaused = false;
-
+  function paintTimerState(paused) {
+      timerPaused = !!paused;
+      if (pauseBtn) pauseBtn.innerHTML = timerPaused
+        ? '<i class="fa-regular fa-circle-play"></i>'
+        : '<i class="fa-regular fa-circle-pause"></i>';
+  }
   window.api.onGameStarted(() => {
-    pauseBtn.style.display = "flex";
-    timerPaused = false;
-    pauseBtn.innerHTML = '<i class="fa-regular fa-circle-pause"></i>';
+      if (pauseBtn) pauseBtn.style.display = 'flex';
+      paintTimerState(false);
   });
-
   window.api.onGameStopped(() => {
-    pauseBtn.style.display = "none";
+      if (pauseBtn) pauseBtn.style.display = 'none';
   });
-
-  pauseBtn.onclick = async () => {
-    timerPaused = !timerPaused;
-    if (timerPaused) {
-      pauseBtn.innerHTML = '<i class="fa-regular fa-circle-play"></i>';
-      await window.api.pauseTimer();
-    } else {
-      pauseBtn.innerHTML = '<i class="fa-regular fa-circle-pause"></i>';
-      await window.api.resumeTimer();
-    }
+  window.api.onTimerState?.(({ gameId, paused }) => {
+      if (String(gameId) === String(state.currentGameId)) paintTimerState(paused);
+  });
+  if (pauseBtn) pauseBtn.onclick = async () => {
+      if (!state.isGameRunning || state.currentGameId == null) return;
+      pauseBtn.disabled = true;
+      try {
+          if (timerPaused) await window.api.resumeTimer(state.currentGameId);
+          else await window.api.pauseTimer(state.currentGameId);
+          // The backend game:timer-state event is authoritative.
+      } finally { pauseBtn.disabled = false; }
   };
 
   // Listen to backend ticks to update timer display

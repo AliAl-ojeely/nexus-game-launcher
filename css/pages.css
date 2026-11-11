@@ -1535,3 +1535,7 @@ html[lang="ar"] .stat-card h3 {
     filter: brightness(0.75);
     box-shadow: 0 2px 5px var(--shadow-color);
 }
+/* v0.6 In-game overlay opt-in on each game detail page */
+.nexus-overlay-toggle { border: 1px solid rgba(138,159,194,.38) !important; }
+.nexus-overlay-toggle.nexus-overlay-enabled { border-color: rgba(75,198,167,.6) !important; color: #9cebd2 !important; background: rgba(38,120,96,.22) !important; }
+.nexus-overlay-toggle:disabled { opacity: .55; cursor: not-allowed; }

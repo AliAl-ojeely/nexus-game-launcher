@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
-const db = require('./database');
+const { randomUUID } = require('node:crypto');
+const db = require('./database'); // Used by getLibraryGrowth(). No dependency cycle: database.js imports playtime only.
 
 const SESSIONS_PATH = path.join(app.getPath('userData'), 'playSessions.json');
 
@@ -11,38 +12,63 @@ function initSessionsDB() {
     }
 }
 
-function readSessions() {
+// Reads used by reports remain tolerant. Writes MUST use strict reads so an
+// invalid/corrupt sessions file is never silently replaced with an empty one.
+function readSessions(strict = false) {
     try {
-        const data = fs.readFileSync(SESSIONS_PATH, 'utf-8');
-        return JSON.parse(data);
+        if (!fs.existsSync(SESSIONS_PATH)) {
+            if (strict) throw new Error('Sessions database is missing; run initSessionsDB() first');
+            return [];
+        }
+        const parsed = JSON.parse(fs.readFileSync(SESSIONS_PATH, 'utf-8'));
+        if (!Array.isArray(parsed)) throw new Error('Sessions database must contain a JSON array');
+        return parsed;
     } catch (err) {
+        if (strict) throw new Error(`Cannot safely modify play sessions: ${err.message}`, { cause: err });
+        console.error('[Sessions] Read error (report returns empty data):', err.message);
         return [];
     }
 }
 
 function writeSessions(sessions) {
-    fs.writeFileSync(SESSIONS_PATH, JSON.stringify(sessions, null, 2), 'utf-8');
+    const temporary = `${SESSIONS_PATH}.tmp-${process.pid}-${randomUUID()}`;
+    try {
+        fs.writeFileSync(temporary, JSON.stringify(sessions, null, 2), 'utf-8');
+        fs.renameSync(temporary, SESSIONS_PATH);
+    } finally {
+        // If a write/rename fails, keep the original file intact.
+        try { fs.unlinkSync(temporary); } catch (_) { /* not present */ }
+    }
 }
 
-function startSession(gameName) {
-    const sessions = readSessions();
-    sessions.push({
+function startSession(gameName, gameId = null) {
+    const records = readSessions(true);
+    records.push({
+        sessionId: randomUUID(),
+        gameId,
         gameName,
         startTime: Date.now(),
         endTime: null,
         durationSeconds: 0
     });
-    writeSessions(sessions);
-    return sessions.length - 1;
+    writeSessions(records);
+    return records.length - 1; // Keep the legacy index return type.
 }
-
-function endSession(sessionIndex, endTime, durationSeconds) {
-    const sessions = readSessions();
-    if (sessions[sessionIndex]) {
-        sessions[sessionIndex].endTime = endTime;
-        sessions[sessionIndex].durationSeconds = durationSeconds;
-        writeSessions(sessions);
+function getSessionId(sessionIndex) {
+    return readSessions()[sessionIndex]?.sessionId || null;
+}
+function endSession(sessionIndex, endTime, durationSeconds, expectedSessionId = null) {
+    const records = readSessions(true);
+    let index = sessionIndex;
+    if (expectedSessionId) {
+        index = records.findIndex(s => s.sessionId === expectedSessionId);
     }
+    const session = records[index];
+    if (!session || session.endTime !== null) return false;
+    session.endTime = endTime;
+    session.durationSeconds = Math.max(0, Math.floor(durationSeconds));
+    writeSessions(records);
+    return true;
 }
 
 function getGameStats(gameName, periodDays) {
@@ -278,17 +304,18 @@ function getCumulativeStats(gameName, days) {
 
 // Game library growth (monthly count of added games)
 function getLibraryGrowth() {
-    const games = db.getGames(); // from database.js – careful: we need to import db or pass it
-    const monthly = {};
+    // Nexus uses millisecond timestamps as the IDs of games added to its library.
+    const games = db.getGames();
+    const monthly = new Map();
     for (const game of games) {
-        const date = new Date(game.id); // game.id is a timestamp (milliseconds)
-        if (isNaN(date.getTime())) continue;
-        const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-        monthly[key] = (monthly[key] || 0) + 1;
+        if (!Number.isSafeInteger(game.id)) continue;
+        const date = new Date(game.id);
+        if (!Number.isFinite(date.getTime())) continue;
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthly.set(month, (monthly.get(month) || 0) + 1);
     }
-    // sort by date
-    const sorted = Object.entries(monthly).sort((a, b) => a[0].localeCompare(b[0]));
-    return sorted.map(([month, count]) => ({ month, count }));
+    return Array.from(monthly, ([month, count]) => ({ month, count }))
+        .sort((a, b) => a.month.localeCompare(b.month));
 }
 
 // Heatmap data: { date: string, count: number } for last 365 days
@@ -326,9 +353,9 @@ function getDailyPlaytimeForGame(gameName, periodDays) {
  */
 function deleteSessionsByGame(gameName) {
     try {
-        const sessions = readSessions();
+        const sessions = readSessions(true);
         const filtered = sessions.filter(s => s.gameName !== gameName);
-        fs.writeFileSync(SESSIONS_PATH, JSON.stringify(filtered, null, 2), 'utf-8');
+        writeSessions(filtered);
         return true;
     } catch (err) {
         console.error('[Sessions] Error deleting sessions for game:', gameName, err);
@@ -339,6 +366,7 @@ function deleteSessionsByGame(gameName) {
 module.exports = {
     initSessionsDB,
     startSession,
+    getSessionId,
     endSession,
     getGameStats,
     getOverallStats,

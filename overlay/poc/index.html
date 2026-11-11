@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nexus In-Game · Session Control</title>
+  <link rel="stylesheet" href="./ui.css" />
+</head>
+<body>
+  <main class="layer">
+    <section class="widget" aria-label="Nexus in-game session dashboard">
+      <header class="heading">
+        <div class="brand-mark" aria-hidden="true"><span>N</span></div>
+        <div class="identity"><strong>NEXUS<span class="identity-dot">.</span></strong><span>IN-GAME DASHBOARD</span></div>
+        <div class="status" id="status-badge"><span class="dot"></span><span id="session-state">OFFLINE</span></div>
+      </header>
+      <div class="game-info">
+        <div class="overline"><span class="overline-line"></span><span>NOW PLAYING</span></div>
+        <strong id="game-name" title="Current game">Waiting for Nexus</strong>
+      </div>
+      <div class="metrics" id="overlay-metrics">
+        <div class="metric primary" data-metric="session">
+          <span class="metric-label">SESSION TIME</span>
+          <strong id="session-time">--:--:--</strong>
+          <span class="metric-footer">ACTIVE PLAYTIME</span>
+        </div>
+        <div class="metric" data-metric="total">
+          <span class="metric-label">TOTAL PLAYTIME</span>
+          <strong id="total-time">--:--:--</strong>
+          <span class="metric-footer">INCLUDING THIS SESSION</span>
+        </div>
+        <div class="metric" data-metric="clock" hidden>
+          <span class="metric-label">LOCAL TIME</span><strong id="local-clock">--:--</strong>
+        </div>
+        <div class="metric" data-metric="fps" hidden>
+          <span class="metric-label">GAME FPS</span><strong id="game-fps">N/A</strong>
+        </div>
+      </div>
+      <div class="sync-row"><span class="sync-light"></span><span id="sync-state">Waiting for a matching Nexus session</span><span class="sync-mode">NEXUS LIVE</span></div>
+      <nav class="actions" aria-label="Overlay actions">
+        <button type="button" class="action selected resume" data-action="resume" tabindex="-1"><span class="btn-icon">↗</span> Resume Game</button>
+        <button type="button" class="action pause" data-action="timer" tabindex="-1" disabled><span class="btn-icon" id="timer-action-icon">Ⅱ</span> <span id="timer-action-label">Pause Timer</span></button>
+        <button type="button" class="action test" data-action="test" tabindex="-1">Test <span class="key-counter" id="input-count">0</span></button>
+      </nav>
+      <footer><span id="last-input">Ctrl + Shift + O · Toggle</span><span id="overlay-hotkey" hidden>Ctrl + Shift + O · Toggle</span><span class="input-hints"><kbd>Mouse</kbd> Click <span class="bullet">·</span> <kbd>↑↓</kbd> Navigate <span class="bullet">·</span> <kbd>Esc</kbd> Close</span></footer>
+    </section>
+    <div id="nexus-mouse-cursor" aria-hidden="true"></div>
+  </main>
+  <script src="../../modules/overlay-config.js"></script>
+  <script src="./ui.js"></script>
+</body>
+</html>
