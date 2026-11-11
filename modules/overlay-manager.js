@@ -7,14 +7,18 @@ const fs = require('node:fs');
 const net = require('node:net');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { app } = require('electron');
 const { readSettings, SETTINGS_FILE } = require('./app-settings');
 const overlayConfig = require('./overlay-config');
 
 const ROOT = path.join(__dirname, '..');
-const RUNNER = path.join(ROOT, 'tools', 'run_overlay_real_game.py');
-const ELECTRON = path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe');
-const DLL = path.join(ROOT, 'native', 'nexus-overlay', 'build', 'bin', 'NexusOverlayHook.dll');
-const INJECTOR = path.join(ROOT, 'native', 'nexus-overlay', 'build', 'bin', 'NexusOverlayInjector.exe');
+// Installed binaries live outside app.asar; development paths are unchanged.
+const PACKAGED = app.isPackaged;
+const RUNTIME_ROOT = PACKAGED ? path.join(process.resourcesPath, 'overlay-runtime') : ROOT;
+const RUNNER = path.join(RUNTIME_ROOT, 'tools', PACKAGED ? 'run_overlay_real_game.exe' : 'run_overlay_real_game.py');
+const ELECTRON = PACKAGED ? process.execPath : path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe');
+const DLL = path.join(RUNTIME_ROOT, 'native', 'nexus-overlay', 'build', 'bin', 'NexusOverlayHook.dll');
+const INJECTOR = path.join(RUNTIME_ROOT, 'native', 'nexus-overlay', 'build', 'bin', 'NexusOverlayInjector.exe');
 const jobs = new Map();
 const unavailable = new Set();
 const retryAfter = new Map();
@@ -50,7 +54,7 @@ function responseForRequest(request) {
     }
 }
 function start(applyTimerAction) {
-    if (process.platform !== 'win32') return;
+    if (process.platform !== 'win32' || process.arch !== 'x64') return;
     if (server) return;
     timerAction = applyTimerAction;
     server = net.createServer(socket => {
@@ -112,14 +116,16 @@ function attach(game) {
     }
     const token = crypto.randomBytes(32).toString('hex');
     const activeShortcut = overlayConfig.normalize(settings.modalOverlay).shortcut;
-    const args = ['-3', RUNNER, '--pid', String(pid), '--exe', game.activePath, '--overlay-shortcut', activeShortcut,
+    const args = [...(PACKAGED ? [] : ['-3']), RUNNER, '--pid', String(pid), '--exe', game.activePath, '--overlay-shortcut', activeShortcut,
         '--attach', '--confirm-unprotected', '--managed',
         '--managed-game-id', key, '--managed-session-id', game.sessionId,
         '--managed-actions-pipe', pipeName, '--managed-actions-token', token];
     let child;
     try {
-        child = spawn('py', args, { cwd: ROOT, windowsHide: true,
-            stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1', NEXUS_OVERLAY_SETTINGS_FILE: SETTINGS_FILE } });
+        child = spawn(PACKAGED ? RUNNER : 'py', args, { cwd: RUNTIME_ROOT, windowsHide: true,
+            stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1',
+                NEXUS_OVERLAY_SETTINGS_FILE: SETTINGS_FILE,
+                ...(PACKAGED ? { NEXUS_OVERLAY_PACKAGED_APP_EXE: process.execPath } : {}) } });
     } catch (error) {
         console.warn('[NEXUS OVERLAY] Unable to start integrated overlay:', error.message);
         return false;

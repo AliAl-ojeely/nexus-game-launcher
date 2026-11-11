@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -31,22 +31,57 @@ jobs:
         run: |
           echo "{\"SGDB_API_KEY\":\"${{ secrets.SGDB_API_KEY }}\", \"RAWG_API_KEY\":\"${{ secrets.RAWG_API_KEY }}\", \"YOUTUBE_API_KEY\":\"${{ secrets.YOUTUBE_API_KEY }}\"}" > src/secrets.json
 
-      - name: Build and Publish for Windows
-        if: matrix.os == 'windows-latest'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64 --arm64 --publish always
+      - name: Set up Python for Windows native helper
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
 
-      - name: Build and Publish for Linux
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --linux --x64 --arm64 --publish always
+      - name: Build native overlay and standalone helper (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./.github/scripts/build_overlay_runtime.ps1
 
-      - name: Build and Publish for macOS
-        if: matrix.os == 'macos-latest'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify staged overlay resources (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./.github/scripts/verify_overlay_resources.ps1 -Root build/overlay-runtime
+
+      - name: Smoke-test unpacked Windows app before publishing
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npx electron-builder --win --x64 --dir --publish never
+          if ($LASTEXITCODE -ne 0) { throw 'Windows unpacked build failed' }
+          ./.github/scripts/verify_overlay_resources.ps1 -Root dist/win-unpacked/resources/overlay-runtime -PackagedApp dist/win-unpacked/'Nexus Game Launcher.exe'
+
+      - name: Build Windows installers without publishing
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npx electron-builder --win --x64 --arm64 --publish never
+          if ($LASTEXITCODE -ne 0) { throw 'Windows installer build failed' }
+
+      - name: Build Linux AppImage without publishing
+        if: runner.os == 'Linux'
+        run: npx electron-builder --linux --x64 --arm64 --publish never
+
+      - name: Build macOS DMG without publishing
+        if: runner.os == 'macOS'
         run: |
           npm install --no-save --force @img/sharp-darwin-x64 @img/sharp-libvips-darwin-x64
-          npx electron-builder --mac --universal --publish always
+          npx electron-builder --mac --universal --publish never
+
+      - name: Upload build artifacts for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-${{ matrix.os }}-${{ github.run_number }}
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.dmg
+            dist/*.zip
+            dist/*.blockmap
+            dist/*.yml
+          if-no-files-found: warn

@@ -1,3 +1,6 @@
+if (process.argv.includes('--nexus-overlay-helper')) {
+    require('../overlay/poc/host.cjs');
+} else {
 const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, protocol, Menu } = require('electron');
@@ -339,3 +342,4 @@ app.on('will-quit', () => {
         trayInstance = null;
     }
 });
+}

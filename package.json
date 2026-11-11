@@ -68,6 +68,15 @@
             "arm64"
           ]
         }
+      ],
+      "extraResources": [
+        {
+          "from": "build/overlay-runtime",
+          "to": "overlay-runtime",
+          "filter": [
+            "**/*"
+          ]
+        }
       ]
     },
     "nsis": {

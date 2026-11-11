@@ -20,7 +20,9 @@ import sys
 import time
 import threading
 
-PROJECT = Path(__file__).resolve().parents[1]
+# A frozen, standalone runner is installed at resources/overlay-runtime/tools/.
+PROJECT = (Path(sys.executable).resolve().parents[1] if getattr(sys, 'frozen', False)
+           else Path(__file__).resolve().parents[1])
 BIN = PROJECT / "native" / "nexus-overlay" / "build" / "bin"
 
 
@@ -644,11 +646,20 @@ def run(args: argparse.Namespace) -> int:
             print("[READ-ONLY] Target validated. To attempt the overlay, append "
                   "--attach --confirm-unprotected.", flush=True)
             return 0
-        electron = PROJECT / "node_modules" / "electron" / "dist" / "electron.exe"
-        host_entry = PROJECT / "overlay" / "poc" / "host.cjs"
-        for file in (injector, dll, electron, host_entry):
-            if not file.is_file():
-                raise RuntimeError(f"Missing {file}; build the {target_arch} native overlay first (v0.6.7)")
+        packaged = bool(getattr(sys, 'frozen', False))
+        if packaged:
+            # The installed Nexus executable starts the OSR host in a separate
+            # Electron process, without a second development Electron runtime.
+            launcher_exe = os.environ.get('NEXUS_OVERLAY_PACKAGED_APP_EXE', '')
+            electron = Path(launcher_exe) if launcher_exe else None
+            needed = (injector, dll, electron)
+        else:
+            electron = PROJECT / 'node_modules' / 'electron' / 'dist' / 'electron.exe'
+            host_entry = PROJECT / 'overlay' / 'poc' / 'host.cjs'
+            needed = (injector, dll, electron, host_entry)
+        for file in needed:
+            if file is None or not file.is_file():
+                raise RuntimeError(f'Missing packaged overlay dependency: {file}')
         trace = win.trace_path(pid)
         hook_names = {'d3d11': 'nexusoverlayhook.dll', 'opengl': 'nexusopenglhook.dll',
                       'd3d9': 'nexusd3d9hook.dll', 'd3d12': 'nexusd3d12hook.dll'}
@@ -670,7 +681,8 @@ def run(args: argparse.Namespace) -> int:
         env.pop("ELECTRON_RUN_AS_NODE", None)
         bridge = None
         control_token = secrets.token_hex(24) if not args.no_input else None
-        host_args = [str(electron), str(host_entry), "--pid", str(pid)]
+        host_args = ([str(electron), '--nexus-overlay-helper', '--pid', str(pid)] if packaged
+                     else [str(electron), str(host_entry), '--pid', str(pid)])
         session_game = match
         if session_game and session_game.get('id') is not None:
             host_args += ["--session-game-id", str(session_game['id'])]
