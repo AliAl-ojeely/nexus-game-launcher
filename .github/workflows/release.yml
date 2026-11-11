@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-2022, ubuntu-latest, macos-latest]
 
     steps:
       - name: Check out Git repository
@@ -37,6 +37,19 @@ jobs:
         with:
           python-version: '3.12'
           architecture: 'x64'
+
+      - name: Verify Visual Studio 2022 C++ toolchain (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "[NEXUS CI] Windows image: $env:ImageOS ($env:ImageVersion)"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) { throw 'vswhere.exe not found on runner.' }
+          $vs = & $vswhere -latest -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or -not $vs) { throw 'Visual Studio 2022 C++ x86/x64 tools not found. Use windows-2022.' }
+          Write-Host "[NEXUS CI] Visual Studio 2022 C++ toolchain: $vs"
+          cmake --version
+          if ($LASTEXITCODE -ne 0) { throw 'CMake is not available.' }
 
       - name: Build native overlay and standalone helper (Windows)
         if: runner.os == 'Windows'
