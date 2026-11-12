@@ -214,12 +214,29 @@ export function createGameCard(
 
   card.innerHTML = `
         ${actionsHtml}
-        <img class="game-poster" src="${posterUrl}" alt="${game.name}" 
-             onerror="this.classList.add('missing-poster'); this.removeAttribute('src');">
+        <div class="game-poster-frame">
+            <div class="game-poster-fallback" aria-hidden="true"></div>
+            <img class="game-poster" alt="" loading="lazy" decoding="async">
+        </div>
         <div class="game-info">
             <div class="game-title">${escapeHtml(game.name)}</div>
         </div>
     `;
+
+  // Set src only after installing the error handler; do not expose broken-image UI.
+  const posterFrame = card.querySelector(".game-poster-frame");
+  const posterImage = card.querySelector(".game-poster");
+  const showPosterFallback = () => {
+    posterFrame.classList.add("is-missing");
+    posterImage.removeAttribute("src");
+    posterImage.remove();
+  };
+  if (posterUrl) {
+    posterImage.addEventListener("error", showPosterFallback, { once: true });
+    posterImage.src = posterUrl;
+  } else {
+    showPosterFallback();
+  }
 
   // Click handler – open details (ignore buttons)
   card.addEventListener("click", (e) => {

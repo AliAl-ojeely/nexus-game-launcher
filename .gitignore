@@ -41,6 +41,7 @@ nexus_proton_prefix/
 /test/
 /tests/
 /tools/
+/backup/
 
 # Nexus generated local files (not needed by GitHub Actions)
 /.nexus-*-backups/

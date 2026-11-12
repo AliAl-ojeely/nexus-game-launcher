@@ -71,19 +71,61 @@
 }
 
 /* =========================================
-   3. Fallback / Placeholder Styles
+   3. Poster fallback: Nexus brand, never a broken <img>
 ========================================= */
-.game-card .game-poster.missing-poster {
-    background-color: #1e293b;
-    background-image: url('../assets/icon-white.png');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 50px;
-    opacity: 0.4;
+.game-card .game-poster-frame {
     position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: #11131c;
 }
 
-.game-card .game-poster.missing-poster::before {
+.game-card .game-poster-frame .game-poster {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.game-card .game-poster-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(160deg, #1b1e29 0%, #0a0b11 100%);
+}
+
+.game-card .game-poster-fallback::after {
     content: "";
     display: block;
+    width: min(46%, 96px);
+    aspect-ratio: 1;
+    background: url('../assets/icon.png') center / contain no-repeat;
+    opacity: 0.90;
 }
+
+.game-card .game-poster-frame.is-missing .game-poster {
+    display: none;
+}
+
+/* NEXUS_POSTER_ORIGINAL_STYLE_V0103_BEGIN */
+/* Original Nexus missing-poster appearance; preserve the broken-image fix. */
+.game-card .game-poster-frame {
+    background: #161a22;
+}
+
+.game-card .game-poster-fallback {
+    background: #161a22;
+}
+
+.game-card .game-poster-fallback::after {
+    width: 50px;
+    height: 50px;
+    aspect-ratio: auto;
+    background: url('../assets/icon-white.png') center / contain no-repeat;
+    opacity: 0.40;
+}
+/* NEXUS_POSTER_ORIGINAL_STYLE_V0103_END */
