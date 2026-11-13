@@ -1,0 +1,15 @@
+/* Shared library header controls for My Favorites. No duplicate UI or handlers. */
+#mainTopbar[data-nexus-page="favoritesArea"] #shortcutsBtn,
+#mainTopbar[data-nexus-page="favoritesArea"] #randomGameBtn,
+#mainTopbar[data-nexus-page="favoritesArea"] #refreshLibraryBtn,
+#mainTopbar[data-nexus-page="favoritesArea"] #addGameBtn {
+    display: none !important;
+}
+
+/* Favorites uses the same absolute header and top spacing as All Games. */
+#favoritesArea { padding-top: 100px; }
+
+@media (max-width: 800px) {
+    /* The shared header wraps into two rows on narrow windows. */
+    #favoritesArea { padding-top: 155px; }
+}

@@ -11,6 +11,7 @@ import { showToast } from './details-components.js';
 import { handleCanIRunItCheck } from './details/handlers.js';
 import { initStatsPage } from './stats.js';
 import { initAutoDetector } from './auto-detector.js';
+import { needsArtworkRefresh, mergeFetchedArtwork, markFailedArtworkRefresh, fetchArtworkOnce } from './artwork-refresh.js';
 
 // Helper: escape HTML to prevent XSS
 function escapeHtml(str) {
@@ -49,50 +50,45 @@ function parseMarkdown(text) {
 let isRefreshingMetadata = false;
 
 async function refreshMissingMetadata() {
-    if (isRefreshingMetadata) return;
-    if (!navigator.onLine) {
-        console.log('[Metadata] Offline – skipping background fetch');
-        return;
-    }
-    if (!state.allGamesData || state.allGamesData.length === 0) return;
-
-    const games = state.allGamesData;
-    const missingGames = games.filter(g => !g.assets?.poster && !g.metadata?.description);
-    if (missingGames.length === 0) {
-        console.log('[Metadata] All games have metadata');
-        return;
-    }
+    if (isRefreshingMetadata || !navigator.onLine) return;
+    const games = (state.allGamesData || []).filter(g => needsArtworkRefresh(g));
+    if (!games.length) return;
 
     isRefreshingMetadata = true;
-    console.log(`[Metadata] Found ${missingGames.length} games missing metadata, fetching...`);
     let updated = 0;
-
-    for (const game of missingGames) {
-        try {
-            const details = await window.api.fetchGameDetails(game.name);
-            if (details && (details.assets?.poster || details.metadata?.description)) {
-                const updatedGame = {
-                    ...game,
-                    assets: details.assets || {},
-                    metadata: details.metadata || {}
-                };
-                await window.api.updateGame(updatedGame);
-                Object.assign(game, updatedGame);
-                updated++;
-                await new Promise(resolve => setTimeout(resolve, 500)); // rate limit
+    // Limit automatic work to prevent API bursts when hundreds of games have no artwork.
+    const batch = games.slice(0, 5);
+    try {
+        for (const game of batch) {
+            try {
+                const details = await fetchArtworkOnce(game, () => window.api.fetchGameDetails(game.name));
+                if (details?.metadata) {
+                    const merged = mergeFetchedArtwork(game, details);
+                    const stored = await window.api.saveGameDetails(game.id, {
+                        assets: details.assets,
+                        metadata: details.metadata,
+                    });
+                    if (stored) {
+                        Object.assign(game, merged);
+                        updated++;
+                    }
+                } else {
+                    markFailedArtworkRefresh(game);
+                    await window.api.saveGameDetails(game.id, {
+                        metadata: { artworkResolution: game.metadata.artworkResolution },
+                    });
+                }
+            } catch (error) {
+                console.warn(`[Assets] Failed refreshing "${game.name}": ${error.message}`);
+                markFailedArtworkRefresh(game);
+                await window.api.saveGameDetails(game.id, {
+                    metadata: { artworkResolution: game.metadata.artworkResolution },
+                }).catch(() => {});
             }
-        } catch (err) {
-            console.warn(`[Metadata] Failed for "${game.name}":`, err.message);
+            await new Promise(resolve => setTimeout(resolve, 900));
         }
-    }
-
-    if (updated > 0) {
-        renderGames();
-        const isAr = userSettings.lang === 'ar';
-        const msg = isAr ? `تم تحديث بيانات ${updated} لعبة` : `Updated metadata for ${updated} game(s)`;
-        showToast('success', msg, '', 3000);
-    }
-    isRefreshingMetadata = false;
+    } finally { isRefreshingMetadata = false; }
+    if (updated) renderGames();
 }
 
 // Expose globally so shortcuts.js can call it

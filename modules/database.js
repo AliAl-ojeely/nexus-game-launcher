@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const playtimeDB = require('./playtime');
+const { nonEmptyAssetMerge } = require('./asset-resolver');
+const { mergeMetadataSafe } = require('./asset-refresh-policy');
 
 const dbPath = path.join(app.getPath('userData'), 'games.json');
 
@@ -9,79 +11,27 @@ const dbPath = path.join(app.getPath('userData'), 'games.json');
 const ASSETS_DIR = path.join(app.getPath('userData'), 'game-assets');
 if (!fs.existsSync(ASSETS_DIR)) fs.mkdirSync(ASSETS_DIR, { recursive: true });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ASSET DOWNLOADER — يحمّل صورة من URL ويحفظها محلياً
-// ─────────────────────────────────────────────────────────────────────────────
-
+// The legacy database writer now uses the same validated downloader as IPC.
+// Previously this path could save an HTTP 404 body as an image file.
 async function downloadAsset(url, gameId, type) {
-    if (!url || url.startsWith('file:///') || url.startsWith('local-resource://')) return url;
-
-    try {
-        const https = require('https');
-        const http = require('http');
-        const ext = path.extname(new URL(url).pathname) || '.jpg';
-        const fileName = `${gameId}_${type}${ext}`;
-        const filePath = path.join(ASSETS_DIR, fileName);
-
-        // إذا موجود مسبقاً، لا تحمّل مجدداً
-        if (fs.existsSync(filePath)) return `local-resource://${filePath}`;
-
-        return new Promise((resolve) => {
-            const protocol = url.startsWith('https') ? https : http;
-            const file = fs.createWriteStream(filePath);
-
-            const request = protocol.get(url, (response) => {
-                // تعامل مع الـ redirect
-                if (response.statusCode === 301 || response.statusCode === 302) {
-                    file.close();
-                    fs.unlink(filePath, () => { });
-                    downloadAsset(response.headers.location, gameId, type).then(resolve);
-                    return;
-                }
-                response.pipe(file);
-                file.on('finish', () => {
-                    file.close();
-                    resolve(`local-resource://${filePath}`);
-                });
-            });
-
-            request.on('error', () => {
-                file.close();
-                fs.unlink(filePath, () => { });
-                resolve(url); // fallback للـ URL الأصلي
-            });
-
-            request.setTimeout(15000, () => {
-                request.destroy();
-                file.close();
-                fs.unlink(filePath, () => { });
-                resolve(url);
-            });
-        });
-    } catch (err) {
-        console.warn(`[Assets] Failed to download ${type} for ${gameId}:`, err.message);
-        return url;
-    }
+    const { downloadAsset: safeDownload } = require('./assets');
+    return safeDownload(url, path.join(ASSETS_DIR, 'legacy', String(gameId)), type);
 }
 
-// تحميل كل الأصول (poster, background, logo) لعبة واحدة
-async function downloadAllAssets(gameId, assets) {
-    const [poster, background, logo, icon] = await Promise.all([
-        downloadAsset(assets.poster || '', gameId, 'poster'),
-        downloadAsset(assets.background || '', gameId, 'background'),
-        downloadAsset(assets.logo || '', gameId, 'logo'),
-        downloadAsset(assets.icon || '', gameId, 'icon'),
-    ]);
-    return { poster, background, logo, icon };
+async function downloadAllAssets(gameId, assets = {}) {
+    const result = await Promise.all(['poster', 'background', 'logo', 'icon']
+        .map(kind => downloadAsset(assets[kind] || '', gameId, kind)));
+    return Object.fromEntries(['poster', 'background', 'logo', 'icon']
+        .map((kind, index) => [kind, result[index]]));
 }
 
-// تحميل الـ screenshots
 async function downloadScreenshots(gameId, screenshots = []) {
-    if (!screenshots.length) return [];
-    const results = await Promise.all(
-        screenshots.map((url, i) => downloadAsset(url, gameId, `screenshot_${i}`))
-    );
-    return results;
+    const result = [];
+    for (const [index, url] of screenshots.slice(0, 20).entries()) {
+        const local = await downloadAsset(url, gameId, `screenshot_${index}`);
+        if (local) result.push(local);
+    }
+    return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -119,20 +69,23 @@ function getGames() {
 function saveGame(newGame) {
     try {
         const games = getGames();
+        // Preserve restored notes and future per-game fields without saving runtime playtime.
         const formattedGame = {
+            ...newGame,
             id: newGame.id || Date.now(),
             name: newGame.name,
             path: newGame.path,
             isInstalled: newGame.isInstalled !== false,
             arguments: newGame.arguments || '',
-            isFavorite: newGame.isFavorite || false,
-            // ✅ إضافة icon هنا عند الحفظ لأول مرة
+            isFavorite: newGame.isFavorite === true,
             assets: newGame.assets || { poster: '', background: '', logo: '', icon: '' },
             metadata: newGame.metadata || {
                 description: '', developer: 'N/A', publisher: 'N/A',
                 releaseDate: 'N/A', systemRequirements: {}, media: { screenshots: [] }
             }
         };
+        delete formattedGame.playtime;
+        delete formattedGame.manualAssets;
         games.push(formattedGame);
         fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
         return true;
@@ -156,20 +109,19 @@ function updateGame(updatedGame) {
 }
 
 function deleteGame(gameId) {
+    // IPC archives the game before removal. Do not delete artwork: it may be
+    // shared by another library entry and must be available on re-add.
     try {
-        // حذف ملفات الأصول المحلية
-        if (fs.existsSync(ASSETS_DIR)) {
-            fs.readdirSync(ASSETS_DIR).forEach(file => {
-                if (file.startsWith(`${gameId}_`)) {
-                    fs.unlinkSync(path.join(ASSETS_DIR, file));
-                }
-            });
-        }
-        let games = getGames();
-        games = games.filter(g => String(g.id) !== String(gameId));
-        fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));
+        const games = getGames();
+        if (!games.some(g => String(g.id) === String(gameId))) return false;
+        const remaining = games.filter(g => String(g.id) !== String(gameId));
+        for (const game of remaining) delete game.playtime;
+        fs.writeFileSync(dbPath, JSON.stringify(remaining, null, 2));
         return true;
-    } catch (err) { return false; }
+    } catch (err) {
+        console.error('[Database] Remove game failed:', err);
+        return false;
+    }
 }
 
 async function saveGameDetails(gameId, fetchedData) {
@@ -185,20 +137,14 @@ async function saveGameDetails(gameId, fetchedData) {
         const localScreenshots = await downloadScreenshots(gameId, rawScreenshots);
 
         // ✅ حفظ مسار الأيقونة النهائي في JSON
-        games[index].assets = {
-            poster: localAssets.poster || games[index].assets.poster,
-            background: localAssets.background || games[index].assets.background,
-            logo: localAssets.logo || games[index].assets.logo,
-            icon: localAssets.icon || games[index].assets.icon, // الحفظ هنا!
-        };
-
-        games[index].metadata = {
-            ...fetchedData.metadata,
+        games[index].assets = nonEmptyAssetMerge(games[index].assets || {}, localAssets);
+        games[index].metadata = mergeMetadataSafe(games[index].metadata || {}, {
+            ...(fetchedData.metadata || {}),
             media: {
-                ...fetchedData.metadata?.media,
+                ...(fetchedData.metadata?.media || {}),
                 screenshots: localScreenshots,
-            }
-        };
+            },
+        });
 
         delete games[index].playtime;
         fs.writeFileSync(dbPath, JSON.stringify(games, null, 2));

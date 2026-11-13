@@ -38,13 +38,68 @@ function resolveDisplayIcon(assets) {
 // INSTANT FAVORITES SYNC (Zero-Lag DOM Update for Favorites Page & Cards)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Keep Favorites search and sort independent from All Games.
+const nexusCollectionSearch = { libraryArea: "", favoritesArea: "" };
+let nexusActiveSearchCollection = "libraryArea";
+let nexusPlaytimeMap = {};
+
+function sortGameCollection(games, sortValue) {
+  const result = [...games];
+  switch (sortValue) {
+    case "name_asc":
+      result.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case "name_desc":
+      result.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case "playtime_desc":
+      result.sort((a, b) => (nexusPlaytimeMap[b.name]?.minutes || 0) - (nexusPlaytimeMap[a.name]?.minutes || 0));
+      break;
+    case "recent_desc":
+      result.sort((a, b) => (Date.parse(nexusPlaytimeMap[b.name]?.lastPlayed || "") || 0) - (Date.parse(nexusPlaytimeMap[a.name]?.lastPlayed || "") || 0));
+      break;
+    case "added_desc":
+      result.sort((a, b) => Number(b.id) - Number(a.id));
+      break;
+  }
+  return result;
+}
+
+function filterGameCollection(pageId) {
+  const containerId = pageId === "favoritesArea" ? "favoritesContainer" : "gamesContainer";
+  const term = (nexusCollectionSearch[pageId] || "").trim().toLocaleLowerCase();
+  document.querySelectorAll(`#${containerId} .game-card`).forEach((card) => {
+    card.style.display = (card.getAttribute("data-title") || "").includes(term) ? "block" : "none";
+  });
+}
+
+// Reuse the same search, sort and reorder controls for the two grid pages.
+export function syncCollectionToolbar(pageId) {
+  const input = document.getElementById("searchInput");
+  const sortSelect = document.getElementById("sortGamesSelect");
+  const topbar = document.getElementById("mainTopbar");
+  if (input && Object.hasOwn(nexusCollectionSearch, nexusActiveSearchCollection)) {
+    nexusCollectionSearch[nexusActiveSearchCollection] = input.value;
+  }
+  if (topbar) topbar.dataset.nexusPage = pageId;
+  if (pageId !== "libraryArea" && pageId !== "favoritesArea") return;
+  nexusActiveSearchCollection = pageId;
+  if (input) input.value = nexusCollectionSearch[pageId] || "";
+  if (sortSelect) {
+    sortSelect.value = localStorage.getItem(pageId === "favoritesArea" ? "favoritesSort" : "librarySort") || (pageId === "favoritesArea" ? "default" : "name_asc");
+  }
+  filterGameCollection(pageId);
+}
+
 async function refreshFavoritesGridOnly() {
   const favoritesContainer = document.getElementById("favoritesContainer");
   if (!favoritesContainer) return;
 
   const favGames = (state.allGamesData || []).filter((g) => g.isFavorite);
-  const savedFavOrder = await loadOrder("favorites");
-  const orderedFavGames = applyOrder(favGames, savedFavOrder);
+  const favoritesSort = localStorage.getItem("favoritesSort") || "default";
+  const orderedFavGames = favoritesSort === "default"
+    ? applyOrder(favGames, await loadOrder("favorites"))
+    : sortGameCollection(favGames, favoritesSort);
 
   favoritesContainer.innerHTML = "";
 
@@ -64,8 +119,7 @@ async function refreshFavoritesGridOnly() {
     return;
   }
 
-  const searchInput = document.getElementById("searchInput");
-  const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : "";
+  const searchTerm = (nexusCollectionSearch.favoritesArea || "").trim().toLocaleLowerCase();
 
   const favFragment = document.createDocumentFragment();
   orderedFavGames.forEach((game, index) => {
@@ -199,7 +253,7 @@ export function createGameCard(
       ? `<button class="action-btn edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>`
       : "";
     const deleteButton = !hideDelete
-      ? `<button class="action-btn delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>`
+      ? `<button class="action-btn delete-btn" title="Remove from library"><i class="fa-solid fa-trash"></i></button>`
       : "";
     actionsHtml = `
             <div class="game-actions">
@@ -289,18 +343,18 @@ export function createGameCard(
           e.stopPropagation();
           const confirmMsg =
             userSettings.lang === "ar"
-              ? `حذف "${game.name}"؟`
-              : `Delete "${game.name}"?`;
+              ? `إزالة "${game.name}" من المكتبة؟ ستبقى الصور والبيانات المحلية محفوظة لاستعادتها إذا أضفت اللعبة مجددًا.`
+              : `Remove "${game.name}" from the library? Its cached artwork and metadata will be retained for restoration if you add it again.`;
           if (
             await confirmDialog({
               variant: "danger",
               message: confirmMsg,
               title:
                 userSettings.lang === "ar"
-                  ? "حذف لعبة من المكتبة"
+                  ? "إزالة لعبة من المكتبة"
                   : "Remove game from library",
               confirmText:
-                userSettings.lang === "ar" ? "حذف اللعبة" : "Remove game",
+                userSettings.lang === "ar" ? "إزالة اللعبة" : "Remove game",
             })
           ) {
             try {
@@ -402,6 +456,7 @@ export async function renderGames() {
     ]);
 
     state.allGamesData = games;
+    nexusPlaytimeMap = playtimeMap || {};
 
     const countDisplay = document.getElementById("gameCountDisplay");
     if (countDisplay) countDisplay.innerText = games.length;
@@ -450,43 +505,11 @@ export async function renderGames() {
     // 2. MAIN LIBRARY – apply sorting (does NOT overwrite manual order)
     // ─────────────────────────────────────────────────────────────────────────────
     if (gamesContainer) {
-      const sortSelect = document.getElementById("sortGamesSelect");
-      let sortedGames = [...games];
-      const sortValue = sortSelect ? sortSelect.value : "default";
-
-      switch (sortValue) {
-        case "name_asc":
-          sortedGames.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        case "name_desc":
-          sortedGames.sort((a, b) => b.name.localeCompare(a.name));
-          break;
-        case "playtime_desc":
-          sortedGames.sort((a, b) => {
-            const ptA = playtimeMap[a.name]?.minutes || 0;
-            const ptB = playtimeMap[b.name]?.minutes || 0;
-            return ptB - ptA;
-          });
-          break;
-        case "recent_desc":
-          sortedGames.sort((a, b) => {
-            const dateA = playtimeMap[a.name]?.lastPlayed
-              ? new Date(playtimeMap[a.name].lastPlayed).getTime()
-              : 0;
-            const dateB = playtimeMap[b.name]?.lastPlayed
-              ? new Date(playtimeMap[b.name].lastPlayed).getTime()
-              : 0;
-            return dateB - dateA;
-          });
-          break;
-        case "added_desc":
-          sortedGames.sort((a, b) => b.id - a.id);
-          break;
-        default:
-          const savedOrder = await loadOrder("main");
-          sortedGames = applyOrder(sortedGames, savedOrder);
+      const librarySort = localStorage.getItem("librarySort") || "name_asc";
+      let sortedGames = sortGameCollection(games, librarySort);
+      if (librarySort === "default") {
+        sortedGames = applyOrder(sortedGames, await loadOrder("main"));
       }
-
       const mainFragment = document.createDocumentFragment();
       sortedGames.forEach((game, index) => {
         mainFragment.appendChild(
@@ -494,6 +517,7 @@ export async function renderGames() {
         );
       });
       gamesContainer.appendChild(mainFragment);
+      filterGameCollection("libraryArea");
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -553,36 +577,34 @@ export function initReorderButton() {
     return;
   }
 
-  reorderBtn.onclick = () => {
-    if (state.currentTab === "recentArea") {
-      const isAr = userSettings.lang === "ar";
-      const msg = isAr
-        ? "لا يمكن إعادة ترتيب الألعاب في صفحة الألعاب الحديثة"
-        : "Cannot reorder games on Recently Played page";
-      if (window.showToast) window.showToast("warning", msg, "", 2000);
-      return;
+  reorderBtn.onclick = async () => {
+    if (state.currentTab !== "libraryArea" && state.currentTab !== "favoritesArea") return;
+    const isFavorites = state.currentTab === "favoritesArea";
+    if (!reorderBtn.classList.contains("active")) {
+      const sortSelect = document.getElementById("sortGamesSelect");
+      if (sortSelect && sortSelect.value !== "default") {
+        sortSelect.value = "default";
+        localStorage.setItem(isFavorites ? "favoritesSort" : "librarySort", "default");
+        await renderGames();
+      }
     }
     const isActive = toggleReorderMode(
-      gamesContainer,
-      favoritesContainer,
-      (newOrder, type) => {
-        console.log(`Order saved for ${type}:`, newOrder);
-      },
+      isFavorites ? null : gamesContainer,
+      isFavorites ? favoritesContainer : null,
+      (newOrder, type) => console.log(`Order saved for ${type}:`, newOrder),
     );
     resetBtn.style.display = isActive ? "inline-flex" : "none";
     reorderBtn.classList.toggle("active", isActive);
   };
 
   resetBtn.onclick = async () => {
-    await resetOrder(state.allGamesData, gamesContainer, favoritesContainer);
+    const scope = state.currentTab === "favoritesArea" ? "favorites" : "main";
+    await resetOrder(state.allGamesData, gamesContainer, favoritesContainer, scope);
+    reorderBtn.classList.remove("active");
+    resetBtn.style.display = "none";
     await renderGames();
     if (window.showToast) {
-      window.showToast(
-        "info",
-        userSettings.lang === "ar" ? "تم إعادة الترتيب" : "Order reset",
-        "",
-        2000,
-      );
+      window.showToast("info", userSettings.lang === "ar" ? "تم إعادة الترتيب" : "Order reset", "", 2000);
     }
   };
 
@@ -596,22 +618,15 @@ export function initReorderButton() {
 let searchTimeout;
 export function initLibrary() {
   const input = document.getElementById("searchInput");
-  input.addEventListener("input", (e) => {
+  if (!input) return;
+  syncCollectionToolbar("libraryArea");
+  input.addEventListener("input", (event) => {
+    const pageId = state.currentTab === "favoritesArea" ? "favoritesArea" : "libraryArea";
+    nexusCollectionSearch[pageId] = event.target.value;
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      const searchTerm = e.target.value.toLowerCase();
-      const cards = document.querySelectorAll(".game-card");
-      cards.forEach((card) => {
-        card.style.display = card
-          .getAttribute("data-title")
-          .includes(searchTerm)
-          ? "block"
-          : "none";
-      });
-    }, 150);
+    searchTimeout = setTimeout(() => filterGameCollection(pageId), 150);
   });
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // EXPORTED HELPERS (used by details.js)
 // ─────────────────────────────────────────────────────────────────────────────

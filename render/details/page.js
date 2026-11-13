@@ -1,3 +1,4 @@
+import { needsArtworkRefresh, mergeFetchedArtwork, markFailedArtworkRefresh, fetchArtworkOnce } from "../artwork-refresh.js";
 import { state, userSettings } from "../state.js";
 import { renderGameDetails } from "./render.js";
 import { updateBackupSidebarUI } from "../details-components.js";
@@ -312,51 +313,34 @@ export async function openGameDetailsPage(game) {
   if (String(state.currentGameId) !== String(game.id)) return;
   updateBackupSidebarUI(bInfo, game.name, userSettings.lang);
 
-  // Background fetch if data not cached
-  const isCached = !!(
-    game.metadata?.steamAppId ||
-    game.metadata?.description?.trim() ||
-    game.assets?.poster?.startsWith("local-resource://")
-  );
-
-  if (!isCached) {
-    console.log(`[FRONTEND] ⚡ Background fetch for: ${game.name}`);
-    window.api
-      .fetchGameDetails(game.name)
-      .then(async (freshData) => {
-        if (freshData?.assets && freshData?.metadata) {
-          console.log(
-            `[FRONTEND] ✅ Background fetch complete for: ${game.name}`,
-          );
-          game.assets = {
-            ...game.assets,
-            ...Object.fromEntries(
-              Object.entries(freshData.assets).filter(([, value]) =>
-                Boolean(value),
-              ),
-            ),
-          };
-          game.metadata = {
-            ...game.metadata,
-            ...freshData.metadata,
-            media: {
-              ...game.metadata?.media,
-              ...freshData.metadata?.media,
-            },
-          };
-          if (String(state.currentGameId) === String(game.id)) {
-            renderGameDetails(game);
-          }
-          await window.api.saveGameDetails(game.id, {
-            name: game.name,
-            assets: freshData.assets,
-            metadata: freshData.metadata,
-          });
+  // Refresh missing artwork even when text metadata or a Steam AppID already exists.
+  if (needsArtworkRefresh(game) && navigator.onLine) {
+    fetchArtworkOnce(game, () => window.api.fetchGameDetails(game.name))
+      .then(async freshData => {
+        if (!freshData?.metadata) {
+          markFailedArtworkRefresh(game);
+          await window.api.saveGameDetails(game.id, { metadata: {
+            artworkResolution: game.metadata.artworkResolution,
+          } });
+          return;
         }
+        const merged = mergeFetchedArtwork(game, freshData);
+        const stored = await window.api.saveGameDetails(game.id, {
+          assets: freshData.assets,
+          metadata: freshData.metadata,
+        });
+        if (!stored) return;
+        game.assets = merged.assets;
+        game.metadata = merged.metadata;
+        if (String(state.currentGameId) === String(game.id)) renderGameDetails(game);
       })
-      .catch((err) =>
-        console.error("[FRONTEND] Background fetch failed:", err),
-      );
+      .catch(async err => {
+        console.warn(`[Assets] Details refresh failed: ${err.message}`);
+        markFailedArtworkRefresh(game);
+        await window.api.saveGameDetails(game.id, {
+          metadata: { artworkResolution: game.metadata.artworkResolution },
+        }).catch(() => {});
+      });
   }
 
   // Adjust sidebar visibility

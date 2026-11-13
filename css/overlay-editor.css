@@ -86,3 +86,75 @@
 #settingsArea .overlay-size-choice:hover { background:var(--bg-hover); }
 #settingsArea .overlay-option[data-mode-locked="true"] { opacity:.62; cursor:not-allowed; }
 @media (max-width:550px) { #settingsArea .overlay-size-options { gap:5px; } #settingsArea .overlay-size-choice { padding:11px 4px; font-size:12px; } }
+
+/* NEXUS_OVERLAY_PREVIEW_LAYOUT_V027_START
+   Only Settings layout is affected. Keep the game's OSR canvas at 560x338.
+   One vertical scroll container per Settings tab (the existing inner scroller).
+*/
+#settingsArea.page-area {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    min-height: 0;
+}
+
+#settingsArea .settings-shell,
+#settingsArea .settings-workspace {
+    min-height: 0;
+    max-height: 100%;
+}
+
+#settingsArea .settings-panel-scroll {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+}
+
+/* Use the open space to the right of the controls for a larger real preview. */
+#settingsArea #settings-overlay-panel .overlay-editor {
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    column-gap: clamp(28px, 3vw, 50px);
+    align-items: start;
+}
+
+#settingsArea #settings-overlay-panel .overlay-editor-controls {
+    max-width: 345px;
+}
+
+#settingsArea #settings-overlay-panel .overlay-editor-preview {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding-inline-start: 0;
+}
+
+#settingsArea #settings-overlay-panel .overlay-preview-heading,
+#settingsArea #settings-overlay-panel .overlay-preview-stage,
+#settingsArea #settings-overlay-panel .overlay-advanced-controls,
+#settingsArea #settings-overlay-panel .overlay-fps-notice {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: clamp(680px, 48vw, 860px);
+    margin-inline-start: auto;
+    margin-inline-end: 0;
+}
+
+/* Retain the existing mobile/compact single-column editor. */
+@media (max-width: 1360px) {
+    #settingsArea #settings-overlay-panel .overlay-editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    #settingsArea #settings-overlay-panel .overlay-editor-controls {
+        max-width: none;
+    }
+    #settingsArea #settings-overlay-panel .overlay-preview-heading,
+    #settingsArea #settings-overlay-panel .overlay-preview-stage,
+    #settingsArea #settings-overlay-panel .overlay-advanced-controls,
+    #settingsArea #settings-overlay-panel .overlay-fps-notice {
+        margin-inline-start: 0;
+        max-width: none;
+    }
+}
+/* NEXUS_OVERLAY_PREVIEW_LAYOUT_V027_END */

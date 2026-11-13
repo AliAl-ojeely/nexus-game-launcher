@@ -326,3 +326,75 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* NEXUS_SETTINGS_TOP_TABS_V024_START: horizontal tabs under Launcher Settings. */
+#settingsArea .settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+#settingsArea .settings-navigation {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-height: 68px;
+    padding: 10px clamp(14px, 2vw, 28px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-sidebar);
+    scrollbar-width: thin;
+}
+
+#settingsArea .settings-nav-tab {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 44px;
+    gap: 9px;
+    padding: 7px 15px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+#settingsArea .settings-nav-tab.is-active::before {
+    inset-block-start: auto;
+    inset-block-end: 0;
+    inset-inline-start: 12px;
+    inset-inline-end: 12px;
+    width: auto;
+    height: 3px;
+    border-radius: 3px;
+}
+
+#settingsArea .settings-nav-icon { flex-basis: 28px; width: 28px; height: 28px; }
+#settingsArea .settings-panel-scroll { min-height: 0; }
+
+@media (max-width: 720px) {
+    #settingsArea .settings-navigation { min-height: 60px; padding: 8px 12px; }
+    #settingsArea .settings-nav-tab { min-height: 43px; padding: 7px 10px; }
+}
+/* NEXUS_SETTINGS_TOP_TABS_V024_END */
+
+/* NEXUS_SETTINGS_FLUID_FILL_V025_START
+   Fill the Settings content area at every supported window width.
+   Keep the original spacing, controls, top tabs and overlay preview geometry.
+*/
+#settingsArea .settings-workspace,
+#settingsArea .settings-panel-scroll {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#settingsArea .settings-panel,
+#settingsArea .settings-panel > .settings-section,
+#settingsArea .settings-panel > .settings-section > .section-content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+}
+/* NEXUS_SETTINGS_FLUID_FILL_V025_END */

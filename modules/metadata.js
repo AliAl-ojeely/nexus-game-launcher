@@ -3,6 +3,7 @@ const steamApi = require('./steam-api');
 const steamGridApi = require('./steamGrid-api');
 const steamArtworkApi = require('./steam-artwork');
 const youtubeApi = require('./youtube-api');
+const { buildAssetCandidates } = require('./asset-resolver');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY: Clean description from markdown and special symbols
@@ -69,19 +70,8 @@ function mergeMetadata({
         ? steamData.media.screenshots
         : (rawgData?.media?.screenshots || []);
 
-    // Prefer SGDB, then verified-by-downloader Steam Library artwork, then RAWG.
-    // Candidate lists are intentional: a URL alone does not prove an image exists.
-    // Never substitute screenshots for poster/background/logo/icon.
-    const candidates = (...values) => [...new Set(values.flat(Infinity).filter(
-        x => typeof x === 'string' && /^https:\/\//i.test(x)
-    ))];
-    const rawAssets = {
-        // RAWG background_image often is a screenshot, so it is not an art fallback.
-        poster: candidates(sgAssets?.poster, steamArtwork?.poster, steamData?.poster),
-        background: candidates(sgAssets?.background, steamArtwork?.background, steamData?.background),
-        logo: candidates(sgAssets?.logo, steamArtwork?.logo),
-        icon: candidates(sgAssets?.icon, steamArtwork?.icon),
-    };
+    // One shared source order for all entry points; the downloader validates bytes.
+    const rawAssets = buildAssetCandidates({ steamGrid: sgAssets, steamArtwork, steamData });
 
     // ── Steam AppID for achievements link ─────────────────────────────────────
     const steamAppId = rawgData?.steamAppId || steamData?.appid || null;
@@ -115,61 +105,10 @@ function mergeMetadata({
 // ORCHESTRATOR
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function fetchAllMetadata(gameName) {
-    console.log(`\n--- Starting Metadata Fetch Pipeline for: "${gameName}" ---`);
-
-    const rawgData = await rawgApi.fetchGameDetails(gameName).catch(err => {
-        console.warn(`[Pipeline] RAWG API Error:`, err.message);
-        return null;
-    });
-
-    let steamData = null;
-    let sgAssets = null;
-    let steamArtwork = null;
-    let steamAppId = rawgData?.steamAppId || null;
-
-    if (!steamAppId) {
-        console.log(`[Pipeline] No Steam AppID from RAWG, searching Steam by name...`);
-        steamAppId = await steamApi.searchAppId(gameName).catch(() => null);
-        if (steamAppId) console.log(`[Pipeline] Found Steam AppID via name search: ${steamAppId}`);
-    }
-
-    if (steamAppId) {
-        console.log(`[Pipeline] Fetching Steam data for AppID ${steamAppId}...`);
-        [steamData, sgAssets, steamArtwork] = await Promise.all([
-            steamApi.fetchGameDetails(steamAppId).catch(() => null),
-            steamGridApi.fetchGameAssets(gameName, steamAppId).catch(() => null),
-            steamArtworkApi.fetchSteamArtwork(steamAppId).catch(() => null)
-        ]);
-    } else {
-        console.log(`[Pipeline] No Steam AppID found, fetching SteamGrid assets by name...`);
-        sgAssets = await steamGridApi.fetchGameAssets(gameName).catch(() => null);
-    }
-
-    let trailerYouTubeId = rawgData?.media?.trailerYouTubeId || null;
-    let trailerThumbnail = rawgData?.media?.trailerThumbnail || null;
-
-    if (!trailerYouTubeId) {
-        console.log(`[Pipeline] No RAWG clip found. Searching YouTube...`);
-        const ytResult = await youtubeApi.getTrailerData(gameName).catch(() => null);
-        if (ytResult) {
-            trailerYouTubeId = ytResult.videoId;
-            trailerThumbnail = ytResult.thumbnail;
-        }
-    }
-
-    const finalResult = mergeMetadata({
-        name: gameName,
-        rawgData,
-        steamData,
-        sgAssets,
-        steamArtwork,
-        trailerYouTubeId,
-        trailerThumbnail
-    });
-
-    console.log(`--- Pipeline Complete for: "${gameName}" ---\n`);
-    return finalResult;
+async function fetchAllMetadata(gameName, options = {}) {
+    // Legacy entry point delegates to the one shared provider orchestrator.
+    const { collectMetadata } = require('./asset-pipeline');
+    return collectMetadata(gameName, options);
 }
 
 module.exports = {

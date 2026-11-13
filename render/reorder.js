@@ -52,6 +52,7 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
     if (sortableMain) sortableMain.destroy();
     if (sortableFav) sortableFav.destroy();
 
+    if (mainContainer) {
     sortableMain = new Sortable(mainContainer, {
         animation: 300,
         handle: '.game-card',
@@ -62,8 +63,9 @@ export function enableReorderMode(mainContainer, favContainer, onOrderChange) {
             if (onOrderChange) onOrderChange(newOrder, 'main');
         }
     });
+    }
 
-    if (favContainer && favContainer.children.length > 0) {
+    if (favContainer && favContainer.querySelectorAll('.game-card').length > 0) {
         sortableFav = new Sortable(favContainer, {
             animation: 300,
             handle: '.game-card',
@@ -106,25 +108,14 @@ export function toggleReorderMode(mainContainer, favContainer, onOrderChange) {
     }
 }
 
-export async function resetOrder(games, mainContainer, favContainer) {
-    // If reorder mode is active, turn it off first
-    if (isReorderMode) {
-        disableReorderMode();
+// Reset only the requested grid; never discard the other grid's saved order.
+export async function resetOrder(games, mainContainer, favContainer, scope = "both") {
+    if (isReorderMode) disableReorderMode();
+    if (scope === "both" || scope === "main") {
+        const defaultOrder = games.map(game => game.id);
+        await saveOrder(defaultOrder, 'main');
     }
-
-    const defaultOrder = games.map(g => g.id);
-    await saveOrder(defaultOrder, 'main');
-    await saveOrder([], 'favorites'); // clear custom favorite order
-
-    const mainCards = Array.from(mainContainer.children);
-    const orderedMain = defaultOrder.map(id => mainCards.find(card => parseInt(card.getAttribute('data-game-id')) === id));
-    mainContainer.innerHTML = '';
-    orderedMain.forEach(card => mainContainer.appendChild(card));
-
-    const favGames = games.filter(g => g.isFavorite);
-    const defaultFavOrder = favGames.map(g => g.id);
-    const favCards = Array.from(favContainer.children);
-    const orderedFav = defaultFavOrder.map(id => favCards.find(card => parseInt(card.getAttribute('data-game-id')) === id));
-    favContainer.innerHTML = '';
-    orderedFav.forEach(card => favContainer.appendChild(card));
+    if (scope === "both" || scope === "favorites") {
+        await saveOrder([], 'favorites');
+    }
 }

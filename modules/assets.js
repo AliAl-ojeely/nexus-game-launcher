@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { downloadImageCandidates } = require('./asset-downloader');
+const { KINDS, isManualResource } = require('./asset-resolver');
+const { RETRY_AFTER_MS } = require('./asset-refresh-policy');
 
 const { ASSETS_DIR } = require('./app-settings');
 
@@ -44,37 +46,49 @@ async function mapLimited(items, count, fn) {
 // DOWNLOAD ALL GAME ASSETS
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function downloadGameAssets(gameName, assets, metadata) {
-    const slug = slugifyName(gameName);
+async function downloadGameAssets(gameName, assets, metadata, options = {}) {
+    const slug = slugifyName(gameName) || 'unknown-game';
     const gameDir = path.join(ASSETS_DIR, slug);
-    if (!fs.existsSync(gameDir)) fs.mkdirSync(gameDir, { recursive: true });
+    await fs.promises.mkdir(gameDir, { recursive: true });
+    const diagnostic = {};
+    const perKind = await Promise.all(KINDS.map(async kind => {
+        if (options.requestedKinds && !options.requestedKinds.includes(kind)) return [kind, ''];
+        let info = { status: 'fallback', reason: 'not_attempted' };
+        const asset = await downloadAsset(assets?.[kind] || [], gameDir, kind, {
+            existing: options.existingAssets?.[kind] || '',
+            force: options.force && !isManualResource(options.existingAssets?.[kind]),
+            http: options.http, decode: options.decode,
+            onDiagnostic: event => { info = event; },
+        });
+        diagnostic[kind] = info;
+        return [kind, asset];
+    }));
+    const resolved = Object.fromEntries(perKind);
 
-    console.log(`[Assets] Downloading for: "${gameName}" → /${slug}/`);
+    // Screenshots and trailer media remain separate from artwork selection.
+    const localScreenshots = await mapLimited(options.includeMedia === false ? [] : metadata?.media?.screenshots || [], 3,
+        (url, i) => downloadAsset(url, gameDir, `screenshot_${i}`, options));
+    const localTrailerThumb = options.includeMedia === false ? '' : await downloadAsset(
+        metadata?.media?.trailerThumbnail || '', gameDir, 'trailer_thumb', options);
 
-    const [poster, background, logo, icon] = await Promise.all([
-        downloadAsset(assets.poster || '', gameDir, 'poster'),
-        downloadAsset(assets.background || '', gameDir, 'background'),
-        downloadAsset(assets.logo || '', gameDir, 'logo'),
-        downloadAsset(assets.icon || '', gameDir, 'icon'),
-    ]);
-
-    const localScreenshots = await mapLimited(metadata?.media?.screenshots || [], 3, (url, i) =>
-            downloadAsset(url, gameDir, `screenshot_${i}`)
-        );
-
-    const localTrailerThumb = await downloadAsset(
-        metadata?.media?.trailerThumbnail || '', gameDir, 'trailer_thumb'
-    );
-
-    console.log(`[Assets] Done → poster:${!!poster} bg:${!!background} logo:${!!logo} icon:${!!icon} screenshots:${localScreenshots.length}`);
-
+    const now = Date.now();
+    const artworkResolution = {
+        version: 1,
+        checkedAt: new Date(now).toISOString(),
+        retryAfter: new Date(now + RETRY_AFTER_MS).toISOString(),
+        kinds: diagnostic,
+    };
+    console.log(`[Assets] ${gameName}: ` + KINDS.map(kind =>
+        `${kind}=${diagnostic[kind]?.status || 'unknown'}`
+    ).join(' '));
     return {
-        assets: { poster, background, logo, icon },
+        assets: resolved,
+        artworkResolution,
         media: {
             ...metadata?.media,
             screenshots: localScreenshots.filter(Boolean),
             trailerThumbnail: localTrailerThumb,
-        }
+        },
     };
 }
 

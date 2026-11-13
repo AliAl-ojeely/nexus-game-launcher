@@ -72,7 +72,7 @@ export async function initOverlayEditor() {
     function scaleFrame() {
         if (!stage || !frame || editor.hidden) return;
         const width = Math.max(1, stage.clientWidth - 16);
-        const scale = Math.min(1, width / 560);
+        const scale = Math.min(1.42, width / 560);
         stage.style.height = `${Math.ceil(338 * scale + 16)}px`;
         stage.style.setProperty('--nx-preview-scale', String(scale));
         stage.style.setProperty('--nx-preview-left', `${Math.max(0, (stage.clientWidth - 560 * scale) / 2)}px`);

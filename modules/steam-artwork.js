@@ -5,7 +5,12 @@
 const axios = require('axios');
 
 const BASE = 'https://shared.steamstatic.com/store_item_assets/';
-const COMMUNITY_BASE = 'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/';
+// Steam moved many community icons to the Fastly community_assets path in 2026.
+// Keep the previous CDN as a fallback; never guess a hash from the AppID.
+const COMMUNITY_BASES = [
+    'https://shared.fastly.steamstatic.com/community_assets/images/apps/',
+    'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/',
+];
 const KINDS = ['poster', 'background', 'logo', 'icon'];
 
 function unique(values) {
@@ -55,16 +60,25 @@ function staticUrl(appid, filename) {
     return `${BASE}steam/apps/${appid}/${filename}`;
 }
 
-function steamCommunityIcon(assets, appid) {
+function steamCommunityIcons(assets, appid) {
     const value = assets?.community_icon;
-    if (typeof value !== 'string') return '';
+    if (typeof value !== 'string') return [];
 
-    // Depending on the game, Steam returns a 40-character image hash instead
-    // of a path relative to asset_url_format.
+    // Official Steam metadata supplies the 40-character content hash.
+    // CDN domain changes must not invalidate an otherwise valid hash.
     if (/^[a-f0-9]{40}$/i.test(value)) {
-        return `${COMMUNITY_BASE}${appid}/${value}.jpg`;
+        return COMMUNITY_BASES.map(base => `${base}${appid}/${value}.jpg`);
     }
-    return resolveReturnedUrl(value, assets, appid);
+    const direct = resolveReturnedUrl(value, assets, appid);
+    return direct ? [direct] : [];
+}
+
+function clientIconUrls(assets, appid) {
+    const hash = assets?.client_icon || assets?.clienticon;
+    if (typeof hash !== 'string' || !/^[a-f0-9]{40}$/i.test(hash)) return [];
+    // ICO is deliberately lower priority than JPG: libvips does not support
+    // every Windows ICO variant; the validated image downloader decides.
+    return COMMUNITY_BASES.map(base => `${base}${appid}/${hash}.ico`);
 }
 
 function fromStoreBrowse(assets, appid) {
@@ -73,7 +87,7 @@ function fromStoreBrowse(assets, appid) {
         poster: urls(['library_capsule_2x', 'library_capsule']),
         background: urls(['library_hero_2x', 'library_hero']),
         logo: urls(['library_logo_2x', 'library_logo', 'logo_2x', 'logo']),
-        icon: [steamCommunityIcon(assets, appid)],
+        icon: unique([...steamCommunityIcons(assets, appid), ...clientIconUrls(assets, appid)]),
     };
 }
 
@@ -85,7 +99,7 @@ async function fetchSteamArtwork(appid, options = {}) {
     try {
         const query = {
             ids: [{ appid: Number(id) }],
-            context: { language: 'english', country_code: 'US' },
+            context: { language: 'english', country_code: 'US', steam_realm: 1 },
             data_request: { include_assets: true },
         };
         const { data } = await (options.http || axios).get(
@@ -97,10 +111,10 @@ async function fetchSteamArtwork(appid, options = {}) {
         );
         remote = item?.assets || {};
 
-        const candidateCount = ['library_capsule', 'library_capsule_2x',
-            'library_hero', 'library_hero_2x', 'community_icon']
-            .filter(key => Boolean(remote[key])).length;
-        console.log(`[SteamArtwork] StoreBrowse ${id}: ${candidateCount} artwork fields`);
+        const fields = ['library_capsule', 'library_capsule_2x',
+            'library_hero', 'library_hero_2x', 'library_logo', 'library_logo_2x',
+            'community_icon', 'client_icon'].filter(key => Boolean(remote[key]));
+        console.log(`[SteamArtwork] StoreBrowse ${id}: ${fields.join(',') || 'no-asset-fields'}`);
     } catch (err) {
         console.warn(`[SteamArtwork] StoreBrowse unavailable for ${id}: ${err.message}`);
     }

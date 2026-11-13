@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { titleVariants, selectTitleMatch, suggestTitleCandidates } = require('./asset-resolver');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILS (reused from rawg-api for consistency)
@@ -37,53 +38,66 @@ function wordOverlapRatio(resultName, queryName) {
 // SEARCH AppID BY NAME — improved with Levenshtein + word overlap
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function searchAppId(gameName) {
-    try {
-        const res = await axios.get(
-            `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(gameName)}&l=en&cc=US`,
-            { timeout: 10000 }
-        );
+// Avoid repeated lookups for the same game during one launcher session.
+// A transient network failure is never a negative cache hit.
+const lookupCache = new Map();
+const lookupPending = new Map();
+const SUCCESS_TTL = 12 * 60 * 60 * 1000;
+const MISS_TTL = 10 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 256;
 
-        const items = res.data?.items;
-        if (!items?.length) {
-            console.warn(`[Steam Search] No results for "${gameName}"`);
-            return null;
+async function searchAppId(gameName, options = {}) {
+    const http = options.http || axios;
+    const name = String(gameName || '').trim();
+    if (!name) return null;
+    const useCache = options.cache === true || (options.cache !== false && http === axios);
+    const cacheKey = name.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ');
+    const now = Date.now();
+    if (useCache) {
+        const hit = lookupCache.get(cacheKey);
+        if (hit?.expires > now) return hit.id;
+        if (hit) lookupCache.delete(cacheKey);
+        if (lookupPending.has(cacheKey)) return lookupPending.get(cacheKey);
+    }
+
+    async function perform() {
+        let successfulQueries = 0;
+        const variants = titleVariants(name);
+        for (const query of variants) {
+            try {
+                const res = await http.get(
+                    `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(query)}&l=en&cc=US`,
+                    { timeout: 11000 },
+                );
+                successfulQueries++;
+                const items = res.data?.items || [];
+                const match = selectTitleMatch(name, items, 0.85);
+                if (match && /^\d{1,12}$/.test(String(match.item.id))) {
+                    console.log(`[Steam Search] Verified match: "${match.item.name}" (${match.score.toFixed(2)})`);
+                    if (useCache) cacheResult(cacheKey, String(match.item.id), SUCCESS_TTL);
+                    return String(match.item.id);
+                }
+                const suggestions = suggestTitleCandidates(name, items, 2);
+                for (const suggestion of suggestions) {
+                    console.log(`[Steam Search] Possible alternate title (requires identity verification): "${suggestion.item.name}"`);
+                }
+            } catch (err) {
+                console.warn(`[Steam Search] Query unavailable: ${err.message}`);
+            }
         }
-
-        const target = norm(gameName);
-
-        // 1. Exact match
-        const exact = items.find(g => norm(g.name) === target);
-        if (exact) {
-            console.log(`[Steam Search] Exact match: "${exact.name}" → ${exact.id}`);
-            return String(exact.id);
-        }
-
-        // 2. Score each result: lower Levenshtein distance + higher word overlap
-        const scored = items.map(g => {
-            const nameNorm = norm(g.name);
-            const distance = levenshtein(nameNorm, target);
-            const overlap = wordOverlapRatio(g.name, gameName);
-            // Combine scores: lower distance better, higher overlap better
-            const score = (overlap * 100) - (distance * 2);
-            return { g, score, overlap, distance };
-        });
-
-        // Filter: require at least 40% overlap OR distance <= 5
-        const viable = scored.filter(x => x.overlap >= 0.4 || x.distance <= 5);
-        if (!viable.length) {
-            console.warn(`[Steam Search] No viable match for "${gameName}" (overlap < 0.4 and distance > 5)`);
-            return null;
-        }
-
-        const best = viable.sort((a, b) => b.score - a.score)[0];
-        console.log(`[Steam Search] Best match: "${best.g.name}" → ${best.g.id} (overlap: ${(best.overlap * 100).toFixed(0)}%, distance: ${best.distance})`);
-        return String(best.g.id);
-
-    } catch (err) {
-        console.error('[Steam Search] Error:', err.message);
+        if (useCache && successfulQueries > 0) cacheResult(cacheKey, null, MISS_TTL);
+        console.warn(`[Steam Search] No sufficiently confident AppID for "${name}"`);
         return null;
     }
+    if (!useCache) return perform();
+    const pending = perform().finally(() => lookupPending.delete(cacheKey));
+    lookupPending.set(cacheKey, pending);
+    return pending;
+}
+
+function cacheResult(key, id, ttl) {
+    if (lookupCache.size >= MAX_CACHE_ENTRIES) lookupCache.delete(lookupCache.keys().next().value);
+    lookupCache.set(key, { id, expires: Date.now() + ttl });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

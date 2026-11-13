@@ -1,6 +1,6 @@
 import { state, userSettings } from "./state.js";
 import { showToast, updateBackupSidebarUI } from "./details-components.js";
-import { renderGames } from "./library.js";
+import { renderGames, syncCollectionToolbar } from "./library.js";
 import {
   clearBackupDiscoveryPanel,
   refreshBackupDiscoveryLanguage,
@@ -280,7 +280,6 @@ export function initUI() {
   const hideTopbarPages = [
     "settingsArea",
     "recentArea",
-    "favoritesArea",
     "statsArea",
   ];
 
@@ -297,6 +296,11 @@ export function initUI() {
       const targetArea = this.getAttribute("data-target");
       if (!targetArea) return;
 
+      // Do not carry drag mode across library grids or into other pages.
+      const activeReorder = document.getElementById("reorderModeBtn");
+      if (targetArea !== state.currentTab && activeReorder?.classList.contains("active")) {
+        activeReorder.click();
+      }
       const targetPage = document.getElementById(targetArea);
       if (targetPage) {
         targetPage.classList.add("active");
@@ -313,15 +317,7 @@ export function initUI() {
           : "flex";
       }
 
-      const reorderBtn = document.getElementById("reorderModeBtn");
-      if (reorderBtn && reorderBtn.classList.contains("active")) {
-        if (
-          state.currentTab !== "libraryArea" &&
-          state.currentTab !== "favoritesArea"
-        ) {
-          reorderBtn.click();
-        }
-      }
+      syncCollectionToolbar(targetArea);
     });
   });
 
@@ -339,6 +335,7 @@ export function initUI() {
       if (topbar && !hideTopbarPages.includes(state.currentTab)) {
         topbar.style.display = "flex";
       }
+      syncCollectionToolbar(state.currentTab);
     });
   }
 
@@ -554,7 +551,9 @@ export function initUI() {
     sortSelect.value = savedSort;
     sortSelect.addEventListener("change", (e) => {
       const newValue = e.target.value;
-      localStorage.setItem("librarySort", newValue);
+      const activeReorder = document.getElementById("reorderModeBtn");
+      if (activeReorder?.classList.contains("active")) activeReorder.click();
+      localStorage.setItem(state.currentTab === "favoritesArea" ? "favoritesSort" : "librarySort", newValue);
       console.log("[Sort] Changed to:", newValue);
       renderGames();
     });

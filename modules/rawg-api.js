@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { titleScore, selectTitleMatch } = require('./asset-resolver');
 const secrets = require('../src/secrets.json');
 const API_KEY = secrets.RAWG_API_KEY;
 
@@ -66,7 +67,11 @@ function pickBestMatch(results, originalName, cleanName, year) {
     const exactNorm = results.find(g => norm(g.name) === target);
     if (exactNorm) return exactNorm;
 
-    // 3. Filter by year if provided
+    // 3. Use a verified full-title identity before weaker token-overlap heuristics.
+    const strict = selectTitleMatch(cleanName, results, 0.85);
+    if (strict) return strict.item;
+
+    // 4. Filter by year if provided
     let yearFiltered = results;
     if (year) {
         yearFiltered = results.filter(g => g.released && g.released.startsWith(year));
@@ -173,8 +178,8 @@ async function fetchGameDetails(name) {
         if (!results.length) return null;
 
         const game = pickBestMatch(results, originalName, cleanName, year);
-        if (!game) {
-            console.warn(`[RAWG] No suitable match for "${originalName}"`);
+        if (!game || titleScore(cleanName, game.name) < 0.85) {
+            console.warn(`[RAWG] No high-confidence match for "${originalName}"`);
             return null;
         }
 
