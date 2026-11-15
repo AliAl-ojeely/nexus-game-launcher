@@ -1,7 +1,7 @@
 'use strict';
 
 const axios = require('axios');
-const secrets = require('../src/secrets.json');
+const secrets = require('./provider-credentials');
 const { titleVariants, selectTitleMatch, validHttpUrl } = require('./asset-resolver');
 const BASE = 'https://www.steamgriddb.com/api/v2';
 
@@ -49,14 +49,20 @@ async function fetchGameAssets(gameName, steamAppId = null, options = {}) {
     }
     if (!gameId) return null;
 
-    const paths = {
-        portrait: `/grids/game/${gameId}?dimensions=600x900`,
-        grids: `/grids/game/${gameId}`,
-        heroes: `/heroes/game/${gameId}`,
-        wide: `/grids/game/${gameId}?dimensions=460x215`,
-        logos: `/logos/game/${gameId}`,
-        icons: `/icons/game/${gameId}`,
-    };
+    // Query only artwork types requested by the caller. Previously even a
+    // quick poster lookup consumed six image-list API calls per game.
+    const requested = new Set(Array.isArray(options.kinds) ? options.kinds : ['poster', 'background', 'logo', 'icon']);
+    const paths = {};
+    if (requested.has('poster')) {
+        paths.portrait = `/grids/game/${gameId}?dimensions=600x900`;
+        paths.grids = `/grids/game/${gameId}`;
+    }
+    if (requested.has('background')) {
+        paths.heroes = `/heroes/game/${gameId}`;
+        paths.wide = `/grids/game/${gameId}?dimensions=460x215`;
+    }
+    if (requested.has('logo')) paths.logos = `/logos/game/${gameId}`;
+    if (requested.has('icon')) paths.icons = `/icons/game/${gameId}`;
     const entries = await Promise.all(Object.entries(paths).map(async ([name, suffix]) => {
         try { return [name, await http.get(BASE + suffix, cfg)]; }
         catch { return [name, null]; }

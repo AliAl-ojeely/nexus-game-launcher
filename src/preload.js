@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld('api', {
     // ── External APIs ─────────────────────────────────────────────────────────
     fetchGameInfo: (name) => ipcRenderer.invoke('api:fetchGameInfo', name),
     fetchGameDetails: (name) => ipcRenderer.invoke('api:fetchGameDetails', name),
+    // NEXUS_STEAM_PICS_V060: narrow Settings bridge; no filesystem access.
+    steamPicsGetStatus: () => ipcRenderer.invoke('pics:get-status'),
+    steamPicsSetEnabled: (enabled) => ipcRenderer.invoke('pics:set-enabled', enabled),
 
     // ── Shell ─────────────────────────────────────────────────────────────────
     openExternal: (url) => ipcRenderer.send('shell:openExternal', url),

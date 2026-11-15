@@ -1,5 +1,5 @@
 const axios = require('axios');
-const secrets = require('../src/secrets.json');
+const secrets = require('./provider-credentials');
 
 const API_KEY = secrets.YOUTUBE_API_KEY;
 

@@ -1,0 +1,24 @@
+/* Steam PICS Settings: scoped to General without altering Nexus's visual language. */
+#settingsArea .nexus-pics-settings {
+    margin-top: 24px;
+    padding: 18px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--bg-secondary, var(--bg-card, transparent));
+}
+#settingsArea .nexus-pics-settings h3 {
+    margin: 0 0 9px;
+    font-size: 16px;
+    font-weight: 650;
+    color: var(--text-main);
+}
+#settingsArea .nexus-pics-settings p {
+    margin: 0 0 12px;
+    line-height: 1.65;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+#settingsArea .nexus-pics-settings .nexus-pics-hint { font-size: 12px; opacity: 0.8; }
+#settingsArea .nexus-pics-settings button { margin-top: 10px; }
+#settingsArea .nexus-pics-settings button:disabled { opacity: 0.5; cursor: not-allowed; }
+#settingsArea .nexus-pics-settings #nexusSteamPicsFeedback { margin-top: 9px; min-height: 1em; }

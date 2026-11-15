@@ -43,7 +43,9 @@
       "overlay/poc/**/*",
       "assets/**/*",
       "index.html",
-      "package.json"
+      "package.json",
+      "tools/nexus-asset-provider-pilot-v033/*.cjs",
+      "!src/secrets.json"
     ],
     "linux": {
       "icon": "assets/icon.png",
@@ -73,6 +75,13 @@
         {
           "from": "build/overlay-runtime",
           "to": "overlay-runtime",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "build/steam-pics-runtime",
+          "to": "steam-pics-runtime",
           "filter": [
             "**/*"
           ]

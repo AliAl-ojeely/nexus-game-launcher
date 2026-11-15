@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { downloadImageCandidates } = require('./asset-downloader');
+const { downloadImageCandidates, fromLocalUrl, validateFile } = require('./asset-downloader');
+const { discoverSteamArtwork } = require('./asset-steam-cache');
 const { KINDS, isManualResource } = require('./asset-resolver');
 const { RETRY_AFTER_MS } = require('./asset-refresh-policy');
 
@@ -51,12 +52,26 @@ async function downloadGameAssets(gameName, assets, metadata, options = {}) {
     const gameDir = path.join(ASSETS_DIR, slug);
     await fs.promises.mkdir(gameDir, { recursive: true });
     const diagnostic = {};
+    const requested = KINDS.filter(kind => !options.requestedKinds || options.requestedKinds.includes(kind));
+    const missing = [];
+    for (const kind of requested) {
+        const currentFile = fromLocalUrl(options.existingAssets?.[kind]);
+        if (options.force || !currentFile || !await validateFile(currentFile, kind, options)) missing.push(kind);
+    }
+    // Zero Steam filesystem reads if every requested image is already cached.
+    // A verified AppID is required, and only librarycache is inspected.
+    const steamLocal = missing.length && metadata?.steamAppId && metadata?.artworkIdentity?.verified
+        ? await discoverSteamArtwork(metadata.steamAppId, options.steamCache || {})
+        : {};
     const perKind = await Promise.all(KINDS.map(async kind => {
-        if (options.requestedKinds && !options.requestedKinds.includes(kind)) return [kind, ''];
+        // Skipping a kind is not a request to erase it. Return the previous path.
+        if (!requested.includes(kind)) return [kind, options.existingAssets?.[kind] || ''];
         let info = { status: 'fallback', reason: 'not_attempted' };
         const asset = await downloadAsset(assets?.[kind] || [], gameDir, kind, {
             existing: options.existingAssets?.[kind] || '',
+            localCandidates: steamLocal[kind] || [],
             force: options.force && !isManualResource(options.existingAssets?.[kind]),
+            enforceHosts: !options.http,
             http: options.http, decode: options.decode,
             onDiagnostic: event => { info = event; },
         });
@@ -64,6 +79,9 @@ async function downloadGameAssets(gameName, assets, metadata, options = {}) {
         return [kind, asset];
     }));
     const resolved = Object.fromEntries(perKind);
+    for (const kind of KINDS) {
+        if (!diagnostic[kind]) diagnostic[kind] = { status: 'skipped', reason: 'not_requested' };
+    }
 
     // Screenshots and trailer media remain separate from artwork selection.
     const localScreenshots = await mapLimited(options.includeMedia === false ? [] : metadata?.media?.screenshots || [], 3,

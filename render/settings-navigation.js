@@ -1,7 +1,11 @@
 // Switch only Settings sections. Existing controls remain mounted and unchanged.
+import { initSteamPicsSettings } from './steam-pics-settings.js';
+
+// NEXUS_STEAM_PICS_V060: Settings card attaches to the existing General panel.
 export function initSettingsNavigation() {
     const page = document.getElementById('settingsArea');
     if (!page) return;
+    void initSteamPicsSettings(page).catch(() => {});
 
     const tabs = [...page.querySelectorAll('[data-settings-tab]')];
     const panels = [...page.querySelectorAll('.settings-panel[role="tabpanel"]')];

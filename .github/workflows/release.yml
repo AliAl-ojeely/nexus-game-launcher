@@ -30,12 +30,15 @@ jobs:
           node-version: 22
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Create secrets.json file
+      - name: Ensure developer API secrets are not in the build tree
         shell: bash
         run: |
-          echo "{\"SGDB_API_KEY\":\"${{ secrets.SGDB_API_KEY }}\", \"RAWG_API_KEY\":\"${{ secrets.RAWG_API_KEY }}\", \"YOUTUBE_API_KEY\":\"${{ secrets.YOUTUBE_API_KEY }}\"}" > src/secrets.json
+          if [ -e src/secrets.json ]; then
+            echo '::error::src/secrets.json must not be present in a distributable build.'
+            exit 1
+          fi
 
       - name: Set up Python for Windows native helper
         if: runner.os == 'Windows'
@@ -67,7 +70,7 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/verify_overlay_resources.ps1 -Root build/overlay-runtime
 
-      - name: Smoke-test unpacked Windows app before publishing
+      - name: Package and verify unpacked Windows app
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -103,7 +106,7 @@ jobs:
             dist/*.zip
             dist/*.blockmap
             dist/*.yml
-          if-no-files-found: warn
+          if-no-files-found: error
 
   publish_release:
     name: Publish release after Windows, Linux and macOS builds pass
@@ -185,7 +188,7 @@ jobs:
           TAG="v${RELEASE_VERSION}"
           gh release create "$TAG" release-assets/* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Nexus Game Launcher ${TAG} - Overlay Installer Hotfix" \
+            --title "Nexus Game Launcher ${TAG}" \
             --notes-file ".github/release-notes/${TAG}.md" \
             --target "$GITHUB_SHA" \
             --fail-on-no-commits \

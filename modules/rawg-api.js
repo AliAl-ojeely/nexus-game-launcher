@@ -1,6 +1,6 @@
 const axios = require("axios");
 const { titleScore, selectTitleMatch } = require('./asset-resolver');
-const secrets = require('../src/secrets.json');
+const secrets = require('./provider-credentials');
 const API_KEY = secrets.RAWG_API_KEY;
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -7,6 +7,12 @@ const { spawn } = require('child_process');
 const AdmZip = require('adm-zip');
 
 const assetPipeline = require('../../modules/asset-pipeline');
+// NEXUS_ASSET_RELIABILITY_V061: serialize only full-detail requests.
+const { createCoordinator, safeErrorCode } = require('../../modules/asset-reliability');
+const detailsCoordinator = createCoordinator({
+    afterFinishMs: 2500, maxQueue: 96,
+    onDiagnostic: event => console.warn('[AssetReliability] ' + event.type + ': ' + event.reason),
+});
 const { isManualResource } = require('../../modules/asset-resolver');
 const { fromLocalUrl, validateFile } = require('../../modules/asset-downloader');
 const playtime = require('../../modules/playtime');
@@ -18,6 +24,10 @@ const { slugifyName, downloadAsset } = require('../../modules/assets');
 const updater = require('../../modules/updater');
 
 function registerApiIPC() {
+    // NEXUS_STEAM_PICS_V060: only expose validated boolean configuration.
+    ipcMain.handle('pics:get-status', () => require('../../modules/steam-pics-production').readStatus());
+    ipcMain.handle('pics:set-enabled', (_event, enabled) =>
+        require('../../modules/steam-pics-production').setEnabled(enabled));
 
     // All artwork IPC entry points use the same resolver and image decoder.
     ipcMain.handle('api:fetchGameInfo', async (_e, name) => {
@@ -27,6 +37,7 @@ function registerApiIPC() {
             const details = await assetPipeline.fetchGameDetails(name, {
                 existingAssets: existing?.assets,
                 steamAppId: existing?.metadata?.steamAppId,
+                trustedSteamAppId: existing?.metadata?.artworkIdentity?.verified === true,
                 includeMedia: false,
                 requestedKinds: ['poster'],
             });
@@ -40,13 +51,16 @@ function registerApiIPC() {
     ipcMain.handle('api:fetchGameDetails', async (_e, name) => {
         if (typeof name !== 'string' || !name.trim()) return null;
         try {
-            const existing = db.getGames().find(g => g.name === name);
-            return await assetPipeline.fetchGameDetails(name, {
-                existingAssets: existing?.assets,
-                steamAppId: existing?.metadata?.steamAppId,
+            return await detailsCoordinator.schedule(name, async () => {
+                const existing = db.getGames().find(g => g.name === name);
+                return await assetPipeline.fetchGameDetails(name, {
+                    existingAssets: existing?.assets,
+                    steamAppId: existing?.metadata?.steamAppId,
+                    trustedSteamAppId: existing?.metadata?.artworkIdentity?.verified === true,
+                });
             });
         } catch (err) {
-            console.error(`[AssetPipeline] Details lookup failed for "${name}": ${err.message}`);
+            console.warn('[AssetReliability] Details lookup failed: ' + safeErrorCode(err));
             return null;
         }
     });
