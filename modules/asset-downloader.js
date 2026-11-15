@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { fileURLToPath } = require('url');
 const { validHttpUrl, isManualResource } = require('./asset-resolver');
+const { limitAssetDownloads } = require('./asset-request-limit');
 
 const MAX_BYTES = 24 * 1024 * 1024;
 const MAX_PIXELS = 45_000_000;
@@ -119,6 +120,52 @@ async function validateFile(filename, kind, options) {
     } catch { return false; }
 }
 
+// HTTPS-only, known artwork hosts. A validated provider response must not
+// redirect the Electron main process to LAN/localhost or an arbitrary origin.
+function trustedArtworkHost(value) {
+    if (!validHttpUrl(value)) return false;
+    try {
+        const host = new URL(value).hostname.toLowerCase();
+        return host === 'steamgriddb.com' || host.endsWith('.steamgriddb.com') ||
+            host === 'steamstatic.com' || host.endsWith('.steamstatic.com') ||
+            host === 'steamusercontent.com' || host.endsWith('.steamusercontent.com');
+    } catch { return false; }
+}
+
+async function writeAtomicImage(gameDir, name, buffer, ext) {
+    const target = path.join(gameDir, `${path.parse(name).name}${ext}`);
+    await fs.promises.mkdir(gameDir, { recursive: true });
+    const tmp = `${target}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.part`;
+    try {
+        await fs.promises.writeFile(tmp, buffer, { flag: 'wx' });
+        await fs.promises.rename(tmp, target);
+    } finally { await fs.promises.rm(tmp, { force: true }).catch(() => {}); }
+    return toLocalUrl(target);
+}
+
+// Local Steam client artwork is imported into Nexus's own cache, so Steam can
+// later clear its librarycache without breaking the user's library.
+async function importLocalCandidates(candidates, gameDir, name, options = {}, failures = []) {
+    const kind = TYPES.has(name) ? name : '';
+    for (const file of (Array.isArray(candidates) ? candidates : []).slice(0, 8)) {
+        if (typeof file !== 'string') continue;
+        try {
+            const stat = await fs.promises.stat(file);
+            if (!stat.isFile() || stat.size < 24 || stat.size > MAX_BYTES) throw Error('invalid_local_size');
+            const bytes = await fs.promises.readFile(file);
+            const info = inspectImage(bytes);
+            if (!acceptable(info, kind)) throw Error('invalid_local_dimensions');
+            await decodeImage(bytes, options);
+            const url = await writeAtomicImage(gameDir, name, bytes, info.ext);
+            tell(options, { status: 'downloaded', source: 'steam-local-cache', attempted: 0 });
+            return url;
+        } catch (error) {
+            failures.push({ source: 'steam-local-cache', reason: String(error.message || 'invalid_local_image').slice(0, 55) });
+        }
+    }
+    return '';
+}
+
 function tell(options, info) {
     if (typeof options.onDiagnostic === 'function') options.onDiagnostic({ ...info });
 }
@@ -130,7 +177,8 @@ async function downloadImageCandidates(input, gameDir, name, options = {}) {
     const seen = new Set();
     for (const candidate of sources) {
         const url = typeof candidate === 'string' ? candidate : candidate?.url;
-        if (!validHttpUrl(url) || seen.has(url)) continue;
+        if (!validHttpUrl(url) || seen.has(url) ||
+            (options.enforceHosts && kind && !trustedArtworkHost(url))) continue;
         candidates.push({ url, source: candidate?.source || 'unspecified' });
         seen.add(url);
         if (candidates.length >= 12) break;
@@ -156,29 +204,36 @@ async function downloadImageCandidates(input, gameDir, name, options = {}) {
         }
     }
 
+    // Fresh artwork in the real Steam client's cache beats speculative remote
+    // filename probes, but NEVER takes priority over manual or valid Nexus art.
+    const fromSteamCache = await importLocalCandidates(options.localCandidates, gameDir, name, options, failures);
+    if (fromSteamCache) return fromSteamCache;
+
     await fs.promises.mkdir(gameDir, { recursive: true });
     for (const candidate of candidates) {
         for (let attempt = 0; attempt < 2; attempt++) {
             try {
-                const response = await (options.http || axios).get(candidate.url, {
-                    responseType: 'arraybuffer', timeout: 12000, maxRedirects: 3,
-                    maxContentLength: MAX_BYTES,
+                const response = await limitAssetDownloads(() => (options.http || axios).get(candidate.url, {
+                    responseType: 'arraybuffer', timeout: 12000, maxRedirects: 2,
+                    maxContentLength: MAX_BYTES, maxBodyLength: MAX_BYTES,
+                    beforeRedirect: options.enforceHosts ? redirect => {
+                        const target = `${redirect.protocol}//${redirect.hostname}${redirect.path || '/'}`;
+                        if (!trustedArtworkHost(target)) throw Error('unsafe_redirect');
+                    } : undefined,
                     headers: { Accept: 'image/webp,image/png,image/jpeg,image/x-icon,image/*;q=0.7' },
-                });
+                }));
+                if (response.status && (response.status < 200 || response.status >= 300)) {
+                    throw Object.assign(Error(`http_${response.status}`), { response });
+                }
                 const type = String(response.headers?.['content-type'] || '');
                 if (/^(?:text\/|application\/(?:json|xml|html))/i.test(type)) throw new Error('non_image_response');
                 const buffer = Buffer.from(response.data);
                 const info = inspectImage(buffer);
                 if (buffer.length > MAX_BYTES || !acceptable(info, kind)) throw new Error('invalid_dimensions_or_format');
                 await decodeImage(buffer, options);
-                const target = path.join(gameDir, `${path.parse(name).name}${info.ext}`);
-                const tmp = `${target}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.part`;
-                try {
-                    await fs.promises.writeFile(tmp, buffer, { flag: 'wx' });
-                    await fs.promises.rename(tmp, target);
-                } finally { await fs.promises.rm(tmp, { force: true }).catch(() => {}); }
+                const saved = await writeAtomicImage(gameDir, name, buffer, info.ext);
                 tell(options, { status: 'downloaded', source: candidate.source, attempted: failures.length + 1 });
-                return toLocalUrl(target);
+                return saved;
             } catch (err) {
                 const status = Number(err.response?.status) || 0;
                 const retriable = [429, 502, 503, 504].includes(status) || ['ETIMEDOUT', 'ECONNRESET'].includes(err.code);
@@ -190,7 +245,7 @@ async function downloadImageCandidates(input, gameDir, name, options = {}) {
     }
     tell(options, {
         status: 'fallback', source: null, attempted: failures.length,
-        reason: candidates.length ? 'no_valid_download' : 'no_candidates',
+        reason: candidates.length || failures.length ? 'no_valid_download' : 'no_candidates',
         failures: failures.slice(0, 12),
     });
     return '';
@@ -199,4 +254,5 @@ async function downloadImageCandidates(input, gameDir, name, options = {}) {
 module.exports = {
     MAX_BYTES, inspectImage, acceptable, cachedFile, decodeImage,
     fromLocalUrl, validateFile, downloadImageCandidates,
+    trustedArtworkHost, importLocalCandidates, writeAtomicImage,
 };
