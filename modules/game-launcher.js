@@ -128,6 +128,16 @@ async function stopMonitor(gameId, verifiedExit = null) {
         }
     }
 
+    // Compare after verified game exit; never block session finalization or automatic backup.
+    try {
+        void require('./backup-discovery-engine-v070').noteGameStopped({
+            gameId, name: game.gameName, sessionId: game.sessionId
+        }).then(result => {
+            if (result && game.event && !game.event.sender.isDestroyed())
+                game.event.sender.send('backup:observation-updated', { gameId });
+        }).catch(error => console.warn('[NEXUS SAVE OBSERVER] Comparison failed:', error.message));
+    } catch (error) { console.warn('[NEXUS SAVE OBSERVER] Exit hook unavailable:', error.message); }
+
     const settings = readSettings();
     const autoBackup = settings.autoBackup !== undefined ? settings.autoBackup : true;
 
@@ -399,6 +409,9 @@ function launchGame(event, gamePath, showFPS, launchArgs, gameId, gameName) {
         });
 
         proc.unref();
+        // Only an explicitly armed, completed baseline observes this verified Nexus session.
+        try { require('./backup-discovery-engine-v070').noteGameStarted({ gameId, name: gameName, sessionId }); }
+        catch (error) { console.warn('[NEXUS SAVE OBSERVER] Session start unavailable:', error.message); }
         publishOverlaySessions();
         startSmartMonitor(gameDir, proc.pid, exeName, gameId);
         startTimer(gameId);
@@ -476,10 +489,19 @@ function forceStopGame(gameId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────────────────────────────
+// Refuse a restore while Nexus still tracks an active session for this game.
+function isGameRunningByName(gameName) {
+    const requested = String(gameName || '').trim().toLowerCase();
+    if (!requested) return false;
+    return [...runningGames.values()].some(game =>
+        !game.stopping && String(game.gameName || '').trim().toLowerCase() === requested);
+}
+
 module.exports = {
     launchGame,
     forceStopGame,
     pauseTimer,
     resumeTimer,
     applyOverlayTimerAction,
+    isGameRunningByName,
 };

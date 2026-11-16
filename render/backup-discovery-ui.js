@@ -74,6 +74,14 @@ function translateSource(source, lang) {
     const title = raw.slice("Ludusavi:".length).trim();
     return i18n(lang, `قاعدة Ludusavi: ${title}`, `Ludusavi: ${title}`);
   }
+  if (raw === "upstream-manifest") return i18n(lang, "قاعدة Ludusavi المحدّثة", "Updated Ludusavi database");
+  if (raw === "steam-cloud-remote") return i18n(lang, "حفظ Steam Cloud المحلي", "Local Steam Cloud saves");
+  if (raw === "unity-locallow") return i18n(lang, "مجلد Unity في LocalLow", "Unity LocalLow location");
+  if (raw === "name-convention") return i18n(lang, "مجلد باسم اللعبة", "Game-name folder");
+  if (raw === "deep-scan-match") return i18n(lang, "مجلد اكتشفه البحث الموسع", "Extended scan match");
+  if (raw === "manifest-winpath-v070") return i18n(lang, "مسار Windows من قاعدة Manifest", "Windows manifest save rule");
+  if (raw === "steam-id-save-v070") return i18n(lang, "حفظ مرتبط بمعرّف Steam", "Steam AppID save location");
+  if (raw === "diff-changed-v070") return i18n(lang, "ملفات تغيرت أثناء جلسة اللعب (تحتاج مراجعة)", "Files changed during game session (review required)");
   if (raw === "installation-folder")
     return i18n(lang, "مجلد تثبيت اللعبة", "Game installation folder");
   if (raw === "unreal-convention")
@@ -104,6 +112,13 @@ function translateIssueMessage(code, rawMessage, lang) {
     MANIFEST_UNAVAILABLE:
       "تعذر قراءة قاعدة بيانات مسارات الحفظ (gameSavePaths.json).",
     NAME_AMBIGUOUS: "يوجد أكثر من سجل مطابق لاسم هذه اللعبة في قاعدة البيانات.",
+    UPSTREAM_MANIFEST_NOT_READY: "قاعدة بيانات Ludusavi الحديثة غير محمّلة. اضغط تحديث قاعدة مواقع الحفظ.",
+    UPSTREAM_TITLE_AMBIGUOUS: "توجد عدة ألعاب متشابهة في قاعدة Ludusavi؛ لن نختار بينها تلقائيًا.",
+    MULTIPLE_SAVE_LOCATIONS: "عُثر على أكثر من موقع حفظ. Nexus يدعم اعتماد موقع واحد حاليًا؛ تحقق من المواقع جميعها.",
+    DEEP_SCAN_PARTIAL: "انتهت حدود البحث الموسع قبل فحص جميع المجلدات؛ النتيجة جزئية.",
+    INSTALL_ROOT_SKIPPED: "استُبعد مجلد تثبيت اللعبة من النتائج؛ ليس مكانًا مخصصًا لملفات الحفظ.",
+    INSTALL_ROOT_NOT_SAVE: "لا يمكن اعتماد مجلد تثبيت اللعبة بالكامل كمصدر حفظ. اختر مجلد Saves أو ملف حفظ محددًا.",
+    DEEP_SCAN_FAILED: "تعذر إكمال البحث الموسع؛ لم تتغير إعدادات الحفظ.",
     EMPTY_RESPONSE: "لم ترد استجابة من خدمة فحص المسارات.",
   };
   return (
@@ -289,6 +304,136 @@ function renderDiscoveryResult(game, result, lang, token, confirmedPath = "") {
     ),
   );
 
+  // Read-only observation is armed before the next Nexus-launched game session.
+  const observation = result.observation || { status: 'idle' };
+  const obsStatus = observation.status || 'idle';
+  const obsMsg = {
+    armed: i18n(activeLang, 'المراقبة جاهزة. شغّل اللعبة من Nexus ثم أغلقها لعرض التغييرات.',
+      'Observation armed. Launch and close the game through Nexus to inspect changes.'),
+    observing: i18n(activeLang, 'اللعبة تعمل الآن؛ ستتم مقارنة الملفات بعد تأكيد خروجها.',
+      'Game running; files will be compared after verified exit.'),
+    comparing: i18n(activeLang, 'جارٍ مقارنة تغيرات الملفات بعد إغلاق اللعبة...',
+      'Comparing file changes after game exit...'),
+    complete: i18n(activeLang, `المراقبة اكتملت: ${observation.changedFiles || 0} ملف متغير، و${observation.candidateFolders || 0} موقع محتمل. راجع النتائج قبل اعتماد أي مسار.`,
+      `Observation complete: ${observation.changedFiles || 0} changed files, ${observation.candidateFolders || 0} candidate folders. Review before confirming.`),
+    'complete-limited': i18n(activeLang,
+      `اكتملت مقارنة ${observation.completedRoots || 0} نطاقات؛ توجد ${observation.limitedRoots || 0} نطاقات غير مكتملة. النتائج من النطاقات المكتملة فقط وتحتاج مراجعتك.`,
+      `Compared ${observation.completedRoots || 0} complete scopes; ${observation.limitedRoots || 0} scopes were limited. Only fully scanned scope results are shown for your review.`),
+    incomplete: i18n(activeLang, 'المراقبة غير مكتملة. جرّب تحديد مجلد أصغر؛ لم تُعتمد أي نتائج تلقائيًا.',
+      'Observation was incomplete. Choose a smaller scope; no paths were automatically confirmed.'),
+    error: i18n(activeLang, 'تعذرت المراقبة؛ لم تتغير ملفات حفظ الألعاب.',
+      'Observation failed; no game saves were modified.'),
+    arming: i18n(activeLang, 'جارٍ تجهيز خط الأساس قبل تشغيل اللعبة...', 'Capturing pre-launch file metadata...'),
+  }[obsStatus];
+  if (obsMsg) addText(root, 'backup-discovery-note', obsMsg);
+  if (observation.limitedRoots > 0) addText(root, 'backup-discovery-warning',
+    i18n(activeLang,
+      `حدود البحث: ${observation.completedRoots || 0} نطاقات مكتملة، ${observation.limitedRoots} نطاقات غير مكتملة. لم تُستخدم ملفات النطاقات غير المكتملة كدليل.`,
+      `Coverage limits: ${observation.completedRoots || 0} complete scopes, ${observation.limitedRoots} incomplete scopes. Incomplete scopes never contribute evidence.`));
+  if (observation.suppressedUnrelated > 0) addText(root, 'backup-discovery-warning',
+    i18n(activeLang,
+      `تم استبعاد ${observation.suppressedUnrelated} مجلدًا تغيّر أثناء اللعب لكنه غير مرتبط بهوية اللعبة. التغير الزمني ليس دليل ملكية.`,
+      `Excluded ${observation.suppressedUnrelated} changed folders unrelated to this game's identity. Timing alone does not prove ownership.`));
+  if (observation.depthLimited) addText(root, 'backup-discovery-warning',
+    i18n(activeLang, 'المراقبة محدودة بعمق المجلدات؛ لا تُعتبر فحصًا شاملًا للكمبيوتر.',
+      'Observation uses a bounded directory depth; this is not a full-computer scan.'));
+  if (['idle', 'complete', 'complete-limited', 'incomplete', 'error'].includes(obsStatus)) {
+    const arm = element('button', 'backup-discovery-use',
+      i18n(activeLang, 'راقب ملفات الحفظ في جلسة اللعب القادمة', 'Observe next game session'));
+    arm.type = 'button';
+    arm.addEventListener('click', async () => {
+      if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+      arm.disabled = true;
+      try {
+        const reply = await window.api.backup.armSaveObservation(game.id, false);
+        if (!reply?.ok && reply?.code !== 'BASELINE_SCAN_PARTIAL' && reply?.code !== 'BASELINE_NO_FILES')
+          await showBackupError(reply || { code: 'OBSERVATION_FAILED' }, game.name, activeLang, game.id);
+        if (token === activeDiscoveryToken && isSameActiveGame(game.id)) await runBackupDiscovery(game, activeLang);
+      } finally { arm.disabled = false; }
+    });
+    root.appendChild(arm);
+    const custom = element('button', 'backup-discovery-use',
+      i18n(activeLang, 'راقب مجلدًا محددًا فقط (فحص أدق)', 'Observe only a chosen folder'));
+    custom.type = 'button';
+    custom.addEventListener('click', async () => {
+      if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+      custom.disabled = true;
+      try {
+        const reply = await window.api.backup.armSaveObservation(game.id, true);
+        if (!reply?.ok && reply?.code !== 'CANCELLED' && reply?.code !== 'BASELINE_SCAN_PARTIAL' && reply?.code !== 'BASELINE_NO_FILES')
+          await showBackupError(reply || { code: 'OBSERVATION_FAILED' }, game.name, activeLang, game.id);
+        if (token === activeDiscoveryToken && isSameActiveGame(game.id)) await runBackupDiscovery(game, activeLang);
+      } finally { custom.disabled = false; }
+    });
+    root.appendChild(custom);
+  }
+  if (['armed', 'observing', 'comparing', 'arming'].includes(obsStatus)) {
+    const cancel = element('button', 'backup-discovery-use',
+      i18n(activeLang, 'إلغاء مراقبة الحفظ', 'Cancel save observation'));
+    cancel.type = 'button';
+    cancel.addEventListener('click', async () => {
+      if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+      await window.api.backup.cancelSaveObservation(game.id);
+      if (token === activeDiscoveryToken && isSameActiveGame(game.id)) await runBackupDiscovery(game, activeLang);
+    });
+    root.appendChild(cancel);
+  }
+  if (obsStatus !== 'idle') {
+    const refresh = element('button', 'backup-discovery-use',
+      i18n(activeLang, 'تحديث نتيجة المراقبة', 'Refresh observation result'));
+    refresh.type = 'button';
+    refresh.addEventListener('click', async () => {
+      if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+      await runBackupDiscovery(game, activeLang);
+    });
+    root.appendChild(refresh);
+  }
+
+  // Candidate search remains read-only until the user confirms a specific path.
+  const update = element("button", "backup-discovery-use",
+    i18n(activeLang, "تحديث قاعدة مواقع الحفظ", "Update save locations database"));
+  update.type = "button";
+  update.addEventListener("click", async () => {
+    if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+    update.disabled = true;
+    try {
+      const response = await window.api.backup.updateSaveManifest();
+      if (!response?.success) {
+        await showBackupError(response || { code: "MANIFEST_UPDATE_FAILED" }, game.name, activeLang, game.id);
+        return;
+      }
+      if (token === activeDiscoveryToken && isSameActiveGame(game.id))
+        await runBackupDiscovery(game, activeLang);
+    } catch (err) {
+      await showBackupError({ code: "MANIFEST_UPDATE_FAILED", error: String(err.message || err) }, game.name, activeLang, game.id);
+    } finally { update.disabled = false; }
+  });
+  root.appendChild(update);
+
+  const deep = element("button", "backup-discovery-use",
+    i18n(activeLang, "بحث موسّع عن الحفظ", "Extended save search"));
+  deep.type = "button";
+  deep.disabled = result.scanMode === "deep";
+  deep.addEventListener("click", async () => {
+    if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+    await runBackupDiscovery(game, activeLang, { deep: true });
+  });
+  root.appendChild(deep);
+
+  const extra = element("button", "backup-discovery-use",
+    i18n(activeLang, "البحث داخل مجلد أو قرص محدد", "Scan a chosen folder or drive"));
+  extra.type = "button";
+  extra.addEventListener("click", async () => {
+    if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+    const folder = await window.api.selectFolder();
+    if (!folder || token !== activeDiscoveryToken || !isSameActiveGame(game.id)) return;
+    await runBackupDiscovery(game, activeLang, { deep: true, extraRoot: folder });
+  });
+  root.appendChild(extra);
+  if (result.scanMode === "deep") addText(root, "backup-discovery-note",
+    i18n(activeLang, `تم فحص ${result.scannedDirectories || 0} مجلدًا (بحث محدود)`,
+      `${result.scannedDirectories || 0} directories inspected (bounded search)`));
+
   for (const warning of result.warnings || []) {
     const warningText = translateIssueMessage(
       warning.code,
@@ -353,6 +498,19 @@ function renderDiscoveryResult(game, result, lang, token, confirmedPath = "") {
         ? `${candidate.files} ملفات · ${sizeMiB} ميجابايت${candidate.partial ? " · فحص جزئي" : ""}`
         : `${candidate.files} files · ${sizeMiB} MiB${candidate.partial ? " · partial scan" : ""}`;
     card.appendChild(element("div", "backup-discovery-note", statsText));
+    if (candidate.partial) card.appendChild(element("div", "backup-discovery-note",
+      i18n(activeLang,
+        "عدد الملفات المعروض تقديري من فحص جزئي؛ قد تشمل النسخة الاحتياطية ملفات إضافية داخل المجلد.",
+        "File count is a partial preview; a verified backup may contain additional deeper files.")));
+
+    // Differential observations are diagnostic only. No confirmation button is rendered.
+    if (candidate.source === 'diff-changed-v070' || candidate.observationOnly === true) {
+      addText(card, 'backup-discovery-warning', i18n(activeLang,
+        'تغيّر هذا الموقع أثناء اللعب، لكن ذلك لا يثبت أنه يحتوي على حفظ اللعبة. لا يمكن اعتماده مباشرة؛ راجعه وحدد مسار الحفظ الصحيح من تعديل اللعبة.',
+        'Changes were observed, but ownership of this folder is unverified. This result cannot be confirmed as a save location; inspect it and set the actual save path in Edit Game.'));
+      root.appendChild(card);
+      continue;
+    }
 
     const use = element(
       "button",
@@ -427,6 +585,7 @@ function renderDiscoveryResult(game, result, lang, token, confirmedPath = "") {
         const response = await window.api.backup.confirmCandidate(
           game.id,
           candidate.path,
+          { deep: result.scanMode === "deep", extraRoot: result.scanRoot || "" },
         );
         if (token !== activeDiscoveryToken || !isSameActiveGame(game.id))
           return;
@@ -500,7 +659,7 @@ function renderDiscoveryResult(game, result, lang, token, confirmedPath = "") {
   }
 }
 
-export async function runBackupDiscovery(game, lang) {
+export async function runBackupDiscovery(game, lang, options = {}) {
   const activeLang = resolveLang(lang);
   const token = ++activeDiscoveryToken;
 
@@ -551,7 +710,7 @@ export async function runBackupDiscovery(game, lang) {
     token,
   };
 
-  const result = await window.api.backup.previewDiscovery(game.id);
+  const result = await window.api.backup.previewDiscovery(game.id, options);
 
   if (token !== activeDiscoveryToken || !isSameActiveGame(game.id)) {
     return;
@@ -577,3 +736,14 @@ export async function runBackupDiscovery(game, lang) {
 
   renderDiscoveryResult(game, result, activeLang, token);
 }
+
+// Refresh only the active game's result when its opt-in session observation completes.
+if (typeof window.api?.backup?.onSaveObservationUpdated === 'function') {
+  window.api.backup.onSaveObservationUpdated(data => {
+    const snapshot = lastDiscoverySnapshot;
+    if (snapshot?.type !== 'result' || !data || String(data.gameId) !== String(snapshot.game?.id)) return;
+    if (!isSameActiveGame(data.gameId)) return;
+    void runBackupDiscovery(snapshot.game, resolveLang(userSettings.lang));
+  });
+}
+

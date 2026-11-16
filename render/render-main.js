@@ -526,7 +526,14 @@ async function initSettingsPage() {
 
             if (scanResultEl) {
                 scanResultEl.style.display = 'block';
-                if (result.linked > 0) {
+                if (result?.blocked) {
+                    scanResultEl.innerHTML = `<small style="color:#f59e0b;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        ${userSettings.lang === 'ar'
+                            ? 'تم إيقاف فحص الخزنة لأسباب تتعلق بالسلامة، ولم تُجر تغييرات.'
+                            : 'Vault scan blocked for safety; no changes were made.'}
+                    </small>`;
+                } else if (result.linked > 0) {
                     scanResultEl.innerHTML = `
                         <div style="padding:8px 12px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:6px; font-size:12px; color:#10b981;">
                             <i class="fa-solid fa-circle-check"></i>
@@ -541,7 +548,11 @@ async function initSettingsPage() {
                     scanResultEl.innerHTML = `
                         <small style="color:var(--text-muted); opacity:0.6;">
                             <i class="fa-solid fa-circle-info"></i>
-                            ${userSettings.lang === 'ar' ? 'لم يتم العثور على نسخ موجودة' : 'No existing backups found'}
+                            ${result.skipped > 0
+                                ? (userSettings.lang === 'ar'
+                                    ? 'لم تُربط أي لعبة: بعض المجلدات لم تستوفِ شروط السلامة.'
+                                    : 'No games linked: some folders did not meet safety requirements.')
+                                : (userSettings.lang === 'ar' ? 'لم يتم العثور على نسخ موجودة' : 'No existing backups found')}
                         </small>`;
                 }
             }

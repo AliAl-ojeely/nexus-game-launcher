@@ -1,0 +1,96 @@
+/* Nexus Backup Hover Polish v0.7.6: visual-only, scoped to backup controls. */
+
+/* Match Backup Now's 0.2s accent fill without changing idle button colors. */
+#backupNowBtn,
+#backupDiscoverBtn,
+#backupDiscoveryPanel button,
+#backupListContainer button,
+#backupStatusValue .restore-backup-btn,
+#backupStatusValue .delete-backup-btn,
+#backupStatusValue #openBackupFolderBtn,
+#settings-backup-panel button {
+    transition: background-color 0.2s ease, color 0.2s ease,
+        border-color 0.2s ease, box-shadow 0.2s ease,
+        transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Discovery controls, including the dynamically rendered Extended search button. */
+#backupNowBtn:not(:disabled):not([aria-disabled="true"]):hover,
+#backupDiscoverBtn:not(:disabled):not([aria-disabled="true"]):hover,
+#backupDiscoveryPanel button:not(:is(.delete-backup-btn, .danger, .btn-danger, [data-action="delete"], [data-variant="danger"])):not(:disabled):not([aria-disabled="true"]):hover,
+#backupListContainer button:not(:is(.delete-backup-btn, .danger, .btn-danger, [data-action="delete"], [data-variant="danger"])):not(:disabled):not([aria-disabled="true"]):hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--btn-text-color, #ffffff);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+/* Icons and text should transition together, as on Backup Now. */
+#backupDiscoverBtn:not(:disabled):hover :is(i, span),
+#backupDiscoveryPanel button:not(:disabled):not([aria-disabled="true"]):hover :is(i, span),
+#backupListContainer button:not(:disabled):not([aria-disabled="true"]):hover :is(i, span) {
+    color: inherit;
+}
+
+/* Restore/Delete retain their existing accent/red fill and handlers. */
+#backupStatusValue :is(.restore-backup-btn, .delete-backup-btn):not(:disabled):hover,
+#backupStatusValue #openBackupFolderBtn:not(:disabled):hover,
+#settings-backup-panel button:not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+}
+
+#backupNowBtn:not(:disabled):active,
+#backupDiscoverBtn:not(:disabled):active,
+#backupDiscoveryPanel button:not(:disabled):active,
+#backupListContainer button:not(:disabled):active,
+#backupStatusValue :is(.restore-backup-btn, .delete-backup-btn):not(:disabled):active,
+#settings-backup-panel button:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Keyboard users see an equally clear focus state. */
+#backupNowBtn:focus-visible,
+#backupDiscoverBtn:focus-visible,
+#backupDiscoveryPanel button:focus-visible,
+#backupListContainer button:focus-visible,
+#backupStatusValue button:focus-visible,
+#settings-backup-panel button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+#backupStatusValue .delete-backup-btn:focus-visible,
+#backupDiscoveryPanel :is(.delete-backup-btn, .danger, .btn-danger):focus-visible,
+#backupListContainer :is(.delete-backup-btn, .danger, .btn-danger):focus-visible {
+    outline-color: #ef4444;
+}
+
+/* Prevent a disabled button from inheriting the old generic discovery hover. */
+#backupDiscoveryPanel .backup-discovery-use:is(:disabled, [aria-disabled="true"]):hover {
+    background: transparent;
+    color: var(--accent);
+    transform: none;
+    box-shadow: none;
+}
+
+#backupDiscoverBtn:is(:disabled, [aria-disabled="true"]):hover {
+    border-color: var(--border-color);
+    transform: none;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #backupNowBtn,
+    #backupDiscoverBtn,
+    #backupDiscoveryPanel button,
+    #backupListContainer button,
+    #backupStatusValue button,
+    #settings-backup-panel button {
+        transition: none !important;
+        transform: none !important;
+        animation: none !important;
+    }
+}

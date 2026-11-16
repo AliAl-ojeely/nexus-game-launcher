@@ -139,8 +139,16 @@ contextBridge.exposeInMainWorld('api', {
 
     // ── Backup System ─────────────────────────────────────────────────────────
     backup: {
-        previewDiscovery: (gameId) => ipcRenderer.invoke('backup:previewDiscovery', gameId),
-        confirmCandidate: (gameId, selectedPath) => ipcRenderer.invoke('backup:confirmCandidate', gameId, selectedPath),
+        previewDiscovery: (gameId, options = {}) => ipcRenderer.invoke('backup:previewDiscovery', gameId, options),
+        confirmCandidate: (gameId, selectedPath, options = {}) => ipcRenderer.invoke('backup:confirmCandidate', gameId, selectedPath, options),
+        updateSaveManifest: () => ipcRenderer.invoke('backup:updateSaveManifest'),
+        armSaveObservation: (gameId, chooseFolder = false) => ipcRenderer.invoke('backup:armSaveObservation', gameId, chooseFolder === true),
+        cancelSaveObservation: (gameId) => ipcRenderer.invoke('backup:cancelSaveObservation', gameId),
+        onSaveObservationUpdated: (callback) => {
+            const listener = (_event, data) => callback(data);
+            ipcRenderer.on('backup:observation-updated', listener);
+            return () => ipcRenderer.removeListener('backup:observation-updated', listener);
+        },
         reportClientIssue: (code, message, gameName) => ipcRenderer.invoke('backup:reportClientIssue', code, message, gameName),
 
         getInfo: (name) =>

@@ -5,6 +5,10 @@ const { app } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { createVerifiedBackupZip } = require("./backup-archive-safety");
+const { restoreVerifiedSave } = require("./backup-restore-safety");
+const { resolveWildcardUnique } = require("./backup-discovery-safety");
+const { auditVault, guardArchiveDeletion } = require("./backup-vault-integrity");
 
 let AdmZip;
 try {
@@ -232,29 +236,8 @@ function resolvePath(rawPath, installPath = null) {
 // ─── Wildcard Resolution ──────────────────────────────────────────────────────
 
 function resolveWildcard(rawPath) {
-  if (!rawPath) return null;
-  let workPath = rawPath.replace(/<storeUserId>/gi, "*");
-  if (!workPath.includes("*")) return workPath;
-
-  try {
-    const starIdx = workPath.indexOf("*");
-    const before = workPath.slice(0, starIdx).replace(/[/\\]$/, "");
-    const afterStar = workPath.slice(starIdx + 1).replace(/^[/\\]/, "");
-
-    if (!fs.existsSync(before)) return null;
-
-    const entries = fs.readdirSync(before, { withFileTypes: true });
-    const dir = entries.find((e) => e.isDirectory() && !e.name.startsWith("."));
-    if (!dir) return null;
-
-    const joined = afterStar
-      ? path.join(before, dir.name, afterStar)
-      : path.join(before, dir.name);
-
-    return joined.includes("*") ? resolveWildcard(joined) : joined;
-  } catch {
-    return null;
-  }
+  // Never select an arbitrary first account when multiple wildcard matches exist.
+  return resolveWildcardUnique(rawPath);
 }
 
 // ─── Find Existing Path ───────────────────────────────────────────────────────
@@ -507,41 +490,36 @@ async function backupGame(
     };
   }
 
+  // Always stage, reopen, and test the ZIP before advertising success.
+  // Existing backups are intentionally never auto-pruned in v0.1.0.
   const safeGameFolder = sanitizeName(game.name);
-  const gameBackupDir = path.join(backupDir, "NexusBackups", safeGameFolder);
-  fs.mkdirSync(gameBackupDir, { recursive: true });
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const zipPath = path.join(
-    gameBackupDir,
-    `${safeGameFolder}_${timestamp}.zip`,
-  );
-
   try {
-    const zip = new AdmZip();
-    const stat = fs.statSync(savePath);
-
-    if (stat.isDirectory()) {
-      addFolderToZip(zip, savePath);
-    } else {
-      zip.addLocalFile(savePath);
+    const verified = createVerifiedBackupZip({
+      sourcePath: savePath,
+      backupRoot: backupDir,
+      gameFolder: safeGameFolder,
+      ZipCtor: AdmZip,
+    });
+    if (!updateBackupConfig(game.name, { backupPath: backupDir })) {
+      return {
+        success: false,
+        code: "BACKUP_CONFIG_SAVE_FAILED",
+        zipPath: verified.zipPath,
+        error: "ZIP verified and retained, but backup configuration could not be saved",
+      };
     }
-
-    zip.writeZip(zipPath);
-
-    const zipStat = fs.statSync(zipPath);
-    const zipSizeKB = Math.round(zipStat.size / 1024);
-
-    cleanOldBackups(gameBackupDir, 10);
-
-    updateBackupConfig(game.name, { backupPath: backupDir });
-
-    console.log(`[Backup] ✅ ZIP created: ${zipPath} (${zipSizeKB} KB)`);
-    return { success: true, zipPath, savePath, sizeKB: zipSizeKB };
+    console.log(`[Backup] Verified ZIP: ${verified.zipPath} (${verified.files} files)`);
+    return {
+      success: true,
+      zipPath: verified.zipPath,
+      savePath,
+      sizeKB: verified.sizeKB,
+      files: verified.files,
+    };
   } catch (err) {
     return {
       success: false,
-      code: "ZIP_WRITE_FAILED",
+      code: err.code || "ZIP_WRITE_FAILED",
       error: `ZIP failed: ${err.message}`,
     };
   }
@@ -623,47 +601,44 @@ async function restoreBackup(zipPath, gameName) {
       code: "ADMZIP_MISSING",
       error: "adm-zip not installed",
     };
-  if (!gameName)
+  if (!gameName || typeof gameName !== "string")
     return {
       success: false,
       code: "INVALID_GAME",
       error: "Game name is required for restore",
     };
 
-  if (!isZipOwnedByGame(zipPath, gameName)) {
-    return {
-      success: false,
-      code: "GAME_ARCHIVE_MISMATCH",
-      error: `Archive "${path.basename(zipPath || "")}" does not belong to "${gameName}". Restore aborted.`,
-    };
-  }
-
   const info = getGameBackupInfo(gameName);
   const targetPath = info.config?.originPath || null;
-
-  if (!targetPath)
-    return {
-      success: false,
-      code: "NO_SAVE_PATH_CONFIGURED",
-      error: `No restore path configured for "${gameName}"`,
-    };
-  if (!fs.existsSync(zipPath))
-    return {
-      success: false,
-      code: "ARCHIVE_NOT_FOUND",
-      error: `ZIP not found: ${zipPath}`,
-    };
+  const backupRoot = info.config?.backupPath || getGlobalBackupPath();
+  if (!targetPath) return {
+    success: false,
+    code: "NO_SAVE_PATH_CONFIGURED",
+    error: `No confirmed save location for "${gameName}"`,
+  };
+  if (!backupRoot) return {
+    success: false,
+    code: "NO_BACKUP_PATH",
+    error: `No configured vault for "${gameName}"`,
+  };
 
   try {
-    fs.mkdirSync(targetPath, { recursive: true });
-    new AdmZip(zipPath).extractAllTo(targetPath, true);
-    console.log(`[Backup] ✅ Restored "${gameName}" → ${targetPath}`);
-    return { success: true, targetPath };
+    const outcome = restoreVerifiedSave({
+      zipPath,
+      gameName,
+      sourcePath: targetPath,
+      backupRoot,
+      ZipCtor: AdmZip,
+    });
+    console.log(`[Backup] Verified restore for "${gameName}". Recovery: ${outcome.recoveryPath || "none"}`);
+    return { success: true, ...outcome };
   } catch (err) {
+    console.error(`[Backup] Safe restore refused for "${gameName}": ${err.code || err.message}`);
     return {
       success: false,
-      code: "RESTORE_EXTRACT_FAILED",
-      error: `Restore failed: ${err.message}`,
+      code: err.code || "RESTORE_SAFETY_FAILED",
+      error: `Restore blocked: ${err.message}`,
+      ...(err.recoveryPath ? { recoveryPath: err.recoveryPath } : {}),
     };
   }
 }
@@ -696,68 +671,52 @@ function listBackups(gameName, backupDir) {
 // ─── scanVaultForExistingBackups ──────────────────────────────────────────────
 
 function scanVaultForExistingBackups(vaultPath, gameNames = []) {
-  const nexusBackupsDir = path.join(vaultPath, "NexusBackups");
+  // Scan is triggered by the existing "Scan Vault & Re-link" user action.
+  // Never associate ambiguous game identities or unverified ZIPs.
   const result = { linked: 0, skipped: 0, details: [] };
-
-  if (!fs.existsSync(nexusBackupsDir)) {
-    console.log(
-      `[Backup] scanVault: NexusBackups folder not found in ${vaultPath}`,
-    );
-    return result;
-  }
-
-  let folders;
   try {
-    folders = fs
-      .readdirSync(nexusBackupsDir, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
-      .map((e) => e.name);
-  } catch (err) {
-    console.error(`[Backup] scanVault read error: ${err.message}`);
+    const config = fs.existsSync(BACKUP_CONFIG)
+      ? JSON.parse(fs.readFileSync(BACKUP_CONFIG, "utf-8")) : {};
+    if (!config || typeof config !== "object" || Array.isArray(config)) {
+      throw new Error("Invalid backup configuration root");
+    }
+    const audit = auditVault({ vaultRoot: vaultPath, gameNames, ZipCtor: AdmZip, quick: true });
+    const configNames = Object.keys(config);
+    for (const entry of audit.entries) {
+      const detail = { folder: entry.folder, game: entry.game,
+        zips: entry.zips, status: entry.status };
+      if (entry.status !== "eligible") {
+        result.skipped++;
+        result.details.push(detail);
+        continue;
+      }
+      const collision = configNames.filter(n =>
+        n.toLowerCase() === entry.game.toLowerCase()).length > 1;
+      const currentRoot = config[entry.game]?.backupPath;
+      const differentRoot = !!currentRoot &&
+        (typeof currentRoot !== "string" || !path.isAbsolute(currentRoot) ||
+         path.resolve(currentRoot).toLowerCase() !== path.resolve(vaultPath).toLowerCase());
+      if (collision || differentRoot) {
+        detail.status = collision ? "ambiguous_config" : "configured_elsewhere";
+        result.skipped++;
+        result.details.push(detail);
+        continue;
+      }
+      if (updateBackupConfig(entry.game, { backupPath: vaultPath })) {
+        result.linked++;
+        detail.status = "linked";
+      } else {
+        result.skipped++;
+        detail.status = "config_write_failed";
+      }
+      result.details.push(detail);
+    }
     return result;
+  } catch (err) {
+    console.error(`[Backup] Safe vault re-link refused: ${err.code || err.message}`);
+    return { linked: 0, skipped: 0, blocked: true, code: err.code || "VAULT_SCAN_FAILED",
+      details: [{ folder: "", game: null, zips: 0, status: "error" }] };
   }
-
-  for (const folderName of folders) {
-    const folderPath = path.join(nexusBackupsDir, folderName);
-
-    let zips;
-    try {
-      zips = fs.readdirSync(folderPath).filter((f) => f.endsWith(".zip"));
-    } catch {
-      continue;
-    }
-
-    if (zips.length === 0) continue;
-
-    const matchedGame = gameNames.find((name) => {
-      const sanitized = sanitizeName(name);
-      return (
-        sanitized.toLowerCase() === folderName.toLowerCase() ||
-        name.toLowerCase() === folderName.toLowerCase()
-      );
-    });
-
-    if (matchedGame) {
-      updateBackupConfig(matchedGame, { backupPath: vaultPath });
-      result.linked++;
-      result.details.push({
-        folder: folderName,
-        game: matchedGame,
-        zips: zips.length,
-        status: "linked",
-      });
-    } else {
-      result.skipped++;
-      result.details.push({
-        folder: folderName,
-        game: null,
-        zips: zips.length,
-        status: "no_match",
-      });
-    }
-  }
-
-  return result;
 }
 
 // ─── Internal Helpers ─────────────────────────────────────────────────────────
@@ -812,26 +771,22 @@ function cleanOldBackups(dir, maxKeep = 10) {
 
 function deleteBackup(gameName, zipPath) {
   try {
-    if (!isZipOwnedByGame(zipPath, gameName)) {
-      return {
-        success: false,
-        code: "GAME_ARCHIVE_MISMATCH",
-        error: `Backup file does not belong to "${gameName}"`,
-      };
+    if (!AdmZip) return { success: false, code: "ADMZIP_MISSING", error: "adm-zip unavailable" };
+    const config = fs.existsSync(BACKUP_CONFIG)
+      ? JSON.parse(fs.readFileSync(BACKUP_CONFIG, "utf-8")) : {};
+    if (!config || typeof config !== "object" || Array.isArray(config)) {
+      return { success: false, code: "BACKUP_CONFIG_INVALID", error: "Backup config is invalid" };
     }
-    if (!fs.existsSync(zipPath)) {
-      return {
-        success: false,
-        code: "ARCHIVE_NOT_FOUND",
-        error: "Backup file not found",
-      };
-    }
+    const vaultRoot = config[gameName]?.backupPath || getGlobalBackupPath();
+    guardArchiveDeletion({ zipPath, gameName, vaultRoot,
+      configNames: Object.keys(config), ZipCtor: AdmZip });
     fs.unlinkSync(zipPath);
-    console.log(`[Backup] Deleted: ${zipPath}`);
+    console.log(`[Backup] Safely deleted one verified archive for "${gameName}"`);
     return { success: true };
   } catch (err) {
-    console.error(`[Backup] Failed to delete backup: ${err.message}`);
-    return { success: false, error: err.message };
+    console.error(`[Backup] Refusing unsafe backup deletion: ${err.code || err.message}`);
+    return { success: false, code: err.code || "BACKUP_DELETE_FAILED",
+      error: `Delete blocked: ${err.message}` };
   }
 }
 

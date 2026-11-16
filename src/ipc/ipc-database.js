@@ -48,18 +48,23 @@ function registerDatabaseIPC() {
             }
         }
 
+        // Discovery is preview-only: do not bind an unconfirmed save path on import.
         const settings = readSettings();
         const globalBackupPath = settings.globalBackupPath || '';
-        const discoveredPath = backups.autoDiscoverSavePath(game.name, game.path || null, true);
-
         if (archived) {
-            // Re-adding a game must not clear its existing save/backup configuration.
             console.log(`[DB] Preserving existing backup configuration for re-added "${game.name}"`);
-        } else if (!discoveredPath) {
-            backups.updateBackupConfig(game.name, { originPath: '', backupPath: globalBackupPath });
-            console.log(`[DB] No save path for "${game.name}" — empty entry created`);
-        } else if (globalBackupPath) {
-            backups.updateBackupConfig(game.name, { backupPath: globalBackupPath });
+        } else {
+            const existingInfo = backups.getGameBackupInfo(game.name);
+            if (!existingInfo.config) {
+                const initial = { originPath: '' };
+                if (globalBackupPath) initial.backupPath = globalBackupPath;
+                if (!backups.updateBackupConfig(game.name, initial)) {
+                    console.warn(`[DB] Could not initialize backup configuration for "${game.name}"`);
+                }
+                console.log(`[DB] Save location for "${game.name}" needs user confirmation.`);
+            } else if (globalBackupPath && !existingInfo.config.backupPath) {
+                backups.updateBackupConfig(game.name, { backupPath: globalBackupPath });
+            }
         }
 
         return result;
