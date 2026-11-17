@@ -59,7 +59,8 @@ function sortGameCollection(games, sortValue) {
       result.sort((a, b) => (Date.parse(nexusPlaytimeMap[b.name]?.lastPlayed || "") || 0) - (Date.parse(nexusPlaytimeMap[a.name]?.lastPlayed || "") || 0));
       break;
     case "added_desc":
-      result.sort((a, b) => Number(b.id) - Number(a.id));
+      // Database insertion order is authoritative; game IDs can be restored.
+      result.reverse();
       break;
   }
   return result;

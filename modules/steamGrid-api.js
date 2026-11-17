@@ -2,7 +2,8 @@
 
 const axios = require('axios');
 const secrets = require('./provider-credentials');
-const { titleVariants, selectTitleMatch, validHttpUrl } = require('./asset-resolver');
+const { validHttpUrl } = require('./asset-resolver');
+const { searchQueries, chooseSteamGridGame } = require('./asset-sgdb-identity-v062.cjs');
 const BASE = 'https://www.steamgriddb.com/api/v2';
 
 function urlList(res, limit = 6, kind = '') {
@@ -38,13 +39,28 @@ async function fetchGameAssets(gameName, steamAppId = null, options = {}) {
     }
 
     if (!gameId) {
-        for (const query of titleVariants(gameName)) {
+        // SteamGridDB does not require a Steam AppID. Resolve its own game ID
+        // using the user's title and a verified RAWG release year when available.
+        const results = new Map();
+        for (const query of searchQueries(gameName, options)) {
             try {
                 const res = await http.get(`${BASE}/search/autocomplete/${encodeURIComponent(query)}`, cfg);
-                const match = selectTitleMatch(gameName, res.data?.data || [], 0.85);
-                if (match?.item?.id) { gameId = match.item.id; break; }
-                console.warn(`[SteamGrid] Rejected ambiguous name result for "${query}"`);
-            } catch (err) { console.warn(`[SteamGrid] Name lookup unavailable: ${err.message}`); }
+                const list = Array.isArray(res.data?.data) && res.data?.success !== false ? res.data.data : [];
+                for (const item of list) {
+                    const id = String(item?.id ?? '');
+                    if (/^\d{1,12}$/.test(id) && !results.has(id)) results.set(id, item);
+                }
+            } catch (err) {
+                const reason = err?.response?.status || err?.code || 'request_failed';
+                console.warn(`[SteamGrid] Name lookup unavailable: ${reason}`);
+            }
+        }
+        const selected = chooseSteamGridGame(gameName, [...results.values()], options);
+        if (selected.id) {
+            gameId = selected.id;
+            console.log(`[SteamGrid] Artwork identity accepted (${selected.reason}) for "${gameName}"`);
+        } else {
+            console.warn(`[SteamGrid] Artwork identity unresolved (${selected.reason}, results=${results.size}) for "${gameName}"`);
         }
     }
     if (!gameId) return null;

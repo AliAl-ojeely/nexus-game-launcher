@@ -84,14 +84,20 @@ async function collectMetadata(name, options = {}) {
         }
     }
 
+    const gridOptions = {
+        kinds: requestedKinds,
+        canonicalName: rawg?.name || lookupName,
+        releaseYear: Number(String(rawg?.releaseDate || '').slice(0, 4)) || undefined,
+    };
+
     if (verified && steamAppId) {
         [grid, steamLibrary] = await Promise.all([
-            safeProvider(providers.grid.fetchGameAssets(lookupName, steamAppId, { kinds: requestedKinds }), 'SteamGridDB'),
+            safeProvider(providers.grid.fetchGameAssets(lookupName, steamAppId, gridOptions), 'SteamGridDB'),
             safeProvider(providers.library.fetchSteamArtwork(steamAppId), 'Steam library'),
         ]);
     } else {
         grid = await safeProvider(providers.grid.fetchGameAssets(lookupName, undefined,
-            { kinds: requestedKinds }), 'SteamGridDB by name');
+            gridOptions), 'SteamGridDB by name');
     }
 
     let trailerYouTubeId = rawg?.media?.trailerYouTubeId || '';
