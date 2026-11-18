@@ -1,0 +1,124 @@
+/* Game Details only: preserve original inputs, buttons, icons, and handlers. */
+#editModal > .modal-content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(1030px, calc(100vw - 36px));
+    max-width: 1030px;
+    max-height: min(880px, calc(100dvh - 28px));
+    min-height: 0;
+    padding: 26px 28px 22px;
+    overflow: hidden;
+}
+
+#editModal > .modal-content > h2 {
+    flex: 0 0 auto;
+    margin-bottom: 16px;
+}
+
+#editModal .nexus-game-modal-columns-v010 {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+#editModal .nexus-game-modal-primary-v010,
+#editModal .nexus-game-modal-secondary-v010 {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    padding: 22px 23px 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-muted) transparent;
+}
+
+#editModal .nexus-game-modal-primary-v010 {
+    border-inline-end: 1px solid var(--border-color);
+}
+
+#editModal .nexus-game-modal-primary-v010 > .form-group:last-child,
+#editModal .nexus-game-modal-secondary-v010 > .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* The left column holds save paths and launch arguments. */
+#editModal .nexus-game-modal-primary-v010 > .form-group:has(#editGameOriginPath) {
+    border-top-color: var(--border-color);
+}
+
+/* Artwork is the first section of the right column. */
+#editModal .nexus-game-modal-secondary-v010 > .form-group:first-child {
+    margin-top: 0;
+}
+
+#editModal .nexus-game-modal-columns-v010 .input-with-btn {
+    min-width: 0;
+}
+
+#editModal .nexus-game-modal-columns-v010 .input-with-btn input {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Save/Cancel remain outside the field panels, aligned beneath column two. */
+#editModal > .modal-content > .modal-buttons {
+    align-self: flex-end;
+    flex: 0 0 auto;
+    width: calc((100% - 16px) / 2);
+    margin-block-start: 17px;
+    margin-inline-start: auto;
+}
+
+/* Narrow windows use a single scrolling form, preserving all original fields. */
+@media (max-width: 840px) {
+    #editModal > .modal-content {
+        width: min(540px, calc(100vw - 20px));
+        max-height: calc(100dvh - 20px);
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    #editModal .nexus-game-modal-columns-v010 {
+        display: block;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+
+    #editModal .nexus-game-modal-primary-v010,
+    #editModal .nexus-game-modal-secondary-v010 {
+        overflow: visible;
+        padding: 16px;
+    }
+
+    #editModal .nexus-game-modal-primary-v010 {
+        border-inline-end: 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #editModal > .modal-content > .modal-buttons {
+        align-self: stretch;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    #editModal > .modal-content { padding: 14px; }
+    #editModal .nexus-game-modal-primary-v010,
+    #editModal .nexus-game-modal-secondary-v010 { padding: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #editModal > .modal-content { animation: none; }
+}
