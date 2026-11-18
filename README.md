@@ -1,363 +1,237 @@
 <div align="center">
 
+<img src="assets/icon.png" alt="Nexus Game Launcher icon" width="92" />
+
 # Nexus Game Launcher
 
-[![Electron](https://img.shields.io/badge/Framework-Electron-blue?logo=electron&style=for-the-badge)](https://www.electronjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.7.5-red?style=for-the-badge)](https://github.com/AliAl-ojeely/nexus-game-launcher/releases)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](https://github.com/AliAl-ojeely/nexus-game-launcher)
-[![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/AliAl-ojeely/nexus-game-launcher)
-[![Linux](https://img.shields.io/badge/Platform-Linux-yellow?logo=linux&style=for-the-badge)](https://github.com/AliAl-ojeely/nexus-game-launcher)
+**Your PC game library, launch controls, artwork, playtime, and save backups — in one desktop app.**
 
-<br>
+[![Version](https://img.shields.io/badge/Source%20version-2.7.6-9146ff?style=flat-square)](package.json)
+[![Electron](https://img.shields.io/badge/Electron-45-4787d7?logo=electron&style=flat-square)](https://www.electronjs.org/)
+[![Windows](https://img.shields.io/badge/Primary%20platform-Windows-166bc0?logo=windows&style=flat-square)](#platform-support)
+[![Languages](https://img.shields.io/badge/UI-English%20%7C%20Arabic-27ae93?style=flat-square)](#appearance-and-localization)
 
-<img src="assets/main-library-en.webp" alt="Nexus Game Launcher main library" width="750">
+[**Features**](#features) · [**Screenshots**](#screenshots) · [**Getting started**](#getting-started) · [**Save backups**](#game-save-backups) · [**Overlay status**](#experimental-in-game-modal-overlay) · [**Development**](#development-and-builds)
 
-<br>
+<img src="assets/main-library-en.webp" alt="Nexus Game Launcher library" width="780" />
 
-**Nexus Game Launcher** is an Electron-based desktop application with a cinematic, organized interface for managing and launching locally installed PC games.
-
-Windows is the primary platform. Since **v1.6.0**, Nexus has also supported running compatible Windows games on Linux through **Proton**.
+*A locally managed game launcher built with Electron, Node.js, HTML, CSS, and JavaScript.*
 
 </div>
 
----
+> [!NOTE]
+> **Source version: 2.7.6.** This README describes the current `main` branch, including improvements committed **after** the v2.7.6 release work. A downloaded installer may not yet include every feature described here. Check [Releases](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for the features and assets of a particular published build.
+>
+> Some screenshots in this repository were captured from earlier interface revisions; the application UI may now look different.
 
-## What's New in `v2.7.5` - Insight & Control + Experimental Overlay
+## At a glance
 
-The `v2.7.5` documentation brings together the Insight & Control improvements and the ongoing **in-game Modal Overlay** work. The overlay is **experimental**: its code and development previews should not be confused with a universally supported or release-ready in-game feature.
+| Area | What Nexus provides |
+| --- | --- |
+| **Library** | Add and launch games, search, favorites, manual ordering, Recently Added, Recently Played, and playtime sorting. |
+| **Game details** | Artwork, descriptions, screenshots, trailers, system requirements, notes, and an updated two-column Add/Edit Game modal. |
+| **Artwork** | RAWG metadata, Steam information, SteamGridDB artwork, local cache, and manual poster/background/logo/icon overrides. |
+| **Statistics** | Session history and charts with day-to-year filters, CSV session export, and PNG dashboard export. |
+| **Game saves** | Manual/optional automatic backups, consent-based save-path discovery, an optional bounded deep scan, restore safeguards, and Backup Vault tools. |
+| **Personalization** | English and Arabic (RTL), Dark/Darker/Light themes, accent colors, configurable Settings, and other local preferences. |
+| **In-game overlay** | **Experimental, Windows-only, and off by default**; restricted to suitable offline games without anti-cheat. |
 
-### Experimental In-Game Modal Overlay (Windows)
+## Screenshots
 
-Nexus is developing a configurable, in-game dashboard for viewing session information and controlling the **Nexus playtime timer** without leaving a compatible game.
+<table>
+  <tr>
+    <td align="center"><img src="assets/game-details-cinematic.webp" alt="Game details view" width="390" /><br /><strong>Game details</strong></td>
+    <td align="center"><img src="assets/favorites-view.webp" alt="Favorite games view" width="390" /><br /><strong>Favorites</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/statistics-dashboard.webp" alt="Game statistics" width="390" /><br /><strong>Statistics</strong></td>
+    <td align="center"><img src="assets/main-library-ar.webp" alt="Arabic right-to-left library" width="390" /><br /><strong>Arabic interface</strong></td>
+  </tr>
+</table>
+
+For the current modal layout, see [`css/game-modal-split-v011.css`](css/game-modal-split-v011.css). The repository does not yet contain an updated screenshot of that modal.
+
+## Features
+
+### Game library and details
+
+- Add games and manage local launch targets, launch arguments, and installation status.
+- Find games using search, collect favorites, and organize cards using drag-and-drop manual order.
+- Sort by name (A–Z/Z–A), playtime, **Recently Played**, or **Recently Added**.
+- **Recently Added** uses the saved library insertion order, rather than assuming the game's numeric ID is its creation date. This also handles games added again with older restored IDs.
+- Open a game details page for artwork, description, developer/publisher, release date, supported system requirements, screenshots, trailers, playtime, and personal notes.
+- Use the responsive **two-column Add/Edit Game modal**: game name, executable, installation status, original save path, backup location, and launch arguments on the left; poster, logo, background, and icon overrides on the right. The original button icons and behavior are preserved.
+- Store game-library preferences and notes locally.
+
+### Artwork and metadata
+
+Nexus combines multiple providers, but **does not assume that every game has a Steam AppID**:
+
+1. **RAWG** supplies game metadata, release information, and media when available.
+2. **Steam** supplies verified store identity and related artwork when a suitable AppID is available.
+3. **SteamGridDB** supplies poster/grid, hero/background, logo, and icon artwork. Its fallback lookup can use a **canonical title and release year** for games without a Steam AppID.
+4. Existing valid images and manual artwork are retained instead of being erased by an unsuccessful refresh.
+
+Art selection is conservative: identity checks reject ambiguous results, mismatched release years, sequels, films, soundtracks, and unrelated titles. Downloaded images are checked for supported formats and dimensions before they are saved. Screenshots and trailer media are handled separately from library artwork.
+
+The SteamGridDB identity improvement was verified with **Dante's Inferno (2010)**, for which the poster, background, logo, and icon were successfully downloaded during local testing. This is an example, **not a guarantee that artwork is available for every title**.
+
+Use **Refresh Assets** from a game's details page to retry retrieval without deleting and re-adding the game. An optional **SteamKit2/PICS logo fallback** exists in Settings, but requires a verified Steam identity and a separately available helper; its release packaging/runtime remains unverified.
+
+### Game statistics and sessions
+
+- Total playtime, session count, average session duration, and per-game/overall views.
+- Time filters for **Day**, **Week**, **Month**, **6 Months**, and **Year**.
+- Session history, daily and monthly charts, weekday/hour patterns, and top-played games.
+- Export session data to **CSV** or the current dashboard to **PNG**.
+- Configurable Recently Played limits, with an option to remove an item from the recent list without deleting the game itself.
+
+### Appearance and localization
+
+- English and Arabic interfaces, including RTL layout for Arabic.
+- Dark, Darker, and Light appearance options, configurable accent colors, and library layout preferences.
+- Collapsible navigation sidebar and a section-based Settings page: **General**, **Appearance**, **Modal Overlay**, and **Backup & Vault**.
+- Hover and transition styling, including the dedicated Backup button hover polish.
+- Local preferences such as window dimensions, updates, and system-tray behavior.
+
+## Game save backups
+
+Nexus provides save-file backup utilities, **not a universal game-save detector**. Supported games and save layouts vary.
+
+### Discovering a save path
+
+- **Discover Save Location** previews candidates before the user chooses one. Discovery does not automatically bind an unconfirmed path.
+- Lookup sources include the bundled path database, refreshed **Ludusavi-compatible** manifest data, common Windows save layouts, Unity `LocalLow`, and supported Steam-related locations when identity evidence is available.
+- **Extended save search** is optional and bounded. It distributes work across candidate roots and reports partial coverage when depth, child-count, time, directory budgets, or read errors prevent full inspection.
+- **Observe next game session** and **scan a chosen folder or drive** are additional explicit opt-in discovery tools.
+- Safety checks reject overly broad locations and entire game-installation folders as save roots, while allowing appropriately narrow save folders.
+
+### Creating and restoring backups
+
+- Make a backup manually with **Backup Now**, or enable optional automatic backups for configured games.
+- Choose a global Backup Vault location or a per-game backup destination.
+- Inspect available backups and restore a selected version with safety checks.
+- Archive validation, Vault integrity checks, and guarded deletion/restoration help avoid unsafe operations; no backup system is a substitute for an independently verified save copy.
+- Save data and backup preferences stay separate from the game's executable and metadata.
+
+> [!IMPORTANT]
+> Verify the **original save path** before creating a backup. A discovery result may be incomplete or ambiguous. Keep an independent copy of valuable saves before testing restoration. The current model uses a single confirmed `originPath` per game; multi-location `originPaths[]` support is **not implemented yet**.
+
+For troubleshooting, use the terminal diagnostics available through `NEXUS_BACKUP_LOG_LEVEL=debug`. They report scan coverage and status while masking sensitive paths in the relevant diagnostic output.
+
+## Experimental in-game Modal Overlay
 
 > [!WARNING]
-> **Experimental - not fully supported.** Modal Overlay is under active development and may change significantly. It is intended for **offline games without anti-cheat**. Compatibility varies by game, graphics API, display mode, and system configuration. DirectX 12 support is **not complete**. Do not assume this feature works in a published installer simply because the application builds successfully.
+> **Experimental, Windows-only, off by default.** Use only in suitable **offline games without online anti-cheat**. Compatibility depends on the game, architecture, graphics API, and display mode. An installer successfully building is **not** proof of compatibility with a particular game.
 
-The current development implementation includes:
+The **Settings → Modal Overlay** editor provides:
 
-- **Global opt-in:** Enable or disable the feature from **Settings > Modal Overlay**. The master switch is off by default.
-- **Live preview:** The editor previews the actual `overlay/poc` HTML/CSS design, rather than a separate mockup.
-- **Selectable metrics:** Session Time, Total Playtime, Local Time, and a Game FPS field. **Game FPS shows `N/A` when there is no verified frame-rate reading**.
-- **Selectable actions:** Resume Game, Pause/Resume Timer, and an optional Test button, subject to the selected layout.
-- **Three layout presets:** **Full**, **Medium**, and **Minimal**. Minimal retains **Resume Game**, **Pause/Resume Timer**, and the keyboard hints, while displaying the user's selected metrics.
-- **Visual customization:** Glassy, Solid, or Minimal background style, background color, accent color, and opacity.
-- **Editable keyboard shortcut:** `Ctrl + Shift + O` by default; supported alternatives can be recorded in Settings. A changed shortcut applies when a new game session starts, and may be unavailable if Windows or another application reserves it.
-- **Local configuration:** Preferences are saved in the launcher's local `settings.json` under `modalOverlay`.
+- A live preview of the overlay interface and **Full / Medium / Minimal** layouts.
+- Optional **Session Time**, **Total Playtime**, **Local Time**, and **FPS** fields. FPS stays `N/A` until the application has a verified value.
+- **Resume Game** (closes the Nexus dashboard) and **Pause/Resume Timer** (controls the *Nexus playtime timer*, not the game's pause state).
+- Glassy, Solid, and Minimal backgrounds, color/opacity controls, and a configurable keyboard shortcut (`Ctrl + Shift + O` by default).
 
-**Important control behavior:** **Resume Game** closes the Nexus dashboard; it does **not** unpause the game. **Pause/Resume Timer** affects Nexus's playtime accounting, not the game's own pause state.
-
-**Graphics API progress (development tests, not a universal compatibility guarantee):**
-
-| Graphics API | Status |
-|:--|:--|
+| Graphics API | Development status |
+| --- | --- |
 | DirectX 9 | Experimental support in tested games |
 | DirectX 10 | Not independently verified as a separate backend |
 | DirectX 11 | Experimental support in tested games |
 | OpenGL | Experimental support in tested games |
-| DirectX 12 | Incomplete; safety restrictions remain in place |
-| Vulkan | No confirmed supported renderer |
+| DirectX 12 | **Incomplete / disabled under safety restrictions** |
+| Vulkan | Not verified |
 
-The dashboard uses an offscreen Electron HTML renderer and a native graphics bridge. Its glass effect is **translucent rendering**, not a promise of real-time background blur of game pixels. The current render surface is `560 x 338` pixels, with an 8-pixel transparent margin and 18-pixel rounded widget corners. The Full, Medium, and Minimal layouts share that technical surface.
+The v2.7.6 GitHub Actions workflow contains steps to build and verify Windows x86/x64 overlay runtime resources outside `app.asar`. **Local packaging is different**: `npm run dist-win` alone may warn that `build/overlay-runtime` is missing if those native components have not been staged first. The Windows ARM64 overlay runtime is not supported. See the [v2.7.6 release notes](.github/release-notes/v2.7.6.md) for packaging context.
 
-### Redesigned Settings
+## Platform support
 
-Settings now uses a wider, section-based layout instead of one long vertical page. It opens on **General** and provides four dedicated sections: **General**, **Appearance**, **Modal Overlay**, and **Backup & Vault**. Existing settings and their useful descriptions are retained. The launcher continues to support English and Arabic RTL interfaces.
+| Platform | Status and notes |
+| --- | --- |
+| **Windows** | Primary development platform. NSIS build targets include x64 and ARM64; the native overlay has separate architecture restrictions. |
+| **Linux** | AppImage build targets include x64 and ARM64. Supported Windows games can be launched through a locally configured **Proton** setup; compatibility depends on the game and installed libraries. |
+| **macOS** | A universal DMG build target exists in CI. This **does not imply Windows game/Proton support or feature parity**. |
 
-### Game Statistics Dashboard
+On Linux, the existing launch implementation looks for a compatible Proton executable at `~/Nexus-Proton/GE-Proton10-32/proton`. Install Proton and appropriate graphics/audio dependencies for your Linux distribution before attempting to launch Windows games. The experimental in-game overlay is **not** a Linux feature.
 
-Explore your gaming history with:
+## Getting started
 
-- Total playtime, play count, and average session length, per game or overall.
-- Day, Week, Month, 6 Months, and Year filters.
-- Daily session charts, weekday and hourly distributions, top games, and monthly playtime charts.
-- The 20 most recent sessions, with CSV export.
-- PNG export of the current statistics view.
+### Download an installer
 
-<p align="center">
-  <img src="assets/statistics-dashboard.webp" alt="Game Statistics Dashboard" width="80%">
-</p>
+Check the [GitHub Releases page](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for published downloads. Availability, architecture, and bundled experimental components depend on the release. Prefer published assets over assuming an arbitrary source checkout is a production build.
 
-### Library Sorting
+### Run from source
 
-Sort your library by name (A-Z or Z-A), total playtime, or most recent launch. Manual drag-and-drop ordering remains available.
-
-### Personal Game Notes
-
-Keep per-game notes such as completed difficulties or next-session goals. Notes are displayed in the game details view and stored locally.
-
-### Folder Details in the Game Sidebar
-
-Inspect a game's folder name, type, path, size, size on disk, file and folder counts, and creation date.
-
-### Recently Played Limit
-
-Choose to show 5, 10, 20, or 50 games in Recently Played. This view uses session timestamps and allows removing an item from the recent list without deleting the game.
-
-<p align="center">
-  <img src="assets/recently-played.webp" alt="Recently Played view" width="80%">
-</p>
-
-### Update Checker with Download Progress
-
-Check for application updates, monitor download progress, and cancel a download when supported by the update workflow.
-
-<p align="center">
-  <img src="assets/check-for-updates downloader.webp" alt="Update checker and download progress" width="80%">
-</p>
-
-### Technical Improvements
-
-- **Session logging:** Game sessions are tracked in local `playSessions.json` for statistics and history.
-- **Modular statistics view:** `render/stats.js` provides charts and session analysis.
-- **Topbar sorting:** Library ordering is accessible without a separate sorting bar.
-- **Collapsible sidebar:** Switch to an icon-only sidebar; the chosen state is saved.
-- **Screenshot export:** The statistics view uses `html2canvas` to generate shareable PNG output.
-- **Theme polish:** Improved border visibility in Darker mode.
-- **Overlay isolation:** UI rendering, session snapshots, and timer control use dedicated modules. The experimental overlay remains separate from the game's own timer and UI implementation.
-
----
-
-## Features Snapshot
-
-### Organize Your Library
-
-Manage your full library and favorites, sort by name, playtime, or recent launch, and manually reorder game cards.
-
-<p align="center">
-  <img src="assets/favorites-view.webp" alt="Favorites view" width="80%">
-</p>
-
-### Game Details View
-
-Browse game banners, animated logos, screenshots, trailers, system requirements, and editable metadata in a cinematic details view.
-
-<p align="center">
-  <img src="assets/game-details-cinematic.webp" alt="Game details view" width="80%">
-</p>
-
-### Customization & Localization
-
-Choose from Dark, Darker, and Light themes; adjust grid density and accent colors; and use the fully localized Arabic RTL or English interface. You can also override game artwork (poster, logo, background, and icon) and remove overrides to return to automatically retrieved assets.
-
-<p align="center">
-  <img src="assets/settings-page.webp" alt="Settings screenshot from an earlier interface revision" width="48%">
-  <img src="assets/main-library-ar.webp" alt="Arabic RTL interface" width="48%">
-</p>
-
-*Note: Some repository screenshots show earlier interface revisions and may not match the latest Settings layout.*
-
-### Game Statistics Dashboard
-
-Review playtime, session trends, and interactive charts, and export selected data.
-
-<p align="center">
-  <img src="assets/statistics-dashboard.webp" alt="Statistics dashboard" width="80%">
-</p>
-
-### Recently Played
-
-Return to recent games and remove individual entries from the recent list without deleting them from your library.
-
-<p align="center">
-  <img src="assets/recently-played.webp" alt="Recently Played" width="80%">
-</p>
-
----
-
-## Core Features
-
-- **Game management:** Add and organize local executables (`.exe`, `.bat`, and `.lnk` on supported Windows setups).
-- **Linux game compatibility:** Launch supported Windows titles through Proton on Linux.
-- **Artwork and metadata:** Fetch imagery from integrated metadata services or supply custom assets.
-- **Favorites, search, and sorting:** Quickly find and arrange games.
-- **Playtime and sessions:** Track local playtime, recent launches, and session history.
-- **Game saves:** Create manual or automatic save backups and restore available backup versions.
-- **Backup Vault:** Keep backups in a chosen location and re-link existing backups after moving or reinstalling games.
-- **Local preferences:** Store game data and settings in local JSON files.
-- **Language and themes:** English/Arabic RTL support with Dark, Darker, and Light modes.
-- **Electron security boundaries:** Use a preload bridge and scoped IPC instead of unrestricted renderer access.
-- **Experimental Windows overlay:** Optional session dashboard for compatible offline games without anti-cheat; not part of the Linux/Proton feature set.
-
----
-
-## Linux Support & Requirements
-
-On Arch Linux or EndeavourOS, install the relevant 32-bit graphics and audio libraries for your GPU and Proton setup. Package names can differ by distribution and driver version.
-
-**NVIDIA:**
-
-```bash
-sudo pacman -S lib32-nvidia-utils lib32-vulkan-icd-loader
-```
-
-**AMD:**
-
-```bash
-sudo pacman -S lib32-vulkan-radeon lib32-mesa
-```
-
-**Audio:**
-
-```bash
-sudo pacman -S lib32-libpulse lib32-pipewire
-```
-
-**Proton GE:** Place a compatible Proton GE build in the directory configured for Nexus, for example:
-
-```text
-~/Nexus-Proton/GE-Proton10-32/
-```
-
-### Running the AppImage
-
-Make the downloaded AppImage executable using your file manager's Properties dialog, or run the following commands from the folder containing the download (assuming one matching AppImage file):
-
-```bash
-chmod +x ./Nexus_Game_Launcher_*.AppImage
-./Nexus_Game_Launcher_*.AppImage
-```
-
-**Note:** The in-game Modal Overlay described above is currently a **Windows experimental feature**. Proton support does not imply overlay support on Linux.
-
----
-
-## Technology Stack
-
-| Component | Technology |
-|:--|:--|
-| Runtime | Electron (currently declared as `^45.0.0` in `package.json`) |
-| Backend | Node.js, file system, child processes, and Electron IPC |
-| Frontend | HTML5, CSS3, JavaScript, Flexbox/Grid, ES modules |
-| Modular UI | `render/details/`, `render/modal/`, `render/stats.js`, `render/overlay-editor.js` |
-| Artwork and APIs | SteamGridDB, RAWG, Steam, and YouTube integrations |
-| Statistics and export | Session data, charts, `html2canvas`, CSV/PNG export |
-| Backups | `adm-zip` and local backup management modules |
-| Storage | Local JSON data and preferences |
-| Internationalization | `src/translations.js`, English and Arabic RTL |
-| Experimental Windows overlay | Electron offscreen rendering, HTML/CSS/JS, native graphics bridge, development Python tooling |
-| CI/CD | GitHub Actions + `electron-builder` (Windows NSIS, Linux AppImage, macOS DMG build targets) |
-
----
-
-## Project Structure
-
-The following is a selected view of the source tree. Generated builds, installed dependencies, local settings, and backup data are omitted.
-
-```text
-nexus-game-launcher/
-|-- .github/
-|   `-- workflows/
-|       `-- release.yml
-|-- assets/
-|   |-- fonts/
-|   |-- fontawesome/
-|   `-- *.webp
-|-- css/
-|   |-- Component-layout.css
-|   |-- main.css
-|   |-- pages.css
-|   |-- settings-layout.css
-|   |-- overlay-editor.css
-|   `-- variables.css
-|-- modules/
-|   |-- game-launcher.js
-|   |-- playSessions.js
-|   |-- overlay-manager.js
-|   |-- overlay-config.js
-|   |-- overlay-preview.js
-|   |-- overlay-session-feed.js
-|   `-- ...
-|-- native/
-|   `-- nexus-overlay/
-|       |-- CMakeLists.txt
-|       `-- src/
-|-- overlay/
-|   `-- poc/
-|       |-- host.cjs
-|       |-- index.html
-|       |-- ui.css
-|       |-- ui.js
-|       |-- preload.cjs
-|       `-- ...
-|-- render/
-|   |-- details/
-|   |-- modal/
-|   |-- overlay-editor.js
-|   |-- settings-navigation.js
-|   |-- render-main.js
-|   `-- stats.js
-|-- src/
-|   |-- ipc/
-|   |-- main.js
-|   |-- preload.js
-|   `-- translations.js
-|-- tests/
-|-- tools/
-|-- gameSavePaths.json
-|-- index.html
-|-- package-lock.json
-|-- package.json
-`-- README.md
-```
-
----
-
-## Installation & Development
-
-Clone the repository:
+**Prerequisites:** Git and Node.js/npm. The repository's release workflow uses **Node.js 22**.
 
 ```bash
 git clone https://github.com/AliAl-ojeely/nexus-game-launcher.git
 cd nexus-game-launcher
-```
-
-Install dependencies and start the launcher:
-
-```bash
-npm install
+npm ci
 npm start
 ```
 
-The current GitHub Actions workflow uses Node.js 22. Other local development versions may work but should be validated with the project's dependencies.
-
-### Experimental overlay development
-
-The overlay source is under `overlay/poc/` and `native/nexus-overlay/`. Windows native development and diagnostics require additional tools and compiled components, including Python and CMake/Visual Studio where appropriate. **Do not enable native injection in games with online anti-cheat.**
-
-The renderer and timer controls are still being tested; a working development setup does not establish broad compatibility or prove that the feature is included in a distributable installer.
-
----
-
-## Building for Production
-
-**Windows (NSIS installer):**
+To run selected regression tests already tracked in the repository:
 
 ```bash
-npm run dist-win
+node --test tests/steamgrid-identity-v062.test.cjs tests/steamgrid-provider-v062.test.cjs tests/library-recently-added-v010.test.cjs tests/game-modal-split-v011.test.cjs
 ```
 
-**Linux (AppImage):**
+### Optional provider credentials
 
-```bash
-npm run dist-linux
+Development credentials are read from the ignored `src/secrets.json` file, or from environment overrides such as `NEXUS_SGDB_API_KEY`. Use [`secrets.json.example`](secrets.json.example) as a starting point. A packaged application uses its own per-user `provider-secrets.json` under Electron's `userData` directory. Keys are **not** bundled into release installers.
+
+Do not commit API keys, local game saves, personal databases, or user configuration files. Missing provider credentials can reduce the available artwork/metadata sources.
+
+## Development and builds
+
+| Command | Purpose |
+| --- | --- |
+| `npm start` | Launch the development application. |
+| `npm run dist-win` | Build configured Windows NSIS targets (requires relevant staged resources for full overlay packaging). |
+| `npm run dist-linux` | Build configured Linux AppImage targets. |
+| `npm run dist` | Run `electron-builder` with the package's build configuration. |
+| `npm run overlay:doctor` | Inspect the experimental overlay environment. |
+| `npm run overlay:poc` | Launch the overlay proof-of-concept host. |
+
+The [`release.yml`](.github/workflows/release.yml) workflow is **manually dispatched**. A normal `git push` does **not** automatically publish a release. It builds Windows/Linux/macOS artifacts, and publishing is gated on build success and release-asset checks. The CI workflow's overlay build and verification steps are specific to Windows.
+
+### Selected source layout
+
+```text
+nexus-game-launcher/
+├── .github/workflows/      # Release automation
+├── .github/release-notes/  # Version-specific release notes
+├── assets/                 # Existing screenshots, icons, fonts
+├── css/                    # UI themes, layout, modal and Backup styling
+├── modules/                # Game launching, artwork, saves, overlay, storage
+├── native/nexus-overlay/   # Experimental native graphics bridge
+├── overlay/poc/            # Experimental offscreen overlay UI and host
+├── render/                 # Library, details, modal, settings, stats
+├── src/ipc/                # Electron IPC handlers
+├── src/main.js             # Electron main process entry point
+├── src/preload.js          # Scoped renderer bridge
+├── src/translations.js     # English and Arabic interface strings
+├── tests/                  # Tracked regression tests
+├── tools/                  # Development/diagnostic utilities
+├── index.html              # Main application document
+├── package.json
+└── README.md
 ```
 
-The standard `electron-builder` output directory is `dist/`.
+User preferences, local game-library data, cached artwork, and save-backup configuration are stored in the application's local data directory. Do not treat copies of JSON files in a checkout as a substitute for your actual Electron `userData` files.
 
-### GitHub Actions release workflow
+## Known limitations and planned work
 
-The repository's `.github/workflows/release.yml` uses **manual `workflow_dispatch`**, so a normal `git push` does **not** automatically publish a release. The workflow currently targets Windows, Linux, and macOS.
+- Save discovery cannot recognize every game or every save location; bounded scans may finish with partial coverage.
+- **Multi-location save origins** (`originPaths[]`) remain a future enhancement.
+- Native in-game overlay support is experimental; **DirectX 12 is incomplete** and Vulkan has not been verified.
+- The SteamKit2/PICS logo helper is opt-in and its runtime/release availability is not yet verified.
+- Cross-platform build targets do not mean identical game-launch capabilities on Windows, Linux, and macOS.
+- Security advisories and dependency updates should be reviewed before distributing new releases.
 
-> [!IMPORTANT]
-> As of the source configuration reviewed for this README, building the Electron application does **not** independently validate or package all experimental Windows overlay runtime dependencies. The overlay manager references local Python tooling, a development Electron executable, and native DLL/EXE build outputs. Those dependencies require a separately verified release-packaging process before the feature can be advertised as fully functional in the installed app. DirectX 12 work remains incomplete.
+## Contributing and support
 
----
+Bug reports and improvement suggestions are welcome through [GitHub Issues](https://github.com/AliAl-ojeely/nexus-game-launcher/issues). When reporting a problem, include the operating system, app version, reproducible steps, relevant error codes, and whether the issue occurs in a source build or published installer. **Do not upload game-save contents, credentials, private file paths, or personal data to public issues.**
 
-## Developer & Contact
+**Maintainer:** [Ali Nasser Al-ojeely (Mr.Ghost)](https://github.com/AliAl-ojeely) · [Email](mailto:alialojeely@gmail.com)
 
-**Ali Nasser Al-ojeely (Mr.Ghost)** - *Junior Software Developer | Frontend Specialist*
-
-[![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?logo=github)](https://github.com/AliAl-ojeely)
-[![Email](https://img.shields.io/badge/Email-Contact_Me-EA4335?logo=gmail)](mailto:alialojeely@gmail.com)
-
-If you have suggestions, encounter bugs, or want to contribute, please [open an issue](https://github.com/AliAl-ojeely/nexus-game-launcher/issues) or get in touch.
+> **Licensing note:** The repository currently does not include a standalone `LICENSE` file. Do not infer redistribution or reuse permissions from badges or this README; ask the maintainer for licensing terms.
