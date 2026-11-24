@@ -16,7 +16,12 @@ const EXE_A = 'C:\\Games\\A\\game-a.exe', EXE_B = 'C:\\Games\\B\\game-b.exe';
 
 // Existing v1.0.0 regression cases explicitly exercise conservative mode.
 // New cases below exercise the real default balanced policy.
-function harness({nativeProbe=true, autoBackup=false, guardIds='*'}={}) {
+function harness({nativeProbe=true, autoBackup=false, guardIds='*', packaged=false, arch='x64'}={}) {
+    const resourcesPath = path.join(ROOT,'fake installed resources');
+    const moduleDir = packaged ? path.join(resourcesPath,'app.asar','modules') : path.join(ROOT,'modules');
+    const packagedProbe = path.join(resourcesPath,'overlay-runtime','native','nexus-overlay','build','bin','NexusProcessProbe.exe');
+    const developmentProbe = path.join(ROOT,'native','nexus-overlay','build','bin','NexusProcessProbe.exe');
+    const commands = [];
     let time = 0, wallOffset = 1700000000000, serial = 0, pid = 11000, index = 0;
     const scheduled = new Map(), running = new Map(), children = new Map();
     const sent = [], finalized = [], attaches = [], stops = [], feeds = [], kills = [], logs = [], probes = [], backups = [];
@@ -65,6 +70,7 @@ function harness({nativeProbe=true, autoBackup=false, guardIds='*'}={}) {
             return callback(null);
         }
         assert.ok(command.endsWith('NexusProcessProbe.exe') || command==='powershell.exe',command);
+        commands.push(command);
         probe(callback);
     }
     const emitter={isDestroyed:()=>false,send:(name,data)=>sent.push({name,data,time})};
@@ -76,8 +82,8 @@ function harness({nativeProbe=true, autoBackup=false, guardIds='*'}={}) {
             running.set(child.pid,{pid:child.pid,ppid:999,path:command});
             return child;
         },execFile,exec:()=>{throw Error('unexpected Linux path');}},
-        path,os:{homedir:()=>'/tmp'},fs:{existsSync:p=>nativeProbe||!String(p).endsWith('NexusProcessProbe.exe'),mkdirSync:()=>{}},
-        electron:{app:{getPath:()=>'/fake-nexus-test'},net:{}},url:{pathToFileURL:()=>null},
+        path,os:{homedir:()=>'/tmp'},fs:{existsSync:p=>!String(p).endsWith('NexusProcessProbe.exe') || (nativeProbe && p===(packaged?packagedProbe:developmentProbe)),mkdirSync:()=>{}},
+        electron:{app:{isPackaged:packaged,getPath:()=>'/fake-nexus-test'},net:{}},url:{pathToFileURL:()=>null},
         './game-process-selector':selector,
         './game-launch-diagnostics':{describeLaunchError:e=>({message:e.message})},
         './backup':{performMirroring:async (...args)=>{backups.push(args);if(autoBackup)await new Promise(resolve=>backupWaiters.push(resolve));}},
@@ -91,16 +97,16 @@ function harness({nativeProbe=true, autoBackup=false, guardIds='*'}={}) {
     };
     const module={exports:{}};
     vm.runInNewContext(source+'\nmodule.exports.__test_stopMonitor = stopMonitor;',{
-        module,exports:module.exports,__dirname:path.join(ROOT,'modules'),
+        module,exports:module.exports,__dirname:moduleDir,
         require:name=>{if(!(name in dep))throw Error('Unexpected require: '+name);return dep[name];},
         console:{log:(...args)=>logs.push(args.join(' ')),warn:(...args)=>logs.push(args.join(' ')),error:(...args)=>logs.push(args.join(' '))},
         Buffer,Date:class extends Date{static now(){return wallOffset+time;}},
-        process:{...process,env:{...process.env,NEXUS_RESTART_GUARD_GAME_IDS:guardIds},platform:'win32',hrtime:{bigint:()=>BigInt(Math.round(time))*1000000n}},
+        process:{...process,env:{...process.env,NEXUS_RESTART_GUARD_GAME_IDS:guardIds},platform:'win32',arch,resourcesPath,hrtime:{bigint:()=>BigInt(Math.round(time))*1000000n}},
         setInterval:(fn,ms)=>schedule(fn,ms,true),clearInterval:id=>scheduled.delete(id),
         setTimeout:(fn,ms)=>schedule(fn,ms,false),clearTimeout:id=>scheduled.delete(id),
     },{filename:'modules/game-launcher.js',timeout:1000});
     const api=module.exports;
-    return {api,advance,running,children,sent,finalized,attaches,stops,feeds,kills,logs,probes,scheduled,held,heldKills,backups,backupWaiters,
+    return {api,advance,running,children,sent,finalized,attaches,stops,feeds,kills,logs,probes,scheduled,held,heldKills,backups,backupWaiters,commands,packagedProbe,
         get now(){return time;},jumpWall(ms){wallOffset+=ms;},
         nextProbe(mode){nextProbe=mode;},killMode(mode){killMode=mode;},disappear,
         addProcess(process){running.set(process.pid,{...process});},
@@ -337,4 +343,37 @@ test('balanced mode does not change explicit Stop confirmation',()=>{
 test('wrapper launches never qualify as verified direct executable',()=>{
     const h=harness({guardIds:''});const a=h.launch(A,'C:\\Games\\A\\launcher.exe');h.advance(3000);
     h.disappear(a,true);h.advance(0);h.advance(4000);assert.ok(h.session(A));h.advance(10000);assert.equal(h.session(A),undefined);
+});
+
+// Packaged-runtime parity: actual monitor must use the staged binary outside
+// app.asar, not a development path. These tests never start real processes.
+test('installed x64 native probe is used and balanced exit still takes 4 seconds',()=>{
+    const h=harness({guardIds:'',packaged:true});const a=h.launch(A),b=h.launch(B);h.advance(3000);
+    const sid=h.session(B).sessionId;
+    assert.ok(h.commands.length>0);assert.ok(h.commands.every(cmd=>cmd===h.packagedProbe));
+    assert.ok(h.hasLog('PROCESS_PROBE source=native runtime=packaged'));
+    h.disappear(a,true);h.advance(0);h.advance(3999);assert.ok(h.session(A));h.advance(1);
+    assert.equal(h.session(A),undefined);assert.equal(h.finalized.length,1);
+    assert.equal(h.session(B).sessionId,sid);assert.ok(h.running.has(b));assert.deepEqual(h.stops,[A]);
+    assert.ok(h.hasLog('verifyMs=4000 mode=balanced'));
+});
+test('installed restart retains original session and pause before balanced deadline',()=>{
+    const h=harness({guardIds:'',packaged:true});const a=h.launch(A);h.advance(2000);
+    const sid=h.session(A).sessionId;h.api.pauseTimer(A);h.disappear(a,true);h.advance(0);h.advance(3999);
+    h.addProcess({pid:61000,ppid:0,path:EXE_A});h.advance(1);
+    assert.equal(h.session(A).sessionId,sid);assert.equal(h.session(A).paused,true);
+    assert.equal(h.finalized.length,0);assert.ok(h.attaches.some(r=>r.activePid===61000&&r.sessionId===sid));
+});
+test('missing installed probe never runs a dev or ASAR executable; full guard remains',()=>{
+    const h=harness({guardIds:'',packaged:true,nativeProbe:false});const a=h.launch(A);h.advance(3000);
+    assert.ok(h.commands.length>0);assert.ok(h.commands.every(cmd=>cmd==='powershell.exe'));
+    assert.ok(h.hasLog('PROCESS_PROBE source=powershell runtime=packaged'));
+    h.disappear(a,true);h.advance(0);h.advance(4000);assert.ok(h.session(A));
+    h.advance(10000);assert.equal(h.session(A),undefined);assert.ok(h.hasLog('mode=extended graceMs=12000'));
+});
+test('installed unsupported ARM64 architecture uses conservative fallback',()=>{
+    const h=harness({guardIds:'',packaged:true,arch:'arm64'});const a=h.launch(A);h.advance(3000);
+    assert.ok(h.commands.length>0);assert.ok(h.commands.every(cmd=>cmd==='powershell.exe'));
+    h.disappear(a,true);h.advance(0);h.advance(4000);assert.ok(h.session(A));
+    h.advance(10000);assert.equal(h.session(A),undefined);assert.ok(h.hasLog('mode=extended graceMs=12000'));
 });

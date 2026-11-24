@@ -117,7 +117,11 @@ function attach(game) {
     }
     const token = crypto.randomBytes(32).toString('hex');
     const activeShortcut = overlaySettings.shortcut;
-    const args = [...(PACKAGED ? [] : ['-3']), RUNNER, '--pid', String(pid), '--exe', game.activePath, '--overlay-shortcut', activeShortcut,
+    // A frozen executable is the command, not a positional Python script.
+    // Use the launcher's actual userData directory instead of runner guesses.
+    const userData = path.dirname(SETTINGS_FILE);
+    const args = [...(PACKAGED ? [] : ['-3', RUNNER]), '--pid', String(pid), '--exe', game.activePath, '--overlay-shortcut', activeShortcut,
+        '--library', path.join(userData, 'games.json'), '--session-file', path.join(userData, 'nexus-overlay-session-v1.json'),
         '--attach', '--confirm-unprotected', '--managed',
         '--managed-game-id', key, '--managed-session-id', game.sessionId,
         '--managed-actions-pipe', pipeName, '--managed-actions-token', token];
@@ -171,7 +175,7 @@ function attach(game) {
         }
         console.log(`[NEXUS OVERLAY] Helper exited for ${game.gameName} (${code ?? signal}).`);
     });
-    console.log(`[NEXUS OVERLAY] Auto-start for ${game.gameName} (PID ${pid}); ${activeShortcut} to open.`);
+    console.log(`[NEXUS OVERLAY] Auto-start for ${game.gameName} (PID ${pid}); ${activeShortcut} to open. runtime=${PACKAGED ? 'packaged' : 'development'}`);
     return true;
 }
 function stop(gameId) {

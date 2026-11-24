@@ -194,9 +194,24 @@ function startTimer(gameId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CROSS‑PLATFORM PROCESS LISTING (Optimized - No PowerShell)
 // ─────────────────────────────────────────────────────────────────────────────
+// Resolve the SAME executable for polling and adaptive guard eligibility.
+// Packaged native binaries must live outside the Electron ASAR archive.
+function resolveNativeProcessProbe() {
+    if (process.platform !== 'win32') return null;
+    if (app.isPackaged && (process.arch !== 'x64' || !process.resourcesPath)) return null;
+    const root = app.isPackaged ? path.join(process.resourcesPath, 'overlay-runtime') : path.join(__dirname, '..');
+    const probe = path.join(root, 'native', 'nexus-overlay', 'build', 'bin', 'NexusProcessProbe.exe');
+    return fs.existsSync(probe) ? probe : null;
+}
+let lastProcessProbeSource = null;
 function getProcesses(callback) {
     if (process.platform === 'win32') {
-        const probe = path.join(__dirname, '..', 'native', 'nexus-overlay', 'build', 'bin', 'NexusProcessProbe.exe');
+        const probe = resolveNativeProcessProbe();
+        const source = probe ? 'native' : 'powershell';
+        if (source !== lastProcessProbeSource) {
+            lastProcessProbeSource = source;
+            console.log(`[NEXUS EXIT] PROCESS_PROBE source=${source} runtime=${app.isPackaged ? 'packaged' : 'development'}`);
+        }
         const deliver = (err, output) => {
             try {
                 if (err) throw err;
@@ -209,7 +224,7 @@ function getProcesses(callback) {
                 callback(valid.map(p => ({ pid: Number(p.pid), ppid: Number(p.ppid) || 0, path: p.path })));
             } catch (error) { callback(null, error); }
         };
-        if (fs.existsSync(probe)) {
+        if (probe) {
             execFile(probe, [], { windowsHide: true, timeout: 12000, maxBuffer: 12 * 1024 * 1024 }, deliver);
         } else {
             // Slow compatibility path when the native probe hasn't been built.
@@ -285,8 +300,7 @@ function startSmartMonitor(gameDir, launcherPid, exeName, gameId) {
     }
     const MAX_MISSING = 7;
     const health = processSelector.createMonitorHealth(MAX_MISSING);
-    const nativeProbe = process.platform === 'win32' && fs.existsSync(
-        path.join(__dirname, '..', 'native', 'nexus-overlay', 'build', 'bin', 'NexusProcessProbe.exe'));
+    const nativeProbe = !!resolveNativeProcessProbe();
     const isCurrent = () => runningGames.get(gameId) === game && !game.stopping;
     function cancelWake() {
         if (wakeTimer !== null) clearTimeout(wakeTimer);

@@ -15,12 +15,13 @@ $targets = @('NexusOverlayHook', 'NexusOverlayInjector', 'NexusOpenGLHook', 'Nex
 foreach ($arch in @('x64', 'Win32')) {
     $buildDir = if ($arch -eq 'x64') { 'native/nexus-overlay/build' } else { 'native/nexus-overlay/build-x86' }
     Invoke-Checked "Configure native $arch" { cmake -S $source -B $buildDir -G 'Visual Studio 17 2022' -A $arch }
-    Invoke-Checked "Compile native $arch" { cmake --build $buildDir --config Release --target $targets --parallel 4 }
+    $archTargets = if ($arch -eq 'x64') { $targets + @('NexusProcessProbe') } else { $targets }
+    Invoke-Checked "Compile native $arch" { cmake --build $buildDir --config Release --target $archTargets --parallel 4 }
 }
 
 Invoke-Checked 'Install standalone-helper packager' { python -m pip install --disable-pip-version-check 'pyinstaller>=6,<7' }
 Invoke-Checked 'Build standalone overlay runner' {
-    python -m PyInstaller --noconfirm --clean --onefile --console --name run_overlay_real_game --paths tools --hidden-import nexus_input_bridge --distpath build/pyinstaller-dist --workpath build/pyinstaller-work --specpath build/pyinstaller-work tools/run_overlay_real_game.py
+    python -m PyInstaller --noconfirm --clean --onefile --console --name run_overlay_real_game --paths tools --hidden-import nexus_input_bridge --hidden-import nexus_overlay_quick_input_v103 --distpath build/pyinstaller-dist --workpath build/pyinstaller-work --specpath build/pyinstaller-work tools/run_overlay_real_game.py
 }
 
 $stage = Join-Path $root 'build/overlay-runtime'
@@ -37,4 +38,8 @@ foreach ($entry in @(@('x64','build'),@('x86','build-x86'))) {
         Copy-Item -LiteralPath $sourceFile -Destination (Join-Path $destination $name) -Force
     }
 }
-Write-Host '[NEXUS CI] Standalone overlay runtime staged.'
+# The process probe is x64-only in CMake; do not invent a Win32 target.
+$probeSource = Join-Path $root 'native/nexus-overlay/build/bin/NexusProcessProbe.exe'
+if (-not (Test-Path -LiteralPath $probeSource -PathType Leaf)) { throw 'Missing compiled x64 NexusProcessProbe.exe' }
+Copy-Item -LiteralPath $probeSource -Destination (Join-Path $stage 'native/nexus-overlay/build/bin/NexusProcessProbe.exe') -Force
+Write-Host '[NEXUS CI] Standalone overlay runtime and x64 process probe staged.'
