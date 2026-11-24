@@ -9,10 +9,10 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('new release version is consistent with lockfile and documentation', () => {
     const pkg = JSON.parse(read('package.json'));
     const lock = JSON.parse(read('package-lock.json'));
-    assert.equal(pkg.version, '2.7.6');
+    assert.equal(pkg.version, '2.8.0');
     assert.equal(lock.version, pkg.version);
     assert.equal(lock.packages[''].version, pkg.version);
-    assert.match(read('.github/release-notes/v2.7.6.md'), /experimental/i);
+    assert.match(read('.github/release-notes/v2.8.0.md'), /experimental/i);
 });
 test('manual publish opt-in only after successful build matrix and from main', () => {
     const yml = read('.github/workflows/release.yml');

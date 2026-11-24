@@ -1,6 +1,6 @@
 """Windows-only external input router for the local Nexus D3D11 POC.
 
-- Ctrl+Shift+O: global registered hotkey, active only while target game focused.
+- Configured shortcut: nonexclusive keyboard hook, only the focused game toggles.
 - Arrow/Enter/Escape: low-level keyboard hook, consumed only while overlay visible.
 - XInput: Start+Back toggle; D-pad, A and B navigate. XInput events cannot be
   consumed here, so the game may respond too. Do not use in competitive games.
@@ -8,6 +8,7 @@
 from __future__ import annotations
 import ctypes
 from ctypes import wintypes
+from nexus_overlay_quick_input_v103 import start_release_edge
 import queue
 import threading
 import time
@@ -26,12 +27,10 @@ MOUSE_MOVE_ABSOLUTE = 0x0001
 RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001
 RI_MOUSE_LEFT_BUTTON_UP = 0x0002
 LLMHF_INJECTED = 0x00000001
-WM_HOTKEY = 0x0312
 WM_QUIT = 0x0012
 WM_KEYDOWN, WM_KEYUP = 0x0100, 0x0101
 WM_SYSKEYDOWN, WM_SYSKEYUP = 0x0104, 0x0105
 MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_NOREPEAT = 0x0001, 0x0002, 0x0004, 0x4000
-HOTKEY_ID = 509
 
 
 def parse_overlay_hotkey(raw: str):
@@ -65,6 +64,44 @@ KEYS = {0x26: 'up', 0x28: 'down', 0x25: 'left', 0x27: 'right',
         0x0D: 'confirm', 0x1B: 'back'}
 BUTTONS = [(0x0001, 'up'), (0x0002, 'down'), (0x0004, 'left'),
            (0x0008, 'right'), (0x1000, 'confirm'), (0x2000, 'back')]
+
+class ForegroundShortcut:
+    """Nonexclusive shortcut: every bridge sees physical press/release edges.
+
+    Only the foreground target's bridge may emit a toggle. Keep the key latch
+    even when unfocused so switching games with the key held cannot retrigger.
+    Call downstream hooks before consuming a matched chord, so other bridges
+    also observe the key edges. Do not consume input outside the target game.
+    """
+    def __init__(self, modifiers, vk, held=False):
+        self.modifiers = modifiers & (MOD_ALT | MOD_CONTROL | MOD_SHIFT)
+        self.vk = vk
+        self.held = bool(held)
+        self.claimed = False
+
+    def on_key(self, key, down, flags, is_foreground, key_state):
+        if key != self.vk or (flags & 0x12):  # Ignore injected input (including lower IL).
+            return False, False
+        if not down:
+            claimed = self.claimed
+            self.held = self.claimed = False
+            return False, claimed and is_foreground()
+        if self.held:
+            return False, self.claimed and is_foreground()
+        self.held = True  # Also latch an unfocused or wrong-modifier press.
+        if not is_foreground():
+            return False, False
+        # The shortcut base is never a modifier. Query only the other keys;
+        # the current key's async state is not yet updated in a WH_KEYBOARD_LL callback.
+        if any(key_state(vk) & 0x8000 for vk in (0x5B, 0x5C)):
+            return False, False
+        actual = 0
+        for vk, modifier in ((0x11, MOD_CONTROL), (0x12, MOD_ALT), (0x10, MOD_SHIFT)):
+            if key_state(vk) & 0x8000:
+                actual |= modifier
+        self.claimed = actual == self.modifiers
+        return self.claimed, self.claimed
+
 
 class KBDLLHOOKSTRUCT(ctypes.Structure):
     _fields_ = [('vkCode', wintypes.DWORD), ('scanCode', wintypes.DWORD),
@@ -247,8 +284,14 @@ def is_raw_input_for_target(message: wintypes.MSG, target_hwnd) -> bool:
 
 
 class WindowsInputBridge:
-    def __init__(self, pid: int, shortcut: str = 'Ctrl+Shift+O') -> None:
+    def __init__(self, pid: int, shortcut: str = 'Ctrl+Shift+O',
+                 quick_escape: bool = False, quick_start: bool = False,
+                 keyboard_navigation: bool = True, gamepad_navigation: bool = True) -> None:
         self.pid = pid
+        self.quick_escape = quick_escape is True
+        self.quick_start = quick_start is True
+        self.keyboard_navigation = keyboard_navigation is True
+        self.gamepad_navigation = gamepad_navigation is True
         self.hotkey_modifiers, self.hotkey_vk, self.hotkey_label = parse_overlay_hotkey(shortcut)
         self.events: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=128)
         self.visible = threading.Event()
@@ -286,10 +329,8 @@ class WindowsInputBridge:
         u.GetForegroundWindow.restype = wintypes.HWND
         u.GetWindowThreadProcessId.argtypes = (wintypes.HWND, ctypes.POINTER(wintypes.DWORD))
         u.GetWindowThreadProcessId.restype = wintypes.DWORD
-        u.RegisterHotKey.argtypes = (wintypes.HWND, ctypes.c_int, wintypes.UINT, wintypes.UINT)
-        u.RegisterHotKey.restype = wintypes.BOOL
-        u.UnregisterHotKey.argtypes = (wintypes.HWND, ctypes.c_int)
-        u.UnregisterHotKey.restype = wintypes.BOOL
+        u.GetAsyncKeyState.argtypes = (ctypes.c_int,)
+        u.GetAsyncKeyState.restype = ctypes.c_short
         u.GetClientRect.argtypes = (wintypes.HWND, ctypes.POINTER(wintypes.RECT))
         u.GetClientRect.restype = wintypes.BOOL
         u.ClientToScreen.argtypes = (wintypes.HWND, ctypes.POINTER(wintypes.POINT))
@@ -506,21 +547,57 @@ class WindowsInputBridge:
         self._keyboard_tid = int(self.kernel32.GetCurrentThreadId())
         pressed = set()
         u = self.user32
-        @self.HookProc
         def callback(code, event, lparam):
             if code >= 0 and event in (WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP):
-                key = int(ctypes.cast(lparam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents.vkCode)
+                record = ctypes.cast(lparam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+                key = int(record.vkCode)
                 if key in KEYS:
                     down = event in (WM_KEYDOWN, WM_SYSKEYDOWN)
+                    foreground = self.game_foreground()
                     if not down: pressed.discard(key)
-                    if self.visible.is_set() and self.game_foreground():
+                    if key == 0x1B and self.quick_escape and foreground:
+                        # Quick Esc must not suppress the game's regular Pause menu.
+                        # Forward physical keydown AND keyup to the focused game,
+                        # even if Nexus is currently showing the overlay.
+                        if down and key not in pressed:
+                            pressed.add(key)  # Debounce repeats and modifier transitions.
+                            if (not (record.flags & 0x10) and
+                                    not any(self.user32.GetAsyncKeyState(vk) & 0x8000
+                                            for vk in (0x10, 0x11, 0x12, 0x5B, 0x5C))):
+                                self._emit('toggle', 'keyboard')
+                        return u.CallNextHookEx(self._hook, code, event, lparam)
+                    if self.keyboard_navigation and self.visible.is_set() and foreground:
                         if down and key not in pressed:
                             pressed.add(key)
                             self._emit(KEYS[key], 'keyboard')
-                        return 1  # Swallow navigation only during active overlay/game focus.
+                        return 1  # Original navigation while overlay visible.
             return u.CallNextHookEx(self._hook, code, event, lparam)
-        self._hook_callback = callback  # Keep callback alive during the hook lifetime.
-        self._hook = u.SetWindowsHookExW(WH_KEYBOARD_LL, callback, None, 0)
+        # NEXUS_FOREGROUND_SHORTCUT_V107: no desktop-global hotkey reservation.
+        # Sample the held state at startup so attaching while a key is held
+        # cannot turn an autorepeat into a new press.
+        shortcut = ForegroundShortcut(self.hotkey_modifiers, self.hotkey_vk,
+                                      held=bool(u.GetAsyncKeyState(self.hotkey_vk) & 0x8000))
+        @self.HookProc
+        def routed_callback(code, event, lparam):
+            consume = False
+            if code >= 0 and event in (WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP):
+                try:
+                    record = ctypes.cast(lparam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+                    if not self.stop_event.is_set():
+                        toggle, consume = shortcut.on_key(
+                            int(record.vkCode), event in (WM_KEYDOWN, WM_SYSKEYDOWN),
+                            int(record.flags), self.game_foreground, u.GetAsyncKeyState)
+                        if toggle:
+                            self._emit('toggle', 'keyboard')
+                except Exception:
+                    consume = False  # Never break the existing input chain.
+            # For the configurable chord, always let downstream hooks see the
+            # press/release before suppressing delivery to the focused game.
+            # Esc and all original navigation retain their exact old callback.
+            result = callback(code, event, lparam)
+            return 1 if consume else result
+        self._hook_callback = routed_callback  # Keep the native callback alive.
+        self._hook = u.SetWindowsHookExW(WH_KEYBOARD_LL, routed_callback, None, 0)
         if not self._hook:
             print('[INPUT] Keyboard hook unavailable; keyboard navigation disabled.', flush=True)
         @self.HookProc
@@ -572,9 +649,10 @@ class WindowsInputBridge:
             print('[INPUT] RAW relative mouse registered; virtual cursor does not require moving the Windows pointer over the widget.', flush=True)
         else:
             print('[INPUT] RAW mouse registration unavailable; using desktop cursor deltas as a fallback.', flush=True)
-        registered = bool(u.RegisterHotKey(None, HOTKEY_ID, self.hotkey_modifiers, self.hotkey_vk))
-        if not registered:
-            print(f'[INPUT] {self.hotkey_label} unavailable (shortcut may be in use); use Start+Back or choose a different shortcut.', flush=True)
+        if self._hook:
+            print(f'[INPUT] {self.hotkey_label} foreground shortcut active (PID {self.pid}); no global reservation.', flush=True)
+        else:
+            print(f'[INPUT] {self.hotkey_label} keyboard hook unavailable; use Start+Back or restart Nexus.', flush=True)
         message = wintypes.MSG()
         raw_error_logged = False
         try:
@@ -582,9 +660,7 @@ class WindowsInputBridge:
                 result = u.GetMessageW(ctypes.byref(message), None, 0, 0)
                 if result <= 0:
                     break
-                if message.message == WM_HOTKEY and message.wParam == HOTKEY_ID and self.game_foreground():
-                    self._emit('toggle', 'keyboard')
-                elif is_raw_input_for_target(message, self._raw_hwnd):
+                if is_raw_input_for_target(message, self._raw_hwnd):
                     try:
                         self._raw_message(message.lParam)
                     except Exception as exc:
@@ -596,7 +672,6 @@ class WindowsInputBridge:
                 u.TranslateMessage(ctypes.byref(message))
                 u.DispatchMessageW(ctypes.byref(message))
         finally:
-            if registered: u.UnregisterHotKey(None, HOTKEY_ID)
             if self._hook: u.UnhookWindowsHookEx(self._hook)
             if self._mouse_hook: u.UnhookWindowsHookEx(self._mouse_hook)
             self._unregister_raw_mouse()
@@ -618,10 +693,14 @@ class WindowsInputBridge:
         get_state.argtypes = (wintypes.DWORD, ctypes.POINTER(XINPUT_STATE))
         get_state.restype = wintypes.DWORD
         previous = [0] * 4
+        start_pending = [False] * 4
+        start_cancelled = [False] * 4
         last_toggle = 0.0
         while not self.stop_event.wait(0.045):
             if not self.game_foreground():
                 previous = [0] * 4
+                start_pending = [False] * 4
+                start_cancelled = [False] * 4
                 continue
             for index in range(4):
                 state = XINPUT_STATE()
@@ -633,7 +712,12 @@ class WindowsInputBridge:
                 if combo and not old_combo and time.monotonic() - last_toggle > 0.6:
                     last_toggle = time.monotonic()
                     self._emit('toggle', 'gamepad')
-                for name in input_events(old, current, self.visible.is_set()):
+                tapped, start_pending[index], start_cancelled[index] = start_release_edge(
+                    old, current, start_pending[index], start_cancelled[index], self.quick_start)
+                if tapped and time.monotonic() - last_toggle > 0.6:
+                    last_toggle = time.monotonic()
+                    self._emit('toggle', 'gamepad')
+                for name in input_events(old, current, self.visible.is_set() and self.gamepad_navigation):
                     self._emit(name, 'gamepad')
 
     def start(self) -> None:
@@ -641,7 +725,7 @@ class WindowsInputBridge:
         self._pad_thread = threading.Thread(target=self._xinput_loop, name='nexus-xinput', daemon=True)
         self._keyboard_thread.start()
         self._pad_thread.start()
-        print(f'[INPUT] {self.hotkey_label} toggle; virtual RAW mouse, arrows/Enter/Esc, Start+Back/D-pad/A/B.', flush=True)
+        print(f'[INPUT] {self.hotkey_label} toggle; quick Esc={self.quick_escape} quick Start={self.quick_start}; keyboardNavigation={self.keyboard_navigation} gamepadNavigation={self.gamepad_navigation}; virtual RAW mouse, arrows/Enter/Esc, Start+Back/D-pad/A/B.', flush=True)
 
     def stop(self) -> None:
         self.stop_event.set()

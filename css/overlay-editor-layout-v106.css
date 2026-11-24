@@ -1,0 +1,170 @@
+/* Nexus Overlay Settings v1.0.6: left preview + its related controls, right layout/size.
+   Builds on the existing CSS; retains theme colors and all DOM control IDs. */
+#settingsArea #settings-overlay-panel .overlay-editor {
+  direction: ltr;
+  grid-template-columns: minmax(0, 1fr) minmax(335px, 395px);
+  gap: clamp(18px, 2.2vw, 36px);
+  align-items: start;
+}
+#settingsArea #settings-overlay-panel .overlay-editor-preview {
+  position: relative; top: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+#settingsArea #settings-overlay-panel .overlay-preview-heading {
+  min-height: 38px;
+  margin: 0;
+  padding: 0 2px;
+}
+#settingsArea #settings-overlay-panel .nx-preview-meta {
+  display: inline-flex; align-items: center; flex-wrap: wrap;
+  justify-content: flex-end; gap: 8px;
+}
+#settingsArea #settings-overlay-panel .nx-preview-size-badge {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  border-radius: 99px;
+  padding: 6px 10px;
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+#settingsArea #settings-overlay-panel .overlay-preview-stage {
+  width: 100%;
+  background:
+    radial-gradient(ellipse at 27% 15%, color-mix(in srgb,var(--accent) 10%, transparent), transparent 52%),
+    linear-gradient(160deg,#1a1e2b,#0e111a 55%,#07090f);
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: clamp(12px,1.5vw,19px);
+  align-items: start;
+  min-width: 0;
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras > .overlay-options-group {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card);
+  box-sizing: border-box;
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras > .overlay-options-group:has(#overlayBgStyle) {
+  grid-column: 1 / -1;
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras > .overlay-options-group legend {
+  padding: 0 4px 10px;
+  color: var(--text-main);
+  font-weight: 750;
+  font-size: 14px;
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras .overlay-option {
+  color: var(--text-main);
+  background: var(--bg-input);
+  border-radius: 10px;
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras .overlay-option:hover,
+#settingsArea #settings-overlay-panel .nx-preview-extras .overlay-option:focus-within {
+  border-color: color-mix(in srgb,var(--accent) 46%,var(--border-color));
+}
+#settingsArea #settings-overlay-panel .nx-preview-extras .overlay-color-controls {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr));
+}
+#settingsArea #settings-overlay-panel .overlay-editor-preview > .overlay-fps-notice {
+  order: 2; margin: 0 2px;
+}
+#settingsArea #settings-overlay-panel .overlay-editor-preview > .nx-preview-extras { order: 1; }
+#settingsArea #settings-overlay-panel .overlay-editor-controls {
+  grid-column: 2; grid-row: 1;
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0;
+}
+#settingsArea #settings-overlay-panel .overlay-editor-controls > .overlay-options-group,
+#settingsArea #settings-overlay-panel .overlay-editor-controls > .overlay-editor-footer,
+#settingsArea #settings-overlay-panel .overlay-editor-controls > .overlay-advanced-controls {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-sizing: border-box;
+  max-width: none;
+}
+#settingsArea #settings-overlay-panel .overlay-advanced-controls {
+  display:flex;flex-direction:column;gap:17px;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-settings {
+  display:block; width:100%; margin:0;padding:0;border:0;min-width:0;
+  order: 2;
+}
+#settingsArea #settings-overlay-panel .overlay-size-settings { order: 1; }
+#settingsArea #settings-overlay-panel .overlay-shortcut-settings { order: 3; }
+#settingsArea #settings-overlay-panel .nx-window-scale-settings legend {
+  display:block; font-size:14px; font-weight:700; color:var(--text-main); padding:0 0 9px;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-grid {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-choice {
+  display:flex;align-items:center;justify-content:center;
+  position:relative;min-height:49px;padding:10px 6px;
+  border:1px solid var(--border-color);border-radius:11px;
+  background:var(--bg-input);color:var(--text-muted);
+  font-size:13px;font-weight:700;cursor:pointer;
+  text-align:center;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-choice input {
+  position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-choice:has(input:checked) {
+  background:color-mix(in srgb,var(--accent) 12%,var(--bg-input));
+  border-color:var(--accent);color:var(--text-main);
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-choice:has(input:focus-visible) {
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-choice:hover {
+  border-color:color-mix(in srgb,var(--accent) 52%,var(--border-color));
+}
+#settingsArea #settings-overlay-panel .nx-window-scale-hint {
+  margin:9px 2px 0;font-size:11px;color:var(--text-muted);line-height:1.5;
+}
+/* Distinguish the actual two-row command panel from the one-line Dockline
+   even in the selection thumbnail. All strokes use the launcher --accent. */
+#settingsArea #settings-overlay-panel .nexus-mini-dock {
+  width:112px;height:24px;border-radius:100px;
+}
+#settingsArea #settings-overlay-panel .nexus-mini-strip {
+  width:90px;height:53px;border-radius:9px;
+}
+#settingsArea #settings-overlay-panel .nexus-mini-strip::before {
+  inset:6px 9px auto 9px;width:auto;height:13px;
+  border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);
+}
+#settingsArea #settings-overlay-panel .nexus-mini-strip::after {
+  inset:auto 9px 6px 9px;width:auto;height:20px;
+  border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);
+  background:color-mix(in srgb,var(--accent) 54%,var(--bg-input));
+}
+@media(max-width:1240px) {
+  #settingsArea #settings-overlay-panel .overlay-editor { grid-template-columns:minmax(0,1fr); }
+  #settingsArea #settings-overlay-panel .overlay-editor-preview { grid-column:1;grid-row:1; }
+  #settingsArea #settings-overlay-panel .overlay-editor-controls {
+    grid-column:1;grid-row:2;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:start;
+  }
+  #settingsArea #settings-overlay-panel .overlay-editor-controls > .overlay-advanced-controls,
+  #settingsArea #settings-overlay-panel .overlay-editor-controls > .overlay-editor-footer {grid-column:1/-1;}
+}
+@media(max-width:760px) {
+  #settingsArea #settings-overlay-panel .overlay-editor-controls { display:flex; }
+  #settingsArea #settings-overlay-panel .nx-preview-extras { grid-template-columns:minmax(0,1fr); }
+  #settingsArea #settings-overlay-panel .nx-preview-extras > .overlay-options-group:has(#overlayBgStyle) { grid-column:1; }
+  #settingsArea #settings-overlay-panel .overlay-preview-heading { flex-wrap:wrap; }
+}

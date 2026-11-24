@@ -85,7 +85,8 @@ function start(applyTimerAction) {
 function attach(game) {
     if (quitting || !ready || process.platform !== 'win32' || !game || game.stopping) return false;
     const settings = readSettings();
-    if (!overlayConfig.normalize(settings.modalOverlay).enabled) return false;
+    const overlaySettings = overlayConfig.normalize(settings.modalOverlay);
+    if (!overlaySettings.enabled) return false;
     // Global opt-in replaces the old per-game approval UI.
     const pid = Number(game.activePid);
     if (!Number.isSafeInteger(pid) || pid < 1 || !game.sessionId ||
@@ -115,11 +116,15 @@ function attach(game) {
         return false;
     }
     const token = crypto.randomBytes(32).toString('hex');
-    const activeShortcut = overlayConfig.normalize(settings.modalOverlay).shortcut;
+    const activeShortcut = overlaySettings.shortcut;
     const args = [...(PACKAGED ? [] : ['-3']), RUNNER, '--pid', String(pid), '--exe', game.activePath, '--overlay-shortcut', activeShortcut,
         '--attach', '--confirm-unprotected', '--managed',
         '--managed-game-id', key, '--managed-session-id', game.sessionId,
         '--managed-actions-pipe', pipeName, '--managed-actions-token', token];
+    if (overlaySettings.quickOpen.escape) args.push('--quick-escape');
+    if (overlaySettings.quickOpen.start) args.push('--quick-start');
+    if (!overlaySettings.navigation.keyboard) args.push('--disable-overlay-keyboard-nav');
+    if (!overlaySettings.navigation.gamepad) args.push('--disable-overlay-gamepad-nav');
     let child;
     try {
         child = spawn(PACKAGED ? RUNNER : 'py', args, { cwd: RUNTIME_ROOT, windowsHide: true,

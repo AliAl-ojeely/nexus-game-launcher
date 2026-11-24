@@ -1,0 +1,85 @@
+/* Nexus Overlay v1.0.5: actual Mini Display geometry, same OSR 560x338.
+   Applies to all four v1.0.0 concepts. The legacy size-mode stylesheet
+   deliberately stays in full mode to avoid stale hidden/cropped elements. */
+.widget[data-nx-layout][data-nx-mode="mini"] {
+  gap: 5px;
+  padding: 9px 11px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14),
+    0 4px 16px rgba(0,0,0,.6),
+    0 0 13px color-mix(in srgb,var(--nx-accent) 18%,transparent);
+}
+.widget[data-nx-mode="mini"] .game-info,
+.widget[data-nx-mode="mini"] .sync-row,
+.widget[data-nx-mode="mini"] .metric-footer,
+.widget[data-nx-mode="mini"] footer,
+.widget[data-nx-mode="mini"] .status { display:none!important; }
+.widget[data-nx-mode="mini"] .metric { min-width:0; min-height:0; padding:6px 8px; gap:3px; border-radius:8px; }
+.widget[data-nx-mode="mini"] .metric-label { font-size:8px; line-height:11px; letter-spacing:.5px; }
+.widget[data-nx-mode="mini"] .metric strong { font:700 17px/21px Consolas,'SFMono-Regular',monospace; letter-spacing:-.5px; }
+.widget[data-nx-mode="mini"] .action { min-height:0; padding:4px 5px; border-radius:8px; font-size:10px; white-space:nowrap; }
+.widget[data-nx-mode="mini"] .action.test { display:none!important; }
+.widget[data-nx-mode="mini"] .btn-icon { font-size:13px; }
+.widget[data-nx-mode="mini"] .heading { min-height:0; }
+.widget[data-nx-mode="mini"] .brand-mark { height:25px;width:25px;flex:0 0 25px;border-radius:7px; }
+.widget[data-nx-mode="mini"] .brand-mark span {font-size:15px;}
+.widget[data-nx-mode="mini"] .identity strong {font-size:10px;}
+.widget[data-nx-mode="mini"] .identity > span {font-size:7px;letter-spacing:.4px;}
+
+/* Dockline: compact horizontal timer + two quick actions. */
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] {
+  width:447px;height:88px;display:grid;align-items:stretch;
+  grid-template-columns:28px minmax(0,175px) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
+  border-radius:22px;
+}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .heading {grid-column:1;grid-row:1;align-items:center;}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .metrics {grid-column:2;grid-row:1;display:grid;gap:5px;align-self:stretch;grid-template-columns:repeat(2,minmax(0,1fr));}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .actions {grid-column:3;grid-row:1;min-height:0;display:flex;gap:5px;margin:0;align-items:stretch;}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .action {height:auto;flex:1;font-size:9px;}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .metric strong {font-size:14px;line-height:19px;}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] .metric-label {font-size:7px;letter-spacing:.2px;}
+
+/* Corner Pulse: two time cards and a compact two-action footer. */
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] {
+  width:318px;height:171px;padding:10px 12px;gap:7px;border-radius:20px;
+  display:flex;flex-direction:column;
+}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] .heading {min-height:25px;}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] .metrics {grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] .metric {height:59px;padding:8px 9px;}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] .actions {height:37px;min-height:0;margin-top:auto;gap:7px;}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="mini"] .action {height:37px;}
+
+/* Side Rail: a vertical mini dashboard that still shows both timers. */
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] {
+  width:186px;height:260px;padding:11px;gap:7px;border-radius:20px;
+  display:flex;flex-direction:column;
+}
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] .heading {min-height:26px;}
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] .metrics {grid-template-columns:minmax(0,1fr);gap:5px;}
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] .metric {height:46px;padding:5px 9px;}
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] .actions {display:flex;flex-direction:column;gap:5px;min-height:0;margin-top:auto;}
+.widget[data-nx-layout="side-rail"][data-nx-mode="mini"] .action {flex:0 0 31px;height:31px;font-size:10px;}
+
+/* Command Strip: dense one-row system command bar. */
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] {
+  width:449px;height:82px;border-radius:16px;display:grid;
+  grid-template-columns:28px minmax(0,174px) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);gap:5px;padding:8px 10px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .heading {grid-column:1;grid-row:1;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metrics {grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .actions {grid-column:3;grid-row:1;display:flex;gap:5px;min-height:0;margin:0;align-items:stretch;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .action {height:auto;font-size:9px;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metric strong {font-size:14px;line-height:18px;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metric-label {font-size:7px;letter-spacing:.2px;}
+
+/* Medium is still available independently of Mini, and does not hide inputs. */
+.widget[data-nx-layout="dockline"][data-nx-mode="medium"] {width:496px;height:128px;}
+.widget[data-nx-layout="corner-pulse"][data-nx-mode="medium"] {width:429px;height:280px;}
+.widget[data-nx-layout="side-rail"][data-nx-mode="medium"] {width:228px;height:308px;}
+.widget[data-nx-layout="command-strip"][data-nx-mode="medium"] {width:498px;height:119px;}
+/* When both navigation sources are disabled, keep mouse interaction only.
+   Hide misleading gamepad/keyboard hints; the hotkey remains a toggle. */
+.widget[data-nx-navigation="mouse-only"] footer .input-hints {display:none!important;}

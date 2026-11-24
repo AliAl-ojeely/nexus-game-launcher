@@ -279,11 +279,11 @@ void NexusD3D11Renderer::Draw(IDXGISwapChain* chain) {
     ctx->PSSetShaderResources(0, 1, srv);
     ctx->PSSetSamplers(0, 1, sampler);
     ctx->VSSetConstantBuffers(0, 1, cb);
-    // Anchor the widget to the top-right, independent of the game resolution.
+    // Four bounded widget corners; position is received through the existing pipe.
     // This is composited into the game's back buffer, not a topmost HWND.
-    const float x = std::max(8.f, static_cast<float>(desc.Width) - float(imageWidth_) - 24.f);
+    const NexusWidgetOrigin origin = NexusComputeWidgetOrigin(desc.Width, desc.Height, imageWidth_, imageHeight_);
     Constants data{
-        {x, 24.f, float(imageWidth_), float(imageHeight_)},
+        {origin.x, origin.y, float(imageWidth_), float(imageHeight_)},
         {float(desc.Width), float(desc.Height), 0.f, 0.f}
     };
     ctx->UpdateSubresource(constants_.Get(), 0, nullptr, &data, 0, 0);

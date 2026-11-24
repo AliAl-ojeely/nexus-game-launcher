@@ -34,19 +34,29 @@ test('real DOM ids are maintained; advanced layout is inside overlay-only editor
   for(const name of ['overlay-hotkey','session-time','total-time','timer-action-label','last-input','nexus-mouse-cursor'])
     assert.ok(overlay.includes(`id="${name}"`),name);
 });
-test('runtime bridge uses selected shortcut and keeps fixed BGRA geometry',()=>{
+test('runtime bridge uses foreground shortcut and validated Small/Large BGRA geometry',()=>{
   const manager=read('modules/overlay-manager.js');
   const win=read('tools/nexus_input_bridge.py');
   const runner=read('tools/run_overlay_real_game.py');
   const overlay=read('overlay/poc/ui.js');
-  const css=read('overlay/poc/ui.css');
+  const css=read('overlay/poc/overlay-layout-v106.css');
+  const host=read('overlay/poc/host.cjs');
+  const markup=read('overlay/poc/index.html');
   assert.ok(manager.includes("'--overlay-shortcut', activeShortcut"));
   assert.ok(win.includes('self.hotkey_modifiers, self.hotkey_vk, self.hotkey_label'));
-  assert.ok(runner.includes('WindowsInputBridge(pid, shortcut=args.overlay_shortcut)'));
-  assert.ok(overlay.includes("button.hidden = isMinimal ? name === 'test' : !config.buttons[name]"));
-  assert.ok(overlay.includes('widget.dataset.overlaySize = config.sizeMode'));
-  assert.match(css,/\.widget\[data-overlay-size="minimal"\]/);
-  assert.match(css,/\.widget\[data-overlay-size="medium"\]/);
-  assert.ok(css.includes('padding: 8px;'));
-  assert.ok(css.includes('border-radius: 18px;'));
+  assert.match(runner,/WindowsInputBridge\(pid,\s*shortcut=args\.overlay_shortcut,\s*quick_escape=args\.quick_escape,\s*quick_start=args\.quick_start,\s*keyboard_navigation=not args\.disable_overlay_keyboard_nav,\s*gamepad_navigation=not args\.disable_overlay_gamepad_nav\)/);
+  assert.match(win,/class ForegroundShortcut:/);
+  assert.doesNotMatch(win,/\b(?:RegisterHotKey|UnregisterHotKey)\s*\(/);
+  assert.match(win,/self\.game_foreground, u\.GetAsyncKeyState/);
+  assert.match(win,/from nexus_overlay_quick_input_v103 import start_release_edge/);
+  assert.match(read('tools/nexus_overlay_quick_input_v103.py'),/def start_release_edge\(/);
+  assert.ok(overlay.includes("button.hidden = !config.buttons[name] || (isMinimal && name === 'test')"));
+  assert.ok(overlay.includes("widget.dataset.nxMode = isMinimal ? 'mini' : config.sizeMode === 'medium' ? 'medium' : 'full'"));
+  assert.ok(overlay.includes('layer.dataset.nxWindowScale = config.windowScale'));
+  assert.ok(markup.includes('./overlay-layout-v106.css'));
+  assert.match(css,/\.layer\[data-nx-window-scale="large"\]\s*\{[^}]*transform:scale\(1\.3\)/);
+  assert.match(host,/small:\s*\[560, 338\]/);
+  assert.match(host,/large:\s*\[728, 439\]/);
+  assert.match(host,/window\.setSize\(width, height, false\)/);
+  assert.match(host,/projectToWidget\(pointer, activeCorner, frameWidth, frameHeight\)/);
 });

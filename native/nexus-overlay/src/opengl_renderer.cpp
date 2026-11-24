@@ -395,8 +395,8 @@ void NexusOpenGLRenderer::Draw(HDC dc) {
     f.UseProgram(program_);
     f.BindVertexArray(vao_);
     f.Uniform1i(uniformSampler_, 0);
-    const float x = std::max(8.f, float(width) - float(imageWidth_) - 24.f);
-    Quad(x, 24.f, float(imageWidth_), float(imageHeight_), imageTexture_, float(width), float(height));
+    const NexusWidgetOrigin origin = NexusComputeWidgetOrigin(width, height, imageWidth_, imageHeight_);
+    Quad(origin.x, origin.y, float(imageWidth_), float(imageHeight_), imageTexture_, float(width), float(height));
     static std::atomic_flag firstFrame = ATOMIC_FLAG_INIT;
     if (!firstFrame.test_and_set()) NexusTrace("FRAME_DRAWN");
     const NexusCursorState cursor = NexusGetCursorState();

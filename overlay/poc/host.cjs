@@ -8,6 +8,7 @@ const fs = require('node:fs');
 const { selectSession } = require('./session_snapshot.cjs');
 const overlayConfig = require('../../modules/overlay-config');
 const { maskRoundedWidget } = require('./alpha_mask.cjs');
+const { AutoTimerPause } = require('./auto_timer_pause_v103.cjs');
 const { decodePointer, decodeScreenPointer, projectToWidget, toCursorNormalized } = require('./pointer_protocol.cjs');
 
 if (process.platform !== 'win32') {
@@ -61,6 +62,51 @@ let sessionPolling = false;
 let sessionTimer = null;
 let configTimer = null;
 let previousConfig = '';
+let activeWindowScale = 'small';
+const FRAME_SIZES = Object.freeze({ small: [560, 338], large: [728, 439] });
+function applyOverlayFrameScale(mode) {
+    const next = mode === 'large' ? 'large' : 'small';
+    if (next === activeWindowScale) return;
+    activeWindowScale = next;
+    if (window && !window.isDestroyed()) {
+        const [width, height] = FRAME_SIZES[next];
+        window.setSize(width, height, false);
+        window.webContents.invalidate();
+    }
+}
+
+let activeAutoPauseEnabled = false;
+let activeCorner = 'top-right';
+const CORNERS = Object.freeze({ 'top-left': 0, 'top-right': 1, 'bottom-left': 2, 'bottom-right': 3 });
+// Existing native binaries do not understand NXP1; never disconnect them.
+const nativeRoot = app.isPackaged ? path.join(process.resourcesPath, 'overlay-runtime')
+    : path.resolve(__dirname, '../..');
+const positionMarker = Buffer.from('NEXUS_NATIVE_POSITION_V100');
+function hasPositionCapableNative() {
+    try {
+        return ['NexusOverlayHook.dll', 'NexusD3D9Hook.dll', 'NexusOpenGLHook.dll'].every(name => {
+            const file = path.join(nativeRoot, 'native', 'nexus-overlay', 'build', 'bin', name);
+            return fs.readFileSync(file).includes(positionMarker);
+        });
+    } catch { return false; }
+}
+const nativePlacementSupported = hasPositionCapableNative();
+if (!nativePlacementSupported) console.warn('[Nexus OSR] Existing native binaries: in-game corner stays top-right until rebuilt.');
+function placementHeader() {
+    // NXP1 adds only a bounded two-bit corner; no arbitrary coordinates or sizes.
+    const packet = Buffer.alloc(16);
+    packet.write('NXP1', 0, 4, 'ascii');
+    packet.writeUInt32LE(CORNERS[activeCorner] ?? 1, 4);
+    return packet;
+}
+function publishPlacement(corner) {
+    const requested = Object.prototype.hasOwnProperty.call(CORNERS, corner) ? corner : 'top-right';
+    activeCorner = nativePlacementSupported ? requested : 'top-right';
+    if (!nativePlacementSupported) return;
+    const packet = placementHeader();
+    for (const client of clients) if (!client.destroyed) client.write(packet);
+}
+
 const settingsFile = managed ? process.env.NEXUS_OVERLAY_SETTINGS_FILE : null;
 async function pollOverlaySettings() {
     if (!settingsFile) return;
@@ -68,10 +114,15 @@ async function pollOverlaySettings() {
         const stat = await fs.promises.stat(settingsFile);
         if (stat.size > 131072) return;
         const stored = JSON.parse(await fs.promises.readFile(settingsFile, 'utf8'));
-        const next = overlayConfig.normalize(stored.modalOverlay);
+        const next = overlayConfig.normalize({ ...(stored.modalOverlay || {}),
+            themeAccent: stored.overlayThemeAccent, launcherTheme: stored.overlayTheme });
         const fingerprint = JSON.stringify(next);
+        activeAutoPauseEnabled = next.autoPauseTimer;
+        void autoTimer.update({ visible, enabled: activeAutoPauseEnabled, session: sessionUI });
         if (fingerprint !== previousConfig) {
             previousConfig = fingerprint;
+            publishPlacement(next.corner);
+            applyOverlayFrameScale(next.windowScale);
             if (window && loaded) window.webContents.send('nexus:overlay-config', next);
         }
     } catch (error) {
@@ -129,12 +180,14 @@ async function pollSession() {
     }
     const changed = JSON.stringify(sessionUI) !== JSON.stringify(next);
     sessionUI = next;
+    void autoTimer.update({ visible, enabled: activeAutoPauseEnabled, session: sessionUI });
     if (changed && window && loaded) window.webContents.send('nexus:session', sessionUI);
 }
 
 
-function requestNexusTimer(action) {
-    if (!managed || !sessionUI.connected || !sessionUI.canControlTimer || !visible) {
+function requestNexusTimer(action, allowHiddenAutoResume = false) {
+    if (!managed || !sessionUI.connected || !sessionUI.canControlTimer ||
+        (!visible && !(allowHiddenAutoResume && action === 'resume'))) {
         return Promise.resolve({ ok: false, error: 'No active Nexus-managed timer session' });
     }
     return new Promise(resolve => {
@@ -166,6 +219,10 @@ function requestNexusTimer(action) {
 }
 
 
+const autoTimer = new AutoTimerPause(
+    (paused, origin) => requestNexusTimer(paused ? 'pause' : 'resume', !paused && origin === 'auto-hide'),
+    status => console.log('[SESSION]', status));
+
 function visibilityHeader() {
     const header = Buffer.alloc(16);
     header.write('NXV1', 0, 4, 'ascii');
@@ -181,6 +238,7 @@ function publishVisibility() {
 function setVisible(next) {
     const changed = visible !== Boolean(next);
     visible = Boolean(next);
+    void autoTimer.update({ visible, enabled: activeAutoPauseEnabled, session: sessionUI });
     publishVisibility();
     if (visible && cursorState) {
         // Reconnect/toggle uses the last trusted normalized point until the
@@ -209,6 +267,7 @@ const server = net.createServer(client => {
             console.log('[Nexus OSR] Test renderer disconnected:', err.code);
         } else console.warn('[Nexus OSR] Client error:', err.message);
     });
+    if (nativePlacementSupported) client.write(placementHeader());
     client.write(visibilityHeader());
     if (visible && window && loaded) window.webContents.invalidate();
 });
@@ -233,7 +292,8 @@ function handleControl(request) {
                 if (!pointer) return { ok: false, error: 'invalid-screen-pointer', visible };
                 if (pointer.type !== 'cancel') {
                     publishCursor(pointer);
-                    const projected = projectToWidget(pointer);
+                    const [frameWidth, frameHeight] = FRAME_SIZES[activeWindowScale];
+                    const projected = projectToWidget(pointer, activeCorner, frameWidth, frameHeight);
                     if (projected) {
                         cursorInsideWidget = true;
                         window.webContents.send('nexus:pointer', projected);
@@ -323,7 +383,7 @@ app.whenReady().then(async () => {
     ipcMain.handle('nexus:timer-action', async (event, paused) => {
         if (event.sender !== window.webContents || typeof paused !== 'boolean')
             return { ok: false, error: 'Invalid timer command' };
-        const result = await requestNexusTimer(paused ? 'pause' : 'resume');
+        const result = await autoTimer.manual(paused);
         if (result.ok) console.log('[SESSION] Nexus timer:', result.paused ? 'PAUSED' : 'RUNNING');
         else console.warn('[SESSION] Timer action not applied:', result.error);
         return result;

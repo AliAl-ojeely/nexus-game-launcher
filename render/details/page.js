@@ -5,6 +5,8 @@ import { updateBackupSidebarUI } from "../details-components.js";
 import { formatPlaytime } from "../details-utils.js";
 import { clearBackupDiscoveryPanel } from "../backup-discovery-ui.js";
 import { t } from "./helpers.js";
+import { liveSessions } from "./live-sessions.mjs";
+import { paintDetailsSession } from "./session-presentation.mjs";
 
 function getMainGameFolder(exePath) {
   const subfolderPatterns = [
@@ -191,29 +193,9 @@ export async function openGameDetailsPage(game) {
   }
   updateHeaderHeart(game);
 
-  // Play button state
-  const playBtn = document.getElementById("detailsPlayBtn");
-  const timerContainer = document.getElementById("sessionTimerContainer");
-  if (state.isGameRunning && state.currentGameExePath === game.path) {
-    if (playBtn) {
-      playBtn.disabled = false;
-      playBtn.classList.add("play-btn-running");
-      playBtn.innerHTML = `<i class="fa-solid fa-stop"></i> ${userSettings.lang === "ar" ? "إيقاف" : "Stop"}`;
-    }
-    if (timerContainer) timerContainer.style.display = "flex";
-  } else {
-    if (timerContainer) timerContainer.style.display = "none";
-    if (playBtn) {
-      playBtn.disabled = false;
-      playBtn.classList.remove(
-        "play-btn-running",
-        "play-btn-stopping",
-        "play-btn-securing",
-      );
-      playBtn.style.cssText = "";
-      playBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${userSettings.lang === "ar" ? "إلعب الآن" : "Play"}</span>`;
-    }
-  }
+  // The details view reflects only this game's backend session. A global
+  // isGameRunning flag would make *every* game look active after one launch.
+  state.isGameRunning = paintDetailsSession(document, liveSessions, game.id, userSettings.lang);
 
   // ─────────────────────────────────────────────────────────────────────────
   // NOTES SECTION – load and set up edit/save handlers

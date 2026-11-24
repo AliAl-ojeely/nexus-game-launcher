@@ -1,0 +1,288 @@
+/* Nexus Overlay Concepts v1.0.0.
+   Same 560 x 338 offscreen texture, action handlers and pointer surface.
+   Only layout and theme visual tokens change here. No external assets. */
+:root { --nx-concept-gap: 8px; }
+.layer[data-nx-corner] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 8px;
+}
+.layer[data-nx-corner="top-left"],
+.layer[data-nx-corner="bottom-left"] { align-items: flex-start; }
+.layer[data-nx-corner="bottom-left"],
+.layer[data-nx-corner="bottom-right"] { justify-content: flex-end; }
+
+/* Unified glass/token rendering. Accent is taken from the launcher at runtime. */
+.widget[data-nx-layout] {
+  flex: none;
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  color: #f7f7fc;
+  border: 1px solid color-mix(in srgb, var(--nx-accent) 58%, rgba(231,235,255,.26));
+  background:
+    radial-gradient(130% 175% at 0% 0%, color-mix(in srgb, var(--nx-accent) 15%, transparent), transparent 48%),
+    linear-gradient(152deg, rgba(19,19,30,.95), rgba(8,10,17,.96));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.13),
+    inset 0 -1px 0 rgba(255,255,255,.055),
+    0 7px 25px rgba(0,0,0,.52),
+    0 0 20px color-mix(in srgb, var(--nx-accent) 17%, transparent);
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.widget[data-nx-layout]::before {
+  height: 2px; left: 17px; right: 17px;
+  background: linear-gradient(90deg, transparent, var(--nx-accent), transparent);
+  opacity: .65;
+}
+.widget[data-nx-layout][data-overlay-style="solid"] {
+  background: linear-gradient(140deg,rgba(20,20,27,.98),rgba(8,9,14,.98));
+}
+.widget[data-nx-layout][data-overlay-style="minimal"] {
+  background: rgba(var(--nx-base-rgb),var(--nx-opacity));
+  border-color: color-mix(in srgb,var(--nx-accent) 40%, transparent);
+  box-shadow: 0 4px 15px rgba(0,0,0,.55);
+}
+.widget[data-nx-layout] .brand-mark {
+  background: color-mix(in srgb,var(--nx-accent) 22%,#13131e);
+  border-color: color-mix(in srgb,var(--nx-accent) 56%,transparent);
+  box-shadow: 0 0 14px color-mix(in srgb,var(--nx-accent) 19%,transparent);
+}
+.widget[data-nx-layout] .identity-dot,
+.widget[data-nx-layout] .btn-icon { color: var(--nx-accent); }
+.widget[data-nx-layout] .metric {
+  border: 1px solid rgba(170,183,210,.21);
+  border-radius: 12px;
+  background: linear-gradient(152deg,rgba(29,33,49,.90),rgba(14,17,27,.95));
+}
+.widget[data-nx-layout] .metric.primary {
+  border-color: color-mix(in srgb,var(--nx-accent) 72%,rgba(255,255,255,.16));
+  background: linear-gradient(145deg,color-mix(in srgb,var(--nx-accent) 31%,rgba(34,31,53,.92)),rgba(19,18,30,.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.17),0 0 18px color-mix(in srgb,var(--nx-accent) 13%,transparent);
+}
+.widget[data-nx-layout] .metric-label { color: #b8c2d9; }
+.widget[data-nx-layout] .metric.primary .metric-label {
+  color: color-mix(in srgb,var(--nx-accent) 37%,#f1efff);
+}
+.widget[data-nx-layout] .metric strong {
+  color: #fff;
+  font-size: 22px;
+  line-height: 27px;
+  font-variant-numeric: tabular-nums;
+}
+.widget[data-nx-layout] .action {
+  border-color: rgba(188,198,223,.25);
+  border-radius: 11px;
+  background: linear-gradient(157deg,rgba(34,34,51,.95),rgba(15,17,27,.97));
+  color: #f6f6fb;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.11);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.widget[data-nx-layout] .action.resume,
+.widget[data-nx-layout] .action.selected:not(:disabled) {
+  border-color: color-mix(in srgb,var(--nx-accent) 86%,white);
+  background: linear-gradient(160deg,
+    color-mix(in srgb,var(--nx-accent) 83%,#36304c),
+    color-mix(in srgb,var(--nx-accent) 49%,#121324));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28),0 0 15px color-mix(in srgb,var(--nx-accent) 22%,transparent);
+}
+.widget[data-nx-layout] .action:hover:not(:disabled),
+.widget[data-nx-layout] .action.mouse-hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--nx-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb,var(--nx-accent) 24%,transparent);
+}
+.widget[data-nx-layout] .action:disabled {
+  background: rgba(25,27,39,.7);
+  color: #8290a9;
+  border-color: rgba(155,166,189,.18);
+  box-shadow: none;
+  opacity: .8;
+}
+.widget[data-nx-layout] .action:disabled .btn-icon { color: #78849e; }
+.widget[data-nx-layout] .status, .widget[data-nx-layout] footer kbd {
+  border-color: rgba(197,203,225,.24);
+  background: rgba(29,33,51,.78);
+}
+.widget[data-nx-layout] .sync-row { color: #adbad1; }
+.widget[data-nx-layout] .sync-light { background: var(--nx-accent); }
+
+/* 1. Dockline: rounded horizontal dock, suitable for top/bottom corners. */
+.widget[data-nx-layout="dockline"] {
+  width: 544px; height: 133px; border-radius: 24px;
+  padding: 11px 13px 9px; gap: 5px;
+  display: grid;
+  grid-template-columns: 36px minmax(0,196px) minmax(0,1fr);
+  grid-template-rows: minmax(0,74px) minmax(0,22px);
+  align-items: stretch;
+}
+.widget[data-nx-layout="dockline"] .heading {
+  grid-column: 1; grid-row: 1; margin: 0; min-height: 0;
+  align-items: center; justify-content: center;
+}
+.widget[data-nx-layout="dockline"] .brand-mark { width:32px;height:32px;flex-basis:32px; }
+.widget[data-nx-layout="dockline"] .identity,
+.widget[data-nx-layout="dockline"] .status,
+.widget[data-nx-layout="dockline"] .game-info,
+.widget[data-nx-layout="dockline"] .sync-row { display:none; }
+.widget[data-nx-layout="dockline"] .metrics {
+  grid-column: 2;grid-row:1; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px; min-height:0; align-self:stretch;
+}
+.widget[data-nx-layout="dockline"] .metric { height:auto; min-height:0;padding:9px 7px;gap:2px;border-radius:10px; }
+.widget[data-nx-layout="dockline"] .metric strong { font-size:15px;line-height:18px;letter-spacing:-.4px; }
+.widget[data-nx-layout="dockline"] .metric-label { font-size:8px;line-height:10px;letter-spacing:.6px; }
+.widget[data-nx-layout="dockline"] .metric-footer { display:none; }
+.widget[data-nx-layout="dockline"] .actions {
+  grid-column:3;grid-row:1;min-height:0;margin:0;gap:6px; align-items:stretch;
+}
+.widget[data-nx-layout="dockline"] .action { height:auto;min-height:0;padding:0 7px;font-size:10px; }
+.widget[data-nx-layout="dockline"] footer {
+  grid-column:1/-1;grid-row:2;display:flex;align-items:center;justify-content:center;
+  margin:0;padding:0;border-top:1px solid rgba(255,255,255,.10);
+  font-size:8px;gap:7px;
+}
+.widget[data-nx-layout="dockline"] footer .input-hints { font-size:8px; }
+.widget[data-nx-layout="dockline"] footer kbd { padding:1px 3px; }
+.widget[data-nx-layout="dockline"] #last-input { display:none; }
+.widget[data-nx-layout="dockline"] #overlay-hotkey { display:inline !important; }
+
+/* 2. Corner Pulse: stacked mini dashboard with illuminated corner edge. */
+.widget[data-nx-layout="corner-pulse"] {
+  width: 466px; height: 302px; border-radius: 23px;
+  padding: 17px 17px 13px;gap:10px;
+}
+.widget[data-nx-layout="corner-pulse"]::after {
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background: radial-gradient(circle at 0 0,color-mix(in srgb,var(--nx-accent) 35%,transparent),transparent 33%);
+  opacity:.55;z-index:-1;
+}
+.layer[data-nx-corner$="right"] .widget[data-nx-layout="corner-pulse"]::after {
+  background:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--nx-accent) 32%,transparent),transparent 33%);
+}
+.widget[data-nx-layout="corner-pulse"] .heading { min-height:27px; }
+.widget[data-nx-layout="corner-pulse"] .brand-mark { width:26px;height:26px;flex-basis:26px;border-radius:8px; }
+.widget[data-nx-layout="corner-pulse"] .brand-mark span { font-size:16px; }
+.widget[data-nx-layout="corner-pulse"] .identity strong {font-size:11px;}
+.widget[data-nx-layout="corner-pulse"] .identity > span {font-size:7px;}
+.widget[data-nx-layout="corner-pulse"] .game-info { min-height:32px; }
+.widget[data-nx-layout="corner-pulse"] .game-info strong {font-size:14px;}
+.widget[data-nx-layout="corner-pulse"] .metrics {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.widget[data-nx-layout="corner-pulse"] .metric {height:74px;padding:10px 12px 7px;}
+.widget[data-nx-layout="corner-pulse"] .metric strong {font-size:22px;line-height:25px;}
+.widget[data-nx-layout="corner-pulse"] .metric-footer {display:none;}
+.widget[data-nx-layout="corner-pulse"] .sync-row {height:11px;font-size:9px;}
+.widget[data-nx-layout="corner-pulse"] .actions {min-height:39px;margin-top:auto;gap:9px;}
+.widget[data-nx-layout="corner-pulse"] .action {height:39px;font-size:11px;}
+.widget[data-nx-layout="corner-pulse"] footer {font-size:9px;}
+
+/* 3. Side Rail: compact vertical command palette pinned to a screen side. */
+.widget[data-nx-layout="side-rail"] {
+  width: 242px; height: 322px; padding:12px 13px; gap:9px;border-radius:20px;
+}
+.widget[data-nx-layout="side-rail"] .heading {min-height:31px;gap:7px;}
+.widget[data-nx-layout="side-rail"] .brand-mark {width:29px;height:29px;flex-basis:29px;}
+.widget[data-nx-layout="side-rail"] .brand-mark span {font-size:17px;}
+.widget[data-nx-layout="side-rail"] .identity strong {font-size:10px;}
+.widget[data-nx-layout="side-rail"] .identity > span {font-size:7px;letter-spacing:.8px;}
+.widget[data-nx-layout="side-rail"] .status {padding:4px 5px;font-size:7px;}
+.widget[data-nx-layout="side-rail"] .game-info,
+.widget[data-nx-layout="side-rail"] .sync-row {display:none;}
+.widget[data-nx-layout="side-rail"] .metrics {
+  grid-template-columns: 1fr; gap:7px;min-height:0;
+}
+.widget[data-nx-layout="side-rail"] .metric {height:64px;padding:8px 11px;}
+.widget[data-nx-layout="side-rail"] .metric strong {font-size:20px;line-height:24px;}
+.widget[data-nx-layout="side-rail"] .metric-footer {display:none;}
+.widget[data-nx-layout="side-rail"] .actions {display:flex;flex-direction:column;gap:6px;min-height:0;margin-top:auto;}
+.widget[data-nx-layout="side-rail"] .action {flex:0 0 38px;height:38px;font-size:10px;}
+.widget[data-nx-layout="side-rail"] footer {font-size:8px;gap:3px;justify-content:center;}
+.widget[data-nx-layout="side-rail"] #last-input {display:none;}
+.widget[data-nx-layout="side-rail"] #overlay-hotkey {display:inline !important;}
+.widget[data-nx-layout="side-rail"] footer .input-hints {display:none;}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .metrics {
+  grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px;
+}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .metric {height:57px;padding:6px 7px;}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .metric strong {font-size:13px;letter-spacing:-.5px;}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .metric-label {font-size:7px;letter-spacing:.4px;}
+
+/* 4. Command Strip: compact one-row controls and status, accent glow rim. */
+.widget[data-nx-layout="command-strip"] {
+  width:544px;height:122px;border-radius:19px;padding:13px 13px 8px;gap:5px;
+  display:grid;grid-template-columns:38px minmax(0,189px) minmax(0,1fr);
+  grid-template-rows:minmax(0,70px) minmax(0,20px);
+  box-shadow:0 0 16px color-mix(in srgb,var(--nx-accent) 45%,transparent),0 6px 20px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.17);
+}
+.widget[data-nx-layout="command-strip"] .heading {grid-column:1;grid-row:1;min-height:0;justify-content:center;}
+.widget[data-nx-layout="command-strip"] .brand-mark {flex-basis:31px;width:31px;height:31px;}
+.widget[data-nx-layout="command-strip"] .brand-mark span {font-size:18px;}
+.widget[data-nx-layout="command-strip"] .identity,
+.widget[data-nx-layout="command-strip"] .status,
+.widget[data-nx-layout="command-strip"] .game-info,
+.widget[data-nx-layout="command-strip"] .sync-row {display:none;}
+.widget[data-nx-layout="command-strip"] .metrics {grid-column:2;grid-row:1;gap:6px;grid-template-columns:repeat(2,minmax(0,1fr));}
+.widget[data-nx-layout="command-strip"] .metric {height:auto;padding:7px 6px;justify-content:center;gap:5px;}
+.widget[data-nx-layout="command-strip"] .metric strong {font-size:17px;line-height:20px;letter-spacing:-.6px;}
+.widget[data-nx-layout="command-strip"] .metric-label {font-size:8px;line-height:10px;letter-spacing:.6px;}
+.widget[data-nx-layout="command-strip"] .metric-footer {display:none;}
+.widget[data-nx-layout="command-strip"] .actions {grid-column:3;grid-row:1;min-height:0;gap:6px;margin:0;}
+.widget[data-nx-layout="command-strip"] .action {height:auto;padding:0 6px;font-size:10px;}
+.widget[data-nx-layout="command-strip"] footer {grid-column:1/-1;grid-row:2;justify-content:center;margin:0;font-size:8px;}
+.widget[data-nx-layout="command-strip"] footer #last-input {display:none;}
+.widget[data-nx-layout="command-strip"] footer #overlay-hotkey {display:inline !important;}
+
+/* The four concepts do not rely on the former full/medium/minimal geometry. */
+.widget[data-nx-layout][data-overlay-size="medium"],
+.widget[data-nx-layout][data-overlay-size="minimal"] {margin:0;}
+.widget[data-nx-layout="dockline"][data-overlay-size="medium"],
+.widget[data-nx-layout="command-strip"][data-overlay-size="medium"] {width:490px;}
+.widget[data-nx-layout="dockline"][data-overlay-size="minimal"],
+.widget[data-nx-layout="command-strip"][data-overlay-size="minimal"] {width:430px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-size="medium"] {width:435px;height:279px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-size="minimal"] {width:416px;height:250px;}
+.widget[data-nx-layout="side-rail"][data-overlay-size="medium"],
+.widget[data-nx-layout="side-rail"][data-overlay-size="minimal"] {width:235px;height:308px;}
+.widget[data-nx-layout] .metric[hidden],
+.widget[data-nx-layout] .action[hidden] {display:none !important;}
+.widget[data-nx-layout="dockline"] .metrics[data-empty="true"],
+.widget[data-nx-layout="command-strip"] .metrics[data-empty="true"] {display:none;}
+/* Add more breathing room when optional metrics are enabled. */
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metric,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric {padding:5px 5px;}
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metric strong,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric strong {font-size:14px;line-height:18px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-dense="true"] .metric {height:57px;padding:6px 9px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-dense="true"] .metric strong {font-size:17px;line-height:21px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-dense="true"] .game-info {min-height:28px;}
+
+@media (prefers-reduced-motion:reduce) {
+  .widget[data-nx-layout],.widget[data-nx-layout] .action {transition:none!important;}
+}
+/* Dense/optional-content safeguards: never make the existing action buttons
+   unclickable when 3-4 metrics and all three actions are enabled. */
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"],
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] {
+  height:154px;grid-template-rows:minmax(0,104px) minmax(0,22px);
+}
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metrics,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metrics {grid-auto-rows:minmax(0,1fr);}
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metric,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric {min-height:0;padding:3px 5px;}
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metric strong,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric strong {font-size:12px;line-height:15px;}
+.widget[data-nx-layout="dockline"][data-overlay-dense="true"] .metric-label,
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric-label {font-size:7px;line-height:8px;}
+.widget[data-nx-layout="corner-pulse"][data-overlay-dense="true"] {
+  padding:12px 14px;gap:6px;height:302px;
+}
+.widget[data-nx-layout="corner-pulse"][data-overlay-dense="true"] .metric {height:51px;}
+.widget[data-nx-layout="side-rail"] {gap:7px;}
+.widget[data-nx-layout="side-rail"] .metric {height:56px;}
+.widget[data-nx-layout="side-rail"] .actions {gap:5px;}
+.widget[data-nx-layout="side-rail"] .action {flex-basis:34px;height:34px;}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .metric {height:51px;}
+.widget[data-nx-layout="side-rail"][data-overlay-dense="true"] .action {flex-basis:32px;height:32px;}

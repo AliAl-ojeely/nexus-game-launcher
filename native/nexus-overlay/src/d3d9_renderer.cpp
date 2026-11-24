@@ -193,9 +193,8 @@ void NexusD3D9Renderer::Draw(IDirect3DDevice9* device, IDirect3DSurface9* option
                 device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
                 device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
                 if (SUCCEEDED(device->BeginScene())) {
-                    const float x = float(desc.Width) - float(imageWidth_) - float(kMargin);
-                    const float y = float(kMargin);
-                    const bool drew = Quad(device, image_, std::max(0.f, x), y, float(imageWidth_), float(imageHeight_));
+                    const NexusWidgetOrigin origin = NexusComputeWidgetOrigin(desc.Width, desc.Height, imageWidth_, imageHeight_);
+                    const bool drew = Quad(device, image_, origin.x, origin.y, float(imageWidth_), float(imageHeight_));
                     const NexusCursorState pos = NexusGetCursorState();
                     if (pos.valid && cursor_) {
                         const float cx = float(pos.xNorm) * float(desc.Width - 1) / 65535.f;

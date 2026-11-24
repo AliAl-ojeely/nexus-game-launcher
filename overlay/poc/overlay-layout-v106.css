@@ -1,0 +1,162 @@
+/* Nexus Overlay v1.0.6: layout differentiation + physical OSR window scaling.
+   560x338 (Small) or 728x439 (Large) BGRA fits the existing native 800x600 limit.
+   The scale follows the entire pixel texture, keeping controls and pointer hit
+   regions visually aligned without modifying the C++ native renderer. */
+.layer[data-nx-window-scale="large"] {
+  width:560px;
+  height:338px;
+  transform:scale(1.3);
+  transform-origin:top left;
+}
+.layer[data-nx-window-scale="small"] {
+  width:560px;
+  height:338px;
+}
+
+/* Dockline stays a rounded single-tier dock. Focus on time and short actions. */
+.widget[data-nx-layout="dockline"] {
+  border-radius:30px;
+  background:
+    radial-gradient(130% 180% at 10% 0%, color-mix(in srgb,var(--nx-accent) 16%,transparent),transparent 60%),
+    linear-gradient(170deg,rgba(21,20,36,.94),rgba(8,10,18,.97));
+}
+.widget[data-nx-layout="dockline"] .metric {
+  border-radius:15px;
+}
+.widget[data-nx-layout="dockline"] .action {
+  border-radius:99px;
+}
+.widget[data-nx-layout="dockline"][data-nx-mode="mini"] {
+  border-radius:99px;
+}
+
+/* Command Strip = TWO-TIER control surface, not a second Dockline.
+   A narrow vertical brand rail is followed by a status row on top and
+   a separate, wide COMMAND ROW underneath. More square, more operational. */
+.widget[data-nx-layout="command-strip"] {
+  width:544px;
+  height:171px;
+  padding:11px 13px;
+  gap:8px;
+  border-radius:13px;
+  display:grid;
+  grid-template-columns:39px minmax(0,1fr);
+  grid-template-rows:43px minmax(0,69px) 18px;
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--nx-accent) 14%,#0b0c16),#0c0f1a 25%,#0b0f19 100%);
+  box-shadow:
+    inset 3px 0 0 color-mix(in srgb,var(--nx-accent) 75%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.14),
+    0 7px 22px rgba(0,0,0,.55),
+    0 0 17px color-mix(in srgb,var(--nx-accent) 22%,transparent);
+}
+.widget[data-nx-layout="command-strip"]::before {
+  left:0;right:auto;top:15px;width:3px;height:calc(100% - 30px);
+  opacity:.9;
+  background:var(--nx-accent);
+}
+.widget[data-nx-layout="command-strip"] .heading {
+  grid-column:1;grid-row:1 / 3;
+  min-height:0;display:flex;align-items:center;justify-content:center;
+  padding:5px 2px;
+  border-right:1px solid color-mix(in srgb,var(--nx-accent) 34%,transparent);
+  background:transparent;
+}
+.widget[data-nx-layout="command-strip"] .brand-mark {
+  width:30px;height:30px;flex:0 0 30px;border-radius:9px;
+}
+.widget[data-nx-layout="command-strip"] .metrics {
+  grid-column:2;grid-row:1;
+  display:flex;align-items:stretch;
+  grid-template-columns:none;
+  gap:7px;min-height:0;max-width:100%;
+}
+.widget[data-nx-layout="command-strip"] .metric {
+  display:flex;flex:1;flex-direction:row;
+  justify-content:space-between;align-items:center;
+  min-width:0;height:auto;min-height:0;
+  padding:5px 10px;border-radius:7px;
+  background:linear-gradient(135deg,rgba(30,33,47,.87),rgba(16,20,31,.91));
+}
+.widget[data-nx-layout="command-strip"] .metric-label {
+  font-size:7px;line-height:9px;letter-spacing:.6px;max-width:48%;
+}
+.widget[data-nx-layout="command-strip"] .metric strong {
+  font-size:17px;line-height:21px;
+  letter-spacing:-.7px;
+}
+.widget[data-nx-layout="command-strip"] .actions {
+  grid-column:2;grid-row:2;
+  display:flex;gap:7px;
+  align-items:stretch;
+  min-height:0;margin:0;
+}
+.widget[data-nx-layout="command-strip"] .action {
+  height:auto;min-height:0;
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+}
+.widget[data-nx-layout="command-strip"] footer {
+  grid-column:1/-1;grid-row:3;
+  display:flex;justify-content:space-between;
+  margin:0;padding:0;
+  font-size:8px;
+}
+
+/* Mini: keep Command Strip two tier, with a top status readout and a large
+   separate action strip. Dockline remains truly one tier. */
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] {
+  width:449px;height:126px;
+  padding:10px 11px;gap:6px;
+  grid-template-columns:31px minmax(0,1fr);
+  grid-template-rows:34px minmax(0,69px);
+  border-radius:12px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .heading {
+  grid-column:1;grid-row:1/3;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .brand-mark {
+  width:25px;height:25px;flex-basis:25px;border-radius:7px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metrics {
+  grid-column:2;grid-row:1;
+  display:flex;gap:5px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metric {
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  padding:4px 6px;border-radius:6px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metric-label {
+  font-size:7px;letter-spacing:0;max-width:45%;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .metric strong {
+  font-size:14px;line-height:18px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .actions {
+  grid-column:2;grid-row:2;
+  display:flex;align-items:stretch;gap:6px;
+  min-height:0;margin:0;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"] .action {
+  height:auto;padding:6px;font-size:11px;border-radius:7px;
+}
+/* Keep enough room when all four metrics are enabled. */
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] {
+  height:183px;
+  grid-template-rows:53px minmax(0,72px) 18px;
+}
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metrics {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-auto-rows:minmax(0,1fr);gap:4px;
+}
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric {
+  min-height:0;padding:2px 5px;
+}
+.widget[data-nx-layout="command-strip"][data-overlay-dense="true"] .metric strong {
+  font-size:12px;line-height:14px;
+}
+.widget[data-nx-layout="command-strip"][data-nx-mode="mini"][data-overlay-dense="true"] {
+  height:126px;grid-template-rows:34px minmax(0,69px);
+}

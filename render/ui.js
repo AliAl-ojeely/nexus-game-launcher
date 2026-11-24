@@ -178,6 +178,8 @@ export function initUI() {
     "--btn-text-color",
     getContrastColor(userSettings.accentColor),
   );
+  // Persist only the validated launcher accent for the isolated native overlay.
+  void window.api?.overlaySyncTheme?.({ accent: userSettings.accentColor, theme: userSettings.theme }).catch(() => {});
   const accentInput = document.getElementById("accentColorSetting");
   if (accentInput) accentInput.value = userSettings.accentColor;
 
@@ -265,6 +267,8 @@ export function initUI() {
       );
       updateTitleVisibility(newGrid);
       applyLanguage(newLang);
+      void window.api?.overlaySyncTheme?.({ accent: newAccent, theme: newTheme }).catch(() => {});
+      window.dispatchEvent(new Event('nexus:launcher-theme-changed'));
 
       showToast(
         "success",

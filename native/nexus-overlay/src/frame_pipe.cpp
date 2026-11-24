@@ -7,6 +7,7 @@
 #include <cstring>
 #include <utility>
 #include <atomic>
+#include <algorithm>
 
 namespace {
 std::mutex g_mutex;
@@ -15,6 +16,7 @@ std::atomic<bool> g_visible{false};
 std::atomic<uint32_t> g_cursorX{0};
 std::atomic<uint32_t> g_cursorY{0};
 std::atomic<bool> g_cursorValid{false};
+std::atomic<uint32_t> g_corner{1}; // top-right remains the safe default
 constexpr uint32_t MAX_WIDTH = 800;
 constexpr uint32_t MAX_HEIGHT = 600;
 
@@ -33,6 +35,13 @@ bool ReadExactly(HANDLE pipe, void* output, DWORD length) {
 }
 
 bool NexusOverlayVisible() { return g_visible.load(std::memory_order_acquire); }
+uint32_t NexusOverlayCorner() { return g_corner.load(std::memory_order_acquire); }
+NexusWidgetOrigin NexusComputeWidgetOrigin(uint32_t width, uint32_t height,
+    uint32_t widgetWidth, uint32_t widgetHeight) {
+    const uint32_t corner = NexusOverlayCorner();
+    return { (corner & 1) ? std::max(8.f, float(width) - float(widgetWidth) - 24.f) : 24.f,
+             (corner & 2) ? std::max(8.f, float(height) - float(widgetHeight) - 24.f) : 24.f };
+}
 NexusCursorState NexusGetCursorState() {
     NexusCursorState state;
     state.xNorm = g_cursorX.load(std::memory_order_relaxed);
@@ -82,6 +91,13 @@ void NexusPipeReaderLoop() {
                 g_cursorValid.store(u32(12) == 1, std::memory_order_release);
                 continue;
             }
+            if (std::memcmp(header, "NXP1", 4) == 0) {
+                // Only four enumerated corners are accepted. Reserved words stay zero.
+                if (u32(4) > 3 || u32(8) != 0 || u32(12) != 0) break;
+                g_corner.store(u32(4), std::memory_order_release);
+                NexusTrace("NEXUS_NATIVE_POSITION_V100");
+                continue;
+            }
             if (std::memcmp(header, "NXF1", 4) != 0) break;
             const uint32_t width = u32(4), height = u32(8), bytes = u32(12);
             if (width == 0 || height == 0 || width > MAX_WIDTH || height > MAX_HEIGHT ||
@@ -103,6 +119,7 @@ void NexusPipeReaderLoop() {
         }
         CloseHandle(pipe);
         g_visible.store(false, std::memory_order_release);
+        g_corner.store(1, std::memory_order_release);
         g_cursorValid.store(false, std::memory_order_release);
         {
             std::lock_guard<std::mutex> guard(g_mutex);

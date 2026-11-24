@@ -734,7 +734,10 @@ def run(args: argparse.Namespace) -> int:
                 response = send_control(pid, control_token, 'ping')
                 if not response.get('ok'):
                     raise RuntimeError('Electron overlay control endpoint rejected the initial ping')
-                bridge = WindowsInputBridge(pid, shortcut=args.overlay_shortcut)
+                bridge = WindowsInputBridge(pid, shortcut=args.overlay_shortcut,
+                                            quick_escape=args.quick_escape, quick_start=args.quick_start,
+                                            keyboard_navigation=not args.disable_overlay_keyboard_nav,
+                                            gamepad_navigation=not args.disable_overlay_gamepad_nav)
                 bridge.start()
                 print(f'[CONTROL] Overlay initially HIDDEN; focus the game and press {bridge.hotkey_label}.', flush=True)
                 print('[CONTROL] Xbox-compatible gamepad: press Start+Back to toggle.', flush=True)
@@ -858,6 +861,10 @@ def main() -> int:
     parser.add_argument("--attach", action="store_true", help="Request native DLL load (never automatic)")
     parser.add_argument("--no-input", action="store_true", help="Legacy always-visible draw test with no interactive controls")
     parser.add_argument("--overlay-shortcut", type=str, default="Ctrl+Shift+O", help="Validated Windows overlay hotkey")
+    parser.add_argument("--quick-escape", action="store_true", help="Allow Esc to toggle only for the focused game")
+    parser.add_argument("--quick-start", action="store_true", help="Allow XInput Start release to toggle overlay")
+    parser.add_argument("--disable-overlay-keyboard-nav", action="store_true", help="Disable Nexus overlay arrow/Enter/back navigation")
+    parser.add_argument("--disable-overlay-gamepad-nav", action="store_true", help="Disable Nexus D-pad/A/B navigation")
     parser.add_argument('--managed', action='store_true', help='Started and owned by Nexus launcher')
     parser.add_argument('--managed-game-id', type=str)
     parser.add_argument('--managed-session-id', type=str)

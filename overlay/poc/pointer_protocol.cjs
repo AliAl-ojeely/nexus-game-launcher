@@ -25,12 +25,18 @@ function decodeScreenPointer(key, source) {
     return { type: m[1], x, y, width, height };
 }
 
-function projectToWidget(pointer) {
+function widgetOrigin(width, height, corner = 'top-right', widgetWidth = WIDTH, widgetHeight = HEIGHT) {
+    const right = corner === 'top-right' || corner === 'bottom-right';
+    const bottom = corner === 'bottom-left' || corner === 'bottom-right';
+    return { x: right ? Math.max(8, width - widgetWidth - 24) : 24,
+             y: bottom ? Math.max(8, height - widgetHeight - 24) : 24 };
+}
+function projectToWidget(pointer, corner = 'top-right', widgetWidth = WIDTH, widgetHeight = HEIGHT) {
     if (!pointer) return null;
-    const widgetLeft = Math.max(8, pointer.width - WIDTH - 24);
-    const x = pointer.x - widgetLeft;
-    const y = pointer.y - 24;
-    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) return null;
+    const origin = widgetOrigin(pointer.width, pointer.height, corner, widgetWidth, widgetHeight);
+    const x = pointer.x - origin.x;
+    const y = pointer.y - origin.y;
+    if (x < 0 || y < 0 || x >= widgetWidth || y >= widgetHeight) return null;
     return { type: pointer.type, x, y, native: true };
 }
 function toCursorNormalized(pointer) {
@@ -38,4 +44,4 @@ function toCursorNormalized(pointer) {
     return { x: Math.round(pointer.x * 65535 / Math.max(1, pointer.width - 1)),
              y: Math.round(pointer.y * 65535 / Math.max(1, pointer.height - 1)) };
 }
-module.exports = { decodePointer, decodeScreenPointer, projectToWidget, toCursorNormalized, WIDTH, HEIGHT };
+module.exports = { decodePointer, decodeScreenPointer, projectToWidget, widgetOrigin, toCursorNormalized, WIDTH, HEIGHT };

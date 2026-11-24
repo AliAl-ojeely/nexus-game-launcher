@@ -1,0 +1,58 @@
+/* NEXUS_OVERLAY_CONCEPTS_V100: visual-only additions to Settings > Modal Overlay. */
+#settingsArea #settings-overlay-panel .nexus-concept-grid {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;
+}
+#settingsArea #settings-overlay-panel .nexus-concept-choice {
+  position:relative;min-width:0;min-height:88px;padding:12px 8px 10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  border:1px solid var(--border-color);border-radius:11px;
+  background:var(--bg-input);color:var(--text-muted);cursor:pointer;
+  text-align:center;font-size:12px;font-weight:600;line-height:1.3;
+  transition:border-color .18s ease,transform .18s ease,background .18s ease;
+}
+#settingsArea #settings-overlay-panel .nexus-concept-choice:hover {
+  transform:translateY(-1px);background:var(--bg-card);
+}
+#settingsArea #settings-overlay-panel .nexus-concept-choice input,
+#settingsArea #settings-overlay-panel .nexus-corner-grid input {
+  position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;
+}
+#settingsArea #settings-overlay-panel .nexus-concept-choice:has(input:checked),
+#settingsArea #settings-overlay-panel .nexus-corner-grid label:has(input:checked) {
+  border-color:var(--accent);color:var(--text-main);
+  background:color-mix(in srgb,var(--accent) 12%,var(--bg-input));
+}
+#settingsArea #settings-overlay-panel .nexus-concept-choice:has(input:focus-visible),
+#settingsArea #settings-overlay-panel .nexus-corner-grid label:has(input:focus-visible) {
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+#settingsArea #settings-overlay-panel .nexus-mini-shape {
+  position:relative;display:block;height:17px;width:56px;
+  border:1px solid color-mix(in srgb,var(--accent) 78%,var(--text-muted));
+  background:color-mix(in srgb,var(--accent) 16%,var(--bg-modal));
+  box-shadow:0 0 11px color-mix(in srgb,var(--accent) 16%,transparent);
+}
+#settingsArea .nexus-mini-dock {height:11px;border-radius:999px;}
+#settingsArea .nexus-mini-corner {width:38px;height:23px;border-radius:8px;}
+#settingsArea .nexus-mini-rail {width:17px;height:32px;border-radius:7px;}
+#settingsArea .nexus-mini-strip {width:64px;height:13px;border-radius:4px;}
+#settingsArea #settings-overlay-panel .nexus-corner-grid {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+}
+#settingsArea #settings-overlay-panel .nexus-corner-grid label {
+  display:flex;align-items:center;justify-content:center;position:relative;
+  min-height:38px;border:1px solid var(--border-color);border-radius:9px;
+  color:var(--text-muted);background:var(--bg-input);cursor:pointer;
+  text-align:center;font-size:12px;font-weight:600;
+}
+#settingsArea #settings-overlay-panel .nexus-corner-grid label:hover {background:var(--bg-card);}
+#settingsArea #settings-overlay-panel .nexus-theme-accent-note {
+  display:block;color:var(--text-muted);font-size:12px;line-height:1.45;
+  border-inline-start:2px solid var(--accent);padding-inline-start:10px;
+}
+#settingsArea #settings-overlay-panel .overlay-size-settings {display:none!important;}
+#settingsArea #settings-overlay-panel .overlay-editor .overlay-color-controls {grid-template-columns:minmax(0,1fr);}
+@media(prefers-reduced-motion:reduce){
+  #settingsArea #settings-overlay-panel .nexus-concept-choice {transition:none;}
+  #settingsArea #settings-overlay-panel .nexus-concept-choice:hover{transform:none;}
+}

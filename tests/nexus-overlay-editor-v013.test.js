@@ -35,11 +35,19 @@ function fakeDom() {
   return {metrics,buttons,widget,ids,receive(config){messageListener({source:parent,data:{type:'nexus-overlay-preview-config',config}})}};
 }
 
-test('schema defaults retain the legacy overlay layout and style', () => {
+test('schema defaults preserve legacy settings and all v2.8.0 safe defaults', () => {
   assert.deepEqual(config.normalize(null), {
     enabled:false,
     shortcut:'Ctrl+Shift+O',
+    quickOpen:{escape:false,start:false},
+    autoPauseTimer:false,
+    navigation:{keyboard:true,gamepad:true},
+    layout:'corner-pulse',
+    corner:'top-right',
+    themeAccent:'#ff4655',
+    launcherTheme:'dark',
     sizeMode:'full',
+    windowScale:'small',
     metrics:{session:true,total:true,clock:false,fps:false},
     buttons:{resume:true,timer:true,test:true},
     appearance:{style:'glassy',background:'#000000',accent:'#78abf8',opacity:45},

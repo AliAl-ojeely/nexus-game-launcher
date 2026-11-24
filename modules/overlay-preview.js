@@ -21,6 +21,9 @@ function buildPreviewHtml() {
     let html = source('overlay/poc/index.html');
     const changes = [
         ['<link rel="stylesheet" href="./ui.css" />', '<style>\n' + source('overlay/poc/ui.css') + '\n</style>'],
+        ['<link rel="stylesheet" href="./concepts-v100.css" />', '<style>\n' + source('overlay/poc/concepts-v100.css') + '\n</style>'],
+        ['<link rel="stylesheet" href="./mini-v105.css" />', '<style>\n' + source('overlay/poc/mini-v105.css') + '\n</style>'],
+        ['<link rel="stylesheet" href="./overlay-layout-v106.css" />', '<style>\n' + source('overlay/poc/overlay-layout-v106.css') + '\n</style>'],
         ['<script src="../../modules/overlay-config.js"></script>', scriptTag('window.NEXUS_PREVIEW = true;\n' + source('modules/overlay-config.js'))],
         ['<script src="./ui.js"></script>', scriptTag(source('overlay/poc/ui.js'))],
     ];

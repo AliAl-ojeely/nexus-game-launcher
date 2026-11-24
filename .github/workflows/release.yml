@@ -129,8 +129,8 @@ jobs:
           node <<'NODE'
           const pkg = require('./package.json');
           const lock = require('./package-lock.json');
-          if (pkg.version !== '2.7.6' || lock.version !== pkg.version || lock.packages[''].version !== pkg.version) {
-            throw new Error('Release version must be 2.7.6 in package.json and both lockfile records');
+          if (pkg.version !== '2.8.0' || lock.version !== pkg.version || lock.packages[''].version !== pkg.version) {
+            throw new Error('Release version must be 2.8.0 in package.json and both lockfile records');
           }
           NODE
           VERSION="$(node -p "require('./package.json').version")"

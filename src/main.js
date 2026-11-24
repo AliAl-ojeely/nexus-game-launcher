@@ -126,6 +126,17 @@ protocol.registerSchemesAsPrivileged([
 app.whenReady().then(() => {
     overlayManager.start(launcher.applyOverlayTimerAction);
     // Only the launcher's own renderer may read/write the overlay layout.
+    ipcMain.handle('overlay:sync-theme', (event, value) => {
+        if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
+        const accent = value?.accent, theme = value?.theme;
+        if (typeof accent !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(accent) ||
+            !['dark', 'darker', 'light'].includes(theme)) throw new Error('Invalid launcher palette');
+        const settings = readSettings();
+        if (settings.overlayThemeAccent !== accent || settings.overlayTheme !== theme) {
+            writeSettings({ ...settings, overlayThemeAccent: accent, overlayTheme: theme });
+        }
+        return { ok: true };
+    });
     ipcMain.handle('overlay:get-config', (event) => {
         if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
         return overlayConfig.normalize(readSettings().modalOverlay);
@@ -302,6 +313,11 @@ ipcMain.on('game:launch', (event, gamePath, showFPS, args, id, name) =>
     launcher.launchGame(event, gamePath, showFPS, args, id, name)
 );
 ipcMain.on('game:force-stop', (_e, gameId) => launcher.forceStopGame(gameId));
+// Read-only renderer recovery: only the launcher's own renderer may query sessions.
+ipcMain.handle('game:get-running-sessions', event => {
+    if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Not the launcher window');
+    return launcher.getRunningSessions();
+});
 
 // ─── Dialog IPC ────────────────────────────────────────────────────────────
 ipcMain.handle('dialog:selectGame', () => dialogs.selectGame());

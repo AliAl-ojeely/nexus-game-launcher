@@ -19,16 +19,17 @@
         if (!parser) return;
         const config = parser.normalize(value);
         currentConfig = config;
+        const isMinimal = config.sizeMode === 'minimal';
         const metrics = document.querySelectorAll?.('[data-metric]') || [];
         for (const metric of metrics) {
             const name = metric.dataset?.metric;
-            if (name in config.metrics) metric.hidden = !config.metrics[name];
+            if (name in config.metrics) metric.hidden = !config.metrics[name] ||
+                (isMinimal && name !== 'session' && name !== 'total');
         }
-        const isMinimal = config.sizeMode === 'minimal';
         for (const button of buttons) {
             const name = button.dataset.action;
             if (name in config.buttons) {
-                button.hidden = isMinimal ? name === 'test' : !config.buttons[name];
+                button.hidden = !config.buttons[name] || (isMinimal && name === 'test');
             }
         }
         const hotkeyLabel = $('overlay-hotkey');
@@ -38,17 +39,23 @@
         }
         if (!isMinimal) lastInput.textContent = `${config.shortcut.replace(/\+/g, ' + ')} · Toggle`;
         const widget = document.querySelector?.('.widget');
-        const metricCount = Object.values(config.metrics).filter(Boolean).length;
+        const metricCount = [...metrics].filter(metric => !metric.hidden).length;
         if (widget) {
             widget.dataset.overlayDense = String(metricCount > 2);
-            widget.dataset.overlaySize = config.sizeMode;
+            widget.dataset.overlaySize = 'full'; // Isolate from the retired legacy size rules.
+            widget.dataset.nxMode = isMinimal ? 'mini' : config.sizeMode === 'medium' ? 'medium' : 'full';
+            widget.dataset.nxNavigation = !config.navigation.keyboard && !config.navigation.gamepad ? 'mouse-only' : 'enabled';
+            widget.dataset.nxLayout = config.layout;
+            widget.dataset.nxTheme = config.launcherTheme;
+            const layer = document.querySelector?.('.layer');
+            if (layer) { layer.dataset.nxCorner = config.corner; layer.dataset.nxWindowScale = config.windowScale; }
             widget.dataset.overlayMetricCount = String(metricCount);
             widget.dataset.overlayStyle = config.appearance.style;
             const hex = config.appearance.background;
             const channels = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
             widget.style?.setProperty('--nx-base-rgb', channels.join(','));
             widget.style?.setProperty('--nx-opacity', String(config.appearance.opacity / 100));
-            widget.style?.setProperty('--nx-accent', config.appearance.accent);
+            widget.style?.setProperty('--nx-accent', config.themeAccent);
         }
         updateSelection();
         renderSession(session);
@@ -146,7 +153,9 @@
             return;
         }
         const { x, y } = pointer;
-        if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x >= 560 || y < 0 || y >= 338) return;
+        if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 ||
+            x >= (currentConfig?.windowScale === 'large' ? 728 : 560) || y < 0 ||
+            y >= (currentConfig?.windowScale === 'large' ? 439 : 338)) return;
         if (pointer.native) {
             // Cursor is rendered by D3D11 in game coordinates, not clipped by
             // the Electron widget or its rounded/overflow-hidden container.
@@ -174,6 +183,10 @@
         }
     });
     window.nexusBridge?.onNavigation(({ key, source }) => {
+        if (currentConfig?.navigation) {
+            if (source === 'keyboard' && !currentConfig.navigation.keyboard) return;
+            if (source === 'gamepad' && !currentConfig.navigation.gamepad) return;
+        }
         mouseCursor?.classList?.remove('visible');
         if (key === 'back') { window.nexusBridge.hide(); return; }
         const length = visibleButtons().length;

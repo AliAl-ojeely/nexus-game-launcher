@@ -26,7 +26,24 @@ export async function initOverlayEditor() {
     const shortcutCapture = field('overlayShortcutCapture');
     const shortcutStatus = field('overlayShortcutStatus');
     const shortcutReset = field('overlayShortcutReset');
+    // Preserve existing preview controls, but group them with the other settings on the right.
+    const controlsColumn = editor.querySelector('.overlay-editor-controls');
+    const advanced = editor.querySelector('.overlay-advanced-controls');
+    if (controlsColumn && advanced && advanced.parentElement !== controlsColumn) controlsColumn.appendChild(advanced);
+    // Keep the live preview above Appearance / Quick Controls / Input Navigation.
+    // Move existing fields, never clone them: listeners and original input IDs survive.
+    const previewExtras = field('overlayPreviewExtras');
+    if (previewExtras) {
+        const appearance = field('overlayBgStyle')?.closest('fieldset');
+        for (const section of [appearance, editor.querySelector('.nx-quick-controls'),
+                               editor.querySelector('.nx-navigation-options')]) {
+            if (section && section.parentElement !== previewExtras) previewExtras.appendChild(section);
+        }
+    }
+    const scaleRadios = [...editor.querySelectorAll('input[name="overlayWindowScale"]')];
     const sizeRadios = [...editor.querySelectorAll('input[name="overlaySizeMode"]')];
+    const conceptRadios = [...editor.querySelectorAll('input[name="overlayConceptLayout"]')];
+    const cornerRadios = [...editor.querySelectorAll('input[name="overlayCorner"]')];
     let capturing = false;
     let config = schema.normalize(null);
     let saved = JSON.stringify(config);
@@ -37,7 +54,15 @@ export async function initOverlayEditor() {
 
     function populate(value) {
         master.checked = value.enabled;
+        field('overlayQuickEscape').checked = value.quickOpen.escape;
+        field('overlayQuickStart').checked = value.quickOpen.start;
+        field('overlayAutoTimerPause').checked = value.autoPauseTimer;
+        field('overlayDisableKeyboardNav').checked = !value.navigation.keyboard;
+        field('overlayDisableGamepadNav').checked = !value.navigation.gamepad;
         for (const radio of sizeRadios) radio.checked = radio.value === value.sizeMode;
+        for (const radio of scaleRadios) radio.checked = radio.value === value.windowScale;
+        for (const radio of conceptRadios) radio.checked = radio.value === value.layout;
+        for (const radio of cornerRadios) radio.checked = radio.value === value.corner;
         if (shortcutCapture) shortcutCapture.textContent = value.shortcut.replace(/\+/g, ' + ');
         for (const [key, id] of Object.entries(OPTION_IDS)) {
             const [group, option] = key.split('.');
@@ -52,13 +77,19 @@ export async function initOverlayEditor() {
 
     function collect() {
         const next = { enabled: master.checked, shortcut: config.shortcut,
-            sizeMode: sizeRadios.find(radio => radio.checked)?.value || 'full', metrics: {}, buttons: {}, appearance: {} };
+            sizeMode: sizeRadios.find(radio => radio.checked)?.value || 'full',
+            windowScale: scaleRadios.find(radio => radio.checked)?.value || 'small', layout: conceptRadios.find(radio => radio.checked)?.value || 'corner-pulse',
+            corner: cornerRadios.find(radio => radio.checked)?.value || 'top-right',
+            quickOpen: { escape: field('overlayQuickEscape').checked,
+                         start: field('overlayQuickStart').checked },
+            autoPauseTimer: field('overlayAutoTimerPause').checked,
+            navigation: { keyboard: !field('overlayDisableKeyboardNav').checked,
+                          gamepad: !field('overlayDisableGamepadNav').checked },
+            metrics: {}, buttons: {}, appearance: {} };
         for (const [key, id] of Object.entries(OPTION_IDS)) {
             const [group, option] = key.split('.');
             // Minimal locks button visuals; preserve the user's full-mode choices.
-            next[group][option] = group === 'buttons' &&
-                (next.sizeMode === 'minimal' || config.sizeMode === 'minimal')
-                ? config.buttons[option] : field(id).checked;
+            next[group][option] = field(id).checked;
         }
         next.appearance = {
             style: field('overlayBgStyle').value,
@@ -71,16 +102,25 @@ export async function initOverlayEditor() {
 
     function scaleFrame() {
         if (!stage || !frame || editor.hidden) return;
+        const large = config.windowScale === 'large';
+        const frameWidth = large ? 728 : 560;
+        const frameHeight = large ? 439 : 338;
         const width = Math.max(1, stage.clientWidth - 16);
-        const scale = Math.min(1.42, width / 560);
-        stage.style.height = `${Math.ceil(338 * scale + 16)}px`;
+        const scale = Math.min(1.15, width / frameWidth);
+        // Preview iframe reflects the real Electron OSR texture size, not just a badge.
+        frame.style.width = `${frameWidth}px`;
+        frame.style.height = `${frameHeight}px`;
+        stage.style.height = `${Math.ceil(frameHeight * scale + 16)}px`;
         stage.style.setProperty('--nx-preview-scale', String(scale));
-        stage.style.setProperty('--nx-preview-left', `${Math.max(0, (stage.clientWidth - 560 * scale) / 2)}px`);
+        stage.style.setProperty('--nx-preview-left', `${Math.max(0, (stage.clientWidth - frameWidth * scale) / 2)}px`);
     }
 
     function paintPreview() {
         if (!previewLoaded || !frame?.contentWindow) return;
-        frame.contentWindow.postMessage({ type: 'nexus-overlay-preview-config', config }, '*');
+        const themeAccent = /^#[0-9a-fA-F]{6}$/.test(userSettings.accentColor || '')
+            ? userSettings.accentColor : '#ff4655';
+        frame.contentWindow.postMessage({ type: 'nexus-overlay-preview-config',
+            config: { ...config, themeAccent, launcherTheme: userSettings.theme || 'dark' } }, '*');
     }
 
     async function loadPreview() {
@@ -106,7 +146,7 @@ export async function initOverlayEditor() {
     }
 
     function updateModeLocks() {
-        const minimal = config.sizeMode === 'minimal';
+        const minimal = false; // Mini layout keeps user selections and manual buttons configurable.
         for (const id of ['overlayResume', 'overlayTimer', 'overlayTest']) {
             const control = field(id);
             if (!control) continue;
@@ -126,6 +166,13 @@ export async function initOverlayEditor() {
         updateModeLocks();
         indicator.hidden = JSON.stringify(config) === saved;
         field('overlayOpacityValue').textContent = `${config.appearance.opacity}%`;
+        const previewMode = field('overlayPreviewModeBadge');
+        const windowScaleNote = field('overlayWindowScaleBadge');
+        if (windowScaleNote) windowScaleNote.textContent = config.windowScale === 'large' ? 'Large · 130%' : 'Small · 100%';
+        if (previewMode) previewMode.textContent = config.sizeMode === 'minimal'
+            ? (userSettings.lang === 'ar' ? 'معاينة مصغّرة' : 'Mini Display')
+            : config.sizeMode === 'medium' ? (userSettings.lang === 'ar' ? 'حجم متوسط' : 'Medium')
+            : (userSettings.lang === 'ar' ? 'الحجم الكامل' : 'Full Display');
         if (config.enabled) {
             scaleFrame();
             void loadPreview();
@@ -232,6 +279,16 @@ export async function initOverlayEditor() {
             paintPreview();
         }
     });
+    // The application stores its main accent in renderer localStorage.
+    // Synchronize only the validated color/theme into the main-process settings
+    // so the isolated offscreen renderer can inherit the same palette.
+    function syncTheme() {
+        const accent = userSettings.accentColor;
+        if (/^#[0-9a-fA-F]{6}$/.test(accent || ''))
+            void window.api?.overlaySyncTheme?.({ accent, theme: userSettings.theme }).catch(() => {});
+        paintPreview();
+    }
+    window.addEventListener('nexus:launcher-theme-changed', () => { syncTheme(); refresh(); });
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(scaleFrame).observe(stage);
     else window.addEventListener('resize', scaleFrame);
 
@@ -261,4 +318,5 @@ export async function initOverlayEditor() {
     ready = true;
     populate(config);
     refresh();
+    syncTheme();
 }

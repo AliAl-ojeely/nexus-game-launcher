@@ -1,7 +1,7 @@
 /* Nexus OSR canvas: 560x338 with an 8px transparent margin. */
 :root {
     color-scheme: dark;
-    --nx-accent: #78abf8;
+    --nx-accent: #ff4655;
     --nx-base-rgb: 0, 0, 0;
     --nx-opacity: .45;
 }

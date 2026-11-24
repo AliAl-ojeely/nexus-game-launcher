@@ -8,7 +8,13 @@
     const DEFAULTS = Object.freeze({
         enabled: false,
         shortcut: 'Ctrl+Shift+O',
+        quickOpen: Object.freeze({ escape: false, start: false }),
+        autoPauseTimer: false,
+        navigation: Object.freeze({ keyboard: true, gamepad: true }),
+        layout: 'corner-pulse',
+        corner: 'top-right',
         sizeMode: 'full',
+        windowScale: 'small',
         metrics: Object.freeze({ session: true, total: true, clock: false, fps: false }),
         buttons: Object.freeze({ resume: true, timer: true, test: true }),
         appearance: Object.freeze({ style: 'glassy', background: '#000000', accent: '#78abf8', opacity: 45 })
@@ -40,7 +46,21 @@
         return {
             enabled: bool(source.enabled, DEFAULTS.enabled),
             shortcut: normalizeShortcut(source.shortcut) || DEFAULTS.shortcut,
+            quickOpen: {
+                escape: bool(plain(source.quickOpen).escape, DEFAULTS.quickOpen.escape),
+                start: bool(plain(source.quickOpen).start, DEFAULTS.quickOpen.start),
+            },
+            autoPauseTimer: bool(source.autoPauseTimer, DEFAULTS.autoPauseTimer),
+            navigation: {
+                keyboard: bool(plain(source.navigation).keyboard, DEFAULTS.navigation.keyboard),
+                gamepad: bool(plain(source.navigation).gamepad, DEFAULTS.navigation.gamepad),
+            },
+            layout: ['dockline', 'corner-pulse', 'side-rail', 'command-strip'].includes(source.layout) ? source.layout : DEFAULTS.layout,
+            corner: ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(source.corner) ? source.corner : DEFAULTS.corner,
+            themeAccent: color(source.themeAccent, '#ff4655'),
+            launcherTheme: ['dark', 'darker', 'light'].includes(source.launcherTheme) ? source.launcherTheme : 'dark',
             sizeMode: ['full', 'medium', 'minimal'].includes(source.sizeMode) ? source.sizeMode : DEFAULTS.sizeMode,
+            windowScale: ['small', 'large'].includes(source.windowScale) ? source.windowScale : DEFAULTS.windowScale,
             metrics: {
                 session: bool(metrics.session, DEFAULTS.metrics.session),
                 total: bool(metrics.total, DEFAULTS.metrics.total),

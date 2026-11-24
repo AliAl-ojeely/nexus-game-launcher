@@ -2,25 +2,19 @@ import { state, userSettings } from '../state.js';
 import { formatTime, formatPlaytime } from '../details-utils.js';
 import { showToast, updateBackupSidebarUI, pulseBackupSuccess } from '../details-components.js';
 import { t } from './helpers.js';
-import { session, resetSession } from './state.js';
+import { liveSessions } from './live-sessions.mjs';
+import { paintDetailsSession } from './session-presentation.mjs';
 import { renderGames } from '../library.js';
 
-export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
-    if (session.isHandlingStop) {
-        console.log(`[FRONTEND] ⚠️ handleGameStop already running for: ${gameName} — skipping`);
-        return;
-    }
-
-    if (!state.isGameRunning || session.startTime === 0) {
-        console.log(`[FRONTEND] ⚠️ handleGameStop called but no active session — skipping`);
-        return;
-    }
-
-    session.isHandlingStop = true;
-    console.log(`[FRONTEND] ⏹️ Session ended for: ${gameName}`);
-
-    if (session.timerInterval) clearInterval(session.timerInterval);
-    session.timerInterval = null;
+const finalizingSessions = new Set();
+export async function handleGameStop(gameName, elapsedSecondsFromBackend, gameId, sessionId) {
+    const token = String(gameId) + '\0' + String(sessionId);
+    if (finalizingSessions.has(token)) return;
+    finalizingSessions.add(token);
+    // Any asynchronous backup/playtime completion may occur after the user
+    // has opened or launched a different game. Guard every shared DOM write.
+    const isCurrentView = () => String(state.currentGameId) === String(gameId) && !liveSessions.get(gameId);
+    console.log(`[FRONTEND] Session ended for game ${gameId}: ${gameName}`);
 
     // ✅ Use elapsed from backend (already accounts for pauses)
     const elapsedSeconds = elapsedSecondsFromBackend || 0;
@@ -31,14 +25,14 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
     if (elapsedSeconds >= 60 && newTotalPlaytime !== false && newTotalPlaytime !== undefined) {
         const playtimeDisplay = document.getElementById('totalPlaytimeValue');
         const currentGame = state.allGamesData.find(g => g.name === gameName);
-        if (playtimeDisplay && currentGame && state.currentGameExePath === currentGame.path) {
+        if (playtimeDisplay && currentGame && isCurrentView()) {
             playtimeDisplay.innerText = formatPlaytime(newTotalPlaytime, userSettings.lang);
         }
     } else {
         const existingTotal = await window.api.getPlaytime(gameName);
         const playtimeDisplay = document.getElementById('totalPlaytimeValue');
         const currentGame = state.allGamesData.find(g => g.name === gameName);
-        if (playtimeDisplay && currentGame && state.currentGameExePath === currentGame.path) {
+        if (playtimeDisplay && currentGame && isCurrentView()) {
             playtimeDisplay.innerText = formatPlaytime(existingTotal, userSettings.lang);
         }
     }
@@ -47,7 +41,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
     const updatedInfo = await window.api.getPlaytimeInfo(gameName);
     const lastPlayedContainer = document.getElementById('lastPlayedContainer');
     const lastPlayedValueSpan = document.getElementById('lastPlayedValue');
-    if (lastPlayedContainer && lastPlayedValueSpan && updatedInfo.lastPlayed) {
+    if (isCurrentView() && lastPlayedContainer && lastPlayedValueSpan && updatedInfo.lastPlayed) {
         const date = new Date(updatedInfo.lastPlayed);
         const formatted = date.toLocaleString(userSettings.lang === 'ar' ? 'ar-EG' : 'en-US', {
             year: 'numeric', month: 'short', day: 'numeric',
@@ -55,7 +49,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         });
         lastPlayedValueSpan.innerText = formatted;
         lastPlayedContainer.style.display = 'flex';
-    } else if (lastPlayedContainer) {
+    } else if (isCurrentView() && lastPlayedContainer) {
         lastPlayedContainer.style.display = 'none';
     }
 
@@ -75,7 +69,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         console.log(`[FRONTEND] ⏭️ Auto backup disabled, skipping backup for "${gameName}"`);
     } else {
         // Show securing UI
-        if (playBtn) {
+        if (playBtn && isCurrentView()) {
             playBtn.disabled = true;
             playBtn.classList.remove('play-btn-running', 'play-btn-stopping');
             playBtn.classList.add('play-btn-securing');
@@ -115,7 +109,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         }
 
         if (backupResult.success) {
-            if (playBtn) {
+            if (playBtn && isCurrentView()) {
                 playBtn.style.cssText += `
                     background: linear-gradient(135deg, #10b981, #059669) !important;
                     border-color: #10b981 !important;
@@ -132,7 +126,7 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
             pulseBackupSuccess();
             const freshInfo = await window.api.backup.getInfo(gameName);
             const currentGame = state.allGamesData.find(g => g.name === gameName);
-            if (currentGame && state.currentGameExePath === currentGame.path) {
+            if (currentGame && isCurrentView()) {
                 updateBackupSidebarUI(freshInfo, gameName, userSettings.lang);
             }
         } else {
@@ -144,28 +138,16 @@ export async function handleGameStop(gameName, elapsedSecondsFromBackend) {
         }
     }
 
-    // Final cleanup
-    state.isGameRunning = false;
-    session.startTime = 0;
-    session.isHandlingStop = false;
-
-    const timerContainer = document.getElementById('sessionTimerContainer');
-    if (timerContainer) timerContainer.style.display = 'none';
-    const timerValue = document.getElementById('sessionTimerValue');
-    if (timerValue) timerValue.innerText = '00:00:00';
-
+    // Only the selected, finished game's presentation may be repainted;
+    // game B's Stop/Pause controls and timer are never globally reset by A.
     const resetDelay = (autoBackup && backupResult.success) ? 3000 : 500;
     setTimeout(async () => {
-        const btn = document.getElementById('detailsPlayBtn');
-        if (btn) {
-            btn.disabled = false;
-            btn.style.cssText = '';
-            btn.classList.remove('play-btn-running', 'play-btn-stopping', 'play-btn-securing');
-            const playLabel = t('btn_play', userSettings.lang === 'ar' ? 'إلعب الآن' : 'Play');
-            btn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-i18n="btn_play">${playLabel}</span>`;
+        if (isCurrentView()) {
+            state.isGameRunning = paintDetailsSession(document, liveSessions, gameId, userSettings.lang);
         }
         await renderGames();
     }, resetDelay);
+
 }
 
 function extractRequiredRam(reqText) {

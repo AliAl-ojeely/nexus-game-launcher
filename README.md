@@ -6,7 +6,7 @@
 
 **Your PC game library, launch controls, artwork, playtime, and save backups — in one desktop app.**
 
-[![Version](https://img.shields.io/badge/Source%20version-2.7.6-9146ff?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/Source%20version-2.8.0-9146ff?style=flat-square)](package.json)
 [![Electron](https://img.shields.io/badge/Electron-45-4787d7?logo=electron&style=flat-square)](https://www.electronjs.org/)
 [![Windows](https://img.shields.io/badge/Primary%20platform-Windows-166bc0?logo=windows&style=flat-square)](#platform-support)
 [![Languages](https://img.shields.io/badge/UI-English%20%7C%20Arabic-27ae93?style=flat-square)](#appearance-and-localization)
@@ -20,7 +20,7 @@
 </div>
 
 > [!NOTE]
-> **Source version: 2.7.6.** This README describes the current `main` branch, including improvements committed **after** the v2.7.6 release work. A downloaded installer may not yet include every feature described here. Check [Releases](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for the features and assets of a particular published build.
+> **Source version: 2.8.0.** This README describes the current `main` branch and its feature-release improvements. A downloaded installer may not yet include every feature described here. Check [Releases](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for the features and assets of a particular published build.
 >
 > Some screenshots in this repository were captured from earlier interface revisions; the application UI may now look different.
 
@@ -84,6 +84,8 @@ Use **Refresh Assets** from a game's details page to retry retrieval without del
 - Time filters for **Day**, **Week**, **Month**, **6 Months**, and **Year**.
 - Session history, daily and monthly charts, weekday/hour patterns, and top-played games.
 - Export session data to **CSV** or the current dashboard to **PNG**.
+- Independent concurrent sessions: each game has its own timer, pause/resume state, and Play/Stop controls. Closing one game does not end another.
+- Restart-aware process monitoring: eligible natural exits use a balanced four-second guard, while uncertain exits retain extended protection. A verified replacement detected within the guard continues the existing session.
 - Configurable Recently Played limits, with an option to remove an item from the recent list without deleting the game itself.
 
 ### Appearance and localization
@@ -126,10 +128,15 @@ For troubleshooting, use the terminal diagnostics available through `NEXUS_BACKU
 
 The **Settings → Modal Overlay** editor provides:
 
-- A live preview of the overlay interface and **Full / Medium / Minimal** layouts.
+- A redesigned live preview and grouped settings, with **Dockline**, **Corner Pulse**, **Side Rail**, and **Command Strip** designs.
+- Four screen corners, **Full / Medium / Mini Display** modes, and independent **Small / Large** window sizes.
 - Optional **Session Time**, **Total Playtime**, **Local Time**, and **FPS** fields. FPS stays `N/A` until the application has a verified value.
 - **Resume Game** (closes the Nexus dashboard) and **Pause/Resume Timer** (controls the *Nexus playtime timer*, not the game's pause state).
-- Glassy, Solid, and Minimal backgrounds, color/opacity controls, and a configurable keyboard shortcut (`Ctrl + Shift + O` by default).
+- Glassy, Solid, and Minimal backgrounds, launcher theme colors, color/opacity controls, and a configurable keyboard shortcut.
+- Foreground-aware shortcut routing for multiple running games, optional Esc / Start quick toggles, and separate keyboard/controller navigation switches.
+- Optional automatic Nexus timer pause/resume when opening and closing the overlay; manually paused sessions are protected.
+
+A verified replacement process detected during Restart Guard keeps the same session. Delayed restarts outside the guard may still end the session; known restart-sensitive games can use `NEXUS_RESTART_GUARD_GAME_IDS` for extended protection.
 
 | Graphics API | Development status |
 | --- | --- |
@@ -140,7 +147,7 @@ The **Settings → Modal Overlay** editor provides:
 | DirectX 12 | **Incomplete / disabled under safety restrictions** |
 | Vulkan | Not verified |
 
-The v2.7.6 GitHub Actions workflow contains steps to build and verify Windows x86/x64 overlay runtime resources outside `app.asar`. **Local packaging is different**: `npm run dist-win` alone may warn that `build/overlay-runtime` is missing if those native components have not been staged first. The Windows ARM64 overlay runtime is not supported. See the [v2.7.6 release notes](.github/release-notes/v2.7.6.md) for packaging context.
+The Windows GitHub Actions workflow contains steps to build and verify Windows x86/x64 overlay runtime resources outside `app.asar`. **Local packaging is different**: `npm run dist-win` alone may warn that `build/overlay-runtime` is missing if those native components have not been staged first. The Windows ARM64 overlay runtime is not supported. See the [v2.7.6 release notes](.github/release-notes/v2.7.6.md) for packaging context.
 
 ## Platform support
 

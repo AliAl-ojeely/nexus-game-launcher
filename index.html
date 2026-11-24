@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/overlay-editor.css">
+    <link rel="stylesheet" href="css/overlay-layout-polish-v105.css">
+    <link rel="stylesheet" href="css/overlay-editor-layout-v106.css">
     <link rel="stylesheet" href="css/favorites-toolbar.css">
 </head>
 
@@ -25,7 +27,7 @@
         <div class="logo">
             <i class="fa-solid fa-ghost"></i>
             <span id="sidebarLogoName">Nexus Launcher</span>
-            <span class="version-badge">v2.7.5</span>
+            <span class="version-badge">v2.8.0</span>
         </div>
         <div class="nav-item active" data-target="libraryArea">
             <i class="fa-solid fa-gamepad"></i> <span data-i18n="nav_library">Library</span>
@@ -531,6 +533,19 @@
 </div>
 <div class="overlay-editor" id="overlayEditor" hidden>
   <div class="overlay-editor-controls">
+    <fieldset class="overlay-options-group nx-navigation-options">
+      <legend data-i18n="overlay_input_navigation">Input Navigation</legend>
+      <label class="overlay-option"><input type="checkbox" id="overlayDisableKeyboardNav"><span data-i18n="overlay_disable_keyboard_nav">Disable keyboard navigation (arrows / Enter / Esc-back)</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayDisableGamepadNav"><span data-i18n="overlay_disable_gamepad_nav">Disable controller navigation (D-pad / A / B)</span></label>
+      <small class="nx-navigation-hint" data-i18n="overlay_navigation_hint">Navigation keys pass through to the game. Quick Esc/Start open and close remain available. Applies on next game launch.</small>
+    </fieldset>
+    <fieldset class="overlay-options-group nx-quick-controls">
+      <legend data-i18n="overlay_quick_controls">Quick Controls</legend>
+      <label class="overlay-option"><input type="checkbox" id="overlayQuickEscape"><span data-i18n="overlay_quick_escape">Esc toggles overlay</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayQuickStart"><span data-i18n="overlay_quick_start">Gamepad Start toggles overlay</span></label>
+      <label class="overlay-option"><input type="checkbox" id="overlayAutoTimerPause"><span data-i18n="overlay_auto_pause_timer">Auto-pause Nexus timer while overlay is open</span></label>
+      <small class="nx-quick-hint" data-i18n="overlay_quick_hint">Esc is captured only for the focused game when enabled; XInput Start may still open the game's own menu. Quick keys apply at next game launch.</small>
+    </fieldset>
     <fieldset class="overlay-options-group">
       <legend data-i18n="overlay_elements">Elements</legend>
       <label class="overlay-option"><input type="checkbox" id="overlaySession" data-overlay-option="metrics.session"><span data-i18n="overlay_session">Session Time</span></label>
@@ -544,13 +559,31 @@
       <label class="overlay-option"><input type="checkbox" id="overlayTimer" data-overlay-option="buttons.timer"><span data-i18n="overlay_pause">Pause / Resume Timer</span></label>
       <label class="overlay-option"><input type="checkbox" id="overlayTest" data-overlay-option="buttons.test"><span data-i18n="overlay_test">Test Button</span></label>
     </fieldset>
+    <fieldset class="overlay-options-group nexus-concept-picker">
+      <legend data-i18n="overlay_concept_label">Overlay Layout</legend>
+      <div class="nexus-concept-grid" role="radiogroup" aria-label="Overlay visual layout">
+        <label class="nexus-concept-choice"><input type="radio" name="overlayConceptLayout" value="dockline"><span class="nexus-mini-shape nexus-mini-dock" aria-hidden="true"></span><strong>Dockline</strong></label>
+        <label class="nexus-concept-choice"><input type="radio" name="overlayConceptLayout" value="corner-pulse" checked><span class="nexus-mini-shape nexus-mini-corner" aria-hidden="true"></span><strong>Corner Pulse</strong></label>
+        <label class="nexus-concept-choice"><input type="radio" name="overlayConceptLayout" value="side-rail"><span class="nexus-mini-shape nexus-mini-rail" aria-hidden="true"></span><strong>Side Rail</strong></label>
+        <label class="nexus-concept-choice"><input type="radio" name="overlayConceptLayout" value="command-strip"><span class="nexus-mini-shape nexus-mini-strip" aria-hidden="true"></span><strong>Command Strip</strong></label>
+      </div>
+    </fieldset>
+    <fieldset class="overlay-options-group nexus-corner-picker">
+      <legend data-i18n="overlay_position_label">Screen Corner</legend>
+      <div class="nexus-corner-grid" role="radiogroup" aria-label="Overlay screen corner">
+        <label><input type="radio" name="overlayCorner" value="top-left"><span data-i18n="overlay_top_left">Top Left</span></label>
+        <label><input type="radio" name="overlayCorner" value="top-right" checked><span data-i18n="overlay_top_right">Top Right</span></label>
+        <label><input type="radio" name="overlayCorner" value="bottom-left"><span data-i18n="overlay_bottom_left">Bottom Left</span></label>
+        <label><input type="radio" name="overlayCorner" value="bottom-right"><span data-i18n="overlay_bottom_right">Bottom Right</span></label>
+      </div>
+    </fieldset>
     <fieldset class="overlay-options-group">
       <legend data-i18n="overlay_appearance">Appearance</legend>
       <div class="overlay-control"><label for="overlayBgStyle" data-i18n="overlay_bg_style">Background</label>
         <select class="custom-select" id="overlayBgStyle"><option value="glassy" data-i18n="overlay_glassy">Glassy</option><option value="solid" data-i18n="overlay_solid">Solid</option><option value="minimal" data-i18n="overlay_minimal">Minimal</option></select></div>
       <div class="overlay-color-controls">
         <div class="overlay-control"><label for="overlayBgColor" data-i18n="overlay_bg_color">Background Color</label><input type="color" id="overlayBgColor" value="#000000"></div>
-        <div class="overlay-control"><label for="overlayAccent" data-i18n="overlay_accent">Accent Color</label><input type="color" id="overlayAccent" value="#78abf8"></div>
+        <div class="overlay-control"><label for="overlayAccent" data-i18n="overlay_accent">Accent Color</label><input type="hidden" id="overlayAccent" value="#ff4655"><small class="nexus-theme-accent-note" data-i18n="overlay_theme_accent">Uses the accent color selected in Launcher Appearance.</small></div>
       </div>
       <div class="overlay-control"><label for="overlayOpacity"><span data-i18n="overlay_opacity">Opacity</span> <output id="overlayOpacityValue" for="overlayOpacity">45%</output></label><input id="overlayOpacity" type="range" min="45" max="100" step="1" value="45"></div>
     </fieldset>
@@ -562,7 +595,7 @@
     </div>
   </div>
   <div class="overlay-editor-preview">
-    <div class="overlay-preview-heading"><strong data-i18n="overlay_preview">Preview</strong></div>
+    <div class="overlay-preview-heading"><strong data-i18n="overlay_preview">Preview</strong><span class="nx-preview-meta"><span class="nx-preview-mode-badge" id="overlayPreviewModeBadge">Full Display</span><span class="nx-preview-size-badge" id="overlayWindowScaleBadge">Small · 100%</span></span></div>
     <div class="overlay-preview-stage" id="overlayPreviewStage"><iframe id="overlayPreviewFrame" sandbox="allow-scripts" title="Modal Overlay Preview" scrolling="no"></iframe></div><p id="overlayPreviewError" hidden></p>
     <div class="overlay-advanced-controls">
       <div class="overlay-shortcut-settings">
@@ -573,15 +606,25 @@
         </div>
         <p id="overlayShortcutStatus" class="overlay-shortcut-status" aria-live="polite" data-i18n="overlay_shortcut_hint">Click the shortcut, then press the new keys.</p>
       </div>
+      <fieldset class="nx-window-scale-settings">
+        <legend data-i18n="overlay_window_scale">Overlay Window Size</legend>
+        <div class="nx-window-scale-grid" role="radiogroup" aria-label="Overlay Window Size">
+          <label class="nx-window-scale-choice"><input type="radio" id="overlayWindowSmall" name="overlayWindowScale" value="small" checked><span data-i18n="overlay_window_small">Small · 100%</span></label>
+          <label class="nx-window-scale-choice"><input type="radio" id="overlayWindowLarge" name="overlayWindowScale" value="large"><span data-i18n="overlay_window_large">Large · 130%</span></label>
+        </div>
+        <p class="nx-window-scale-hint" data-i18n="overlay_window_scale_hint">Large enlarges the actual in-game overlay and its mouse hit area; Mini Display remains available.</p>
+      </fieldset>
       <fieldset class="overlay-size-settings">
         <legend data-i18n="overlay_size">Modal Size</legend>
+        <p class="nx-mini-description" data-i18n="overlay_mini_hint">Choose Mini Display for a compact view of essential time indicators and actions in any layout.</p>
         <div class="overlay-size-options" role="radiogroup" aria-label="Overlay size">
           <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="full" checked><span data-i18n="overlay_size_full">Full</span></label>
           <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="medium"><span data-i18n="overlay_size_medium">Medium</span></label>
-          <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="minimal"><span data-i18n="overlay_size_minimal">Minimal</span></label>
+          <label class="overlay-size-choice"><input type="radio" name="overlaySizeMode" value="minimal"><span data-i18n="overlay_mini_display">Mini Display</span></label>
         </div>
       </fieldset>
     </div>
+    <div class="nx-preview-extras" id="overlayPreviewExtras" aria-label="Overlay appearance and input settings"></div>
     <p class="overlay-fps-notice" data-i18n="overlay_fps_notice">Game FPS shows N/A until a game FPS source is connected.</p>
   </div>
 </div>
@@ -1111,7 +1154,7 @@
                     <a href="https://github.com/AliAl-ojeely" target="_blank"
                         style="color: var(--accent); text-decoration: none; font-weight: bold;">GitHub Profile</a>
                 </p>
-                <p style="text-align: center;">version 2.7.5</p>
+                <p style="text-align: center;">version 2.8.0</p>
             </div>
         </div>
     </div>

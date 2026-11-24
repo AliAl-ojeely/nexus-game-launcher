@@ -9,13 +9,18 @@ import { formatTime } from "../details-utils.js";
 import { runBackupDiscovery, showBackupError } from "../backup-discovery-ui.js";
 import { toggleGameFavorite } from "../library.js";
 import { t } from "./helpers.js";
-import { session, resetSession } from "./state.js";
+import { liveSessions } from "./live-sessions.mjs";
+import { paintDetailsSession } from "./session-presentation.mjs";
 
 // Helper to get base filename from a full path (works without Node's 'path' module)
 function getBasename(filePath) {
   if (!filePath) return "";
   const parts = filePath.split(/[/\\]/);
   return parts[parts.length - 1].toLowerCase();
+}
+
+function refreshVisibleSession() {
+  state.isGameRunning = paintDetailsSession(document, liveSessions, state.currentGameId, userSettings.lang);
 }
 
 export function initDetails() {
@@ -31,88 +36,52 @@ export function initDetails() {
     };
   }
 
-  // Play / Stop button
-  document.getElementById("detailsPlayBtn").onclick = async () => {
-    if (state.isGameRunning) {
-      const currentGame = state.allGamesData.find(
-        (g) => g.id === state.currentGameId,
-      );
-      if (!currentGame) return;
-      const playBtn = document.getElementById("detailsPlayBtn");
-      if (playBtn) {
-        playBtn.disabled = true;
-        playBtn.classList.add("play-btn-stopping");
-        playBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t("stopping", userSettings.lang === "ar" ? "جاري الإيقاف..." : "Stopping...")}`;
+  // Play and Stop are always scoped to the game shown in this details page.
+  document.getElementById("detailsPlayBtn").onclick = () => {
+    const selectedId = state.currentGameId;
+    const currentGame = state.allGamesData.find(g => String(g.id) === String(selectedId));
+    if (!currentGame) return;
+    const live = liveSessions.get(selectedId);
+    if (live) {
+      if (live.phase !== 'running') return;
+      const btn = document.getElementById("detailsPlayBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('play-btn-stopping');
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t("stopping", userSettings.lang === "ar" ? "جاري الإيقاف..." : "Stopping...")}`;
       }
       window.api.forceStopGame(currentGame.id);
       return;
     }
-
-    if (!state.currentGameExePath) return;
-    const currentGame = state.allGamesData.find(
-      (g) => g.id === state.currentGameId,
-    );
-    if (!currentGame) return;
-
-    console.log(`[FRONTEND] ▶️ Launching: ${currentGame.name}`);
-    session.startTime = Date.now();
-    state.isGameRunning = true;
-    session.isHandlingStop = false;
-
-    const playBtn = document.getElementById("detailsPlayBtn");
-    if (playBtn) {
-      playBtn.classList.add("play-btn-running");
-      playBtn.innerHTML = `<i class="fa-solid fa-stop"></i> ${userSettings.lang === "ar" ? "إيقاف" : "Stop"}`;
-    }
-
+    if (!state.currentGameExePath || !liveSessions.launch(selectedId)) return;
+    refreshVisibleSession();
     const showFPS = localStorage.getItem("showFPS") === "true";
-    window.api.launchGame(
-      currentGame.path,
-      showFPS,
-      currentGame.arguments || "",
-      currentGame.id,
-      currentGame.name,
-    );
-
-    const timerContainer = document.getElementById("sessionTimerContainer");
-    if (timerContainer) timerContainer.style.display = "flex";
+    window.api.launchGame(currentGame.path, showFPS, currentGame.arguments || "", currentGame.id, currentGame.name);
   };
 
-  // Game events
-  if (window.api.removeGameStoppedListener)
-    window.api.removeGameStoppedListener();
+  // Backend events carry gameId + sessionId. Never change another game's UI
+  // or timer, even when the user opens a different details page mid-session.
+  if (window.api.removeGameStoppedListener) window.api.removeGameStoppedListener();
   if (window.api.removeGameErrorListener) window.api.removeGameErrorListener();
 
-  window.api.onGameStopped(async (data) => {
-    console.log(
-      `[FRONTEND] 🛑 game:stopped → gameId: ${data.gameId}, elapsed: ${data.elapsed}s`,
-    );
-    const currentGame = state.allGamesData.find(
-      (g) => String(g.id) === String(data.gameId),
-    );
-    if (currentGame) await handleGameStop(currentGame.name, data.elapsed);
+  window.api.onGameStopped(async data => {
+    const finished = liveSessions.stop(data);
+    if (!finished) return; // Duplicate or delayed stop from a stale session.
+    refreshVisibleSession();
+    const game = state.allGamesData.find(g => String(g.id) === String(data.gameId));
+    if (!game) return;
+    try {
+      await handleGameStop(game.name, data.elapsed, data.gameId, data.sessionId);
+    } catch (error) {
+      console.error('[FRONTEND] Session finalization failed:', error);
+    }
   });
 
-  window.api.onGameError((data) => {
-    console.error(`[FRONTEND] Launch error: ${data.message}`);
-    // Ignore a delayed failure from another game/details page.
-    if (data.gameId != null && String(data.gameId) !== String(state.currentGameId)) return;
-    showToast("error", data.message || "Launch failed", "", 7000);
-    // Launch errors are NOT completed play sessions. In particular, never
-    // call handleGameStop() here: it would write a false 0-second Last Played.
-    state.isGameRunning = false;
-    resetSession();
-    const timerContainer = document.getElementById("sessionTimerContainer");
-    if (timerContainer) timerContainer.style.display = "none";
-    const pauseButton = document.getElementById("pauseTimerBtn");
-    if (pauseButton) pauseButton.style.display = "none";
-    const playButton = document.getElementById("detailsPlayBtn");
-    if (playButton) {
-      playButton.disabled = false;
-      playButton.style.cssText = "";
-      playButton.classList.remove("play-btn-running", "play-btn-stopping", "play-btn-securing");
-      playButton.innerHTML = `<i class="fa-solid fa-play"></i> ${t("btn_play", userSettings.lang === "ar" ? "إلعب الآن" : "Play")}`;
-    }
+  window.api.onGameError(data => {
+    liveSessions.failed(data); // Never clears an established running session.
+    refreshVisibleSession();
+    if (String(data?.gameId) !== String(state.currentGameId)) return;
+    showToast('error', data.message || 'Launch failed', '', 7000);
   });
 
   // Folder button
@@ -207,45 +176,41 @@ export function initDetails() {
     };
   }
 
-  // Pause/Resume button stays in sync even when the native overlay changes it.
+  // A single source of truth for all running games: the backend's
+  // per-game Map, mirrored here by gameId and immutable session identity.
   const pauseBtn = document.getElementById('pauseTimerBtn');
-  let timerPaused = false;
-  function paintTimerState(paused) {
-      timerPaused = !!paused;
-      if (pauseBtn) pauseBtn.innerHTML = timerPaused
-        ? '<i class="fa-regular fa-circle-play"></i>'
-        : '<i class="fa-regular fa-circle-pause"></i>';
-  }
-  window.api.onGameStarted(() => {
-      if (pauseBtn) pauseBtn.style.display = 'flex';
-      paintTimerState(false);
+  window.api.onGameStarted(data => {
+    if (liveSessions.started(data)) refreshVisibleSession();
   });
-  window.api.onGameStopped(() => {
-      if (pauseBtn) pauseBtn.style.display = 'none';
-  });
-  window.api.onTimerState?.(({ gameId, paused }) => {
-      if (String(gameId) === String(state.currentGameId)) paintTimerState(paused);
+  window.api.onTimerState?.(data => {
+    if (liveSessions.timerState(data) && String(data.gameId) === String(state.currentGameId)) refreshVisibleSession();
   });
   if (pauseBtn) pauseBtn.onclick = async () => {
-      if (!state.isGameRunning || state.currentGameId == null) return;
-      pauseBtn.disabled = true;
-      try {
-          if (timerPaused) await window.api.resumeTimer(state.currentGameId);
-          else await window.api.pauseTimer(state.currentGameId);
-          // The backend game:timer-state event is authoritative.
-      } finally { pauseBtn.disabled = false; }
+    const targetId = state.currentGameId;
+    const current = liveSessions.get(targetId);
+    if (!current || current.phase !== 'running') return;
+    pauseBtn.disabled = true;
+    try {
+      if (current.paused) await window.api.resumeTimer(targetId);
+      else await window.api.pauseTimer(targetId);
+    } finally {
+      // A pending timer IPC request must not re-enable a different game's UI.
+      if (String(targetId) === String(state.currentGameId)) refreshVisibleSession();
+    }
   };
-
-  // Listen to backend ticks to update timer display
   if (window.api.onGameTick) {
-    window.api.onGameTick((data) => {
-      const timerValue = document.getElementById("sessionTimerValue");
-      if (timerValue && data.elapsed !== undefined) {
-        timerValue.innerText = formatTime(data.elapsed);
-      }
+    window.api.onGameTick(data => {
+      if (liveSessions.tick(data) && String(data.gameId) === String(state.currentGameId)) refreshVisibleSession();
     });
-  } else {
-    console.warn("[FRONTEND] onGameTick not available");
+  }
+  // Recover already-running games after renderer reload without launching them
+  // again. A late snapshot may add missing sessions but never overwrites a
+  // newer in-memory session identity.
+  if (typeof window.api.getRunningGameSessions === 'function') {
+    void window.api.getRunningGameSessions().then(rows => {
+      liveSessions.reconcile(rows);
+      refreshVisibleSession();
+    }).catch(error => console.warn('[FRONTEND] Active sessions unavailable:', error.message));
   }
 
   // Read More button

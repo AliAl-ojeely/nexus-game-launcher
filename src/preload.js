@@ -29,7 +29,9 @@ contextBridge.exposeInMainWorld('api', {
     // ── Game Launcher ─────────────────────────────────────────────────────────
     launchGame: (path, showFPS, args, id, name) => ipcRenderer.send('game:launch', path, showFPS, args, id, name),
     forceStopGame: (id) => ipcRenderer.send('game:force-stop', id),
+    getRunningGameSessions: () => ipcRenderer.invoke('game:get-running-sessions'),
     overlayGetConfig: () => ipcRenderer.invoke('overlay:get-config'),
+    overlaySyncTheme: value => ipcRenderer.invoke('overlay:sync-theme', value),
     overlayGetPreviewHtml: () => ipcRenderer.invoke('overlay:preview-html'),
     overlaySaveConfig: config => ipcRenderer.invoke('overlay:save-config', config),
 

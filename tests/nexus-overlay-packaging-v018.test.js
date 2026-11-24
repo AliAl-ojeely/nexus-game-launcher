@@ -12,9 +12,18 @@ test('Windows resources are included only on Windows and outside ASAR', () => {
     const lock = JSON.parse(load('package-lock.json'));
     assert.equal(lock.version, pkg.version);
     assert.equal(lock.packages[''].version, pkg.version);
-    assert.deepEqual(pkg.build.win.extraResources, [{from:'build/overlay-runtime',to:'overlay-runtime',filter:['**/*']}]);
+    const runtimes = [
+        {from:'build/overlay-runtime',to:'overlay-runtime',filter:['**/*']},
+        {from:'build/steam-pics-runtime',to:'steam-pics-runtime',filter:['**/*']}
+    ];
+    assert.deepEqual(pkg.build.win.extraResources, runtimes);
     assert.ok(pkg.build.files.includes('overlay/poc/**/*'));
-    assert.ok(!pkg.build.extraResources.some(item => item.from === 'build/overlay-runtime'));
+    for (const runtime of runtimes) {
+        assert.ok(!pkg.build.extraResources.some(item => item.from === runtime.from || item.to === runtime.to));
+        for (const platform of ['linux','mac']) {
+            assert.ok(!(pkg.build[platform]?.extraResources || []).some(item => item.from === runtime.from || item.to === runtime.to));
+        }
+    }
 });
 
 test('CI builds x64 and x86 native hooks and a frozen Python helper', () => {
