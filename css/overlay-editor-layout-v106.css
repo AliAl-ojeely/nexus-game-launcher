@@ -168,3 +168,37 @@
   #settingsArea #settings-overlay-panel .nx-preview-extras > .overlay-options-group:has(#overlayBgStyle) { grid-column:1; }
   #settingsArea #settings-overlay-panel .overlay-preview-heading { flex-wrap:wrap; }
 }
+
+/* NEXUS_SETTINGS_SCROLL_FOCUS_V108_START
+   Keep the Settings header/tabs/footer outside the only vertical scroller.
+   overflow:hidden still accepts focus-driven programmatic scrolling in Chromium.
+   Anchor invisible radio controls to their own cards, not the page transform. */
+#settingsArea.page-area,
+#settingsArea .settings-shell,
+#settingsArea #settings-overlay-panel > .settings-section {
+  overflow: clip;
+}
+#settingsArea #settingsPanelScroll {
+  position: relative;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+#settingsArea #settings-overlay-panel .overlay-size-choice,
+#settingsArea #settings-overlay-panel .nx-window-scale-choice,
+#settingsArea #settings-overlay-panel .nexus-concept-choice,
+#settingsArea #settings-overlay-panel .nexus-corner-grid label {
+  position: relative;
+}
+#settingsArea #settings-overlay-panel .overlay-size-choice > input[type="radio"],
+#settingsArea #settings-overlay-panel .nx-window-scale-choice > input[type="radio"],
+#settingsArea #settings-overlay-panel .nexus-concept-choice > input[type="radio"],
+#settingsArea #settings-overlay-panel .nexus-corner-grid label > input[type="radio"] {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+/* NEXUS_SETTINGS_SCROLL_FOCUS_V108_END */

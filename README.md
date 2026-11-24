@@ -6,7 +6,7 @@
 
 **Your PC game library, launch controls, artwork, playtime, and save backups — in one desktop app.**
 
-[![Version](https://img.shields.io/badge/Source%20version-2.8.0-9146ff?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/Source%20version-2.8.1-9146ff?style=flat-square)](package.json)
 [![Electron](https://img.shields.io/badge/Electron-45-4787d7?logo=electron&style=flat-square)](https://www.electronjs.org/)
 [![Windows](https://img.shields.io/badge/Primary%20platform-Windows-166bc0?logo=windows&style=flat-square)](#platform-support)
 [![Languages](https://img.shields.io/badge/UI-English%20%7C%20Arabic-27ae93?style=flat-square)](#appearance-and-localization)
@@ -20,7 +20,7 @@
 </div>
 
 > [!NOTE]
-> **Source version: 2.8.0.** This README describes the current `main` branch and its feature-release improvements. A downloaded installer may not yet include every feature described here. Check [Releases](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for the features and assets of a particular published build.
+> **Source version: 2.8.1.** This maintenance hotfix keeps the v2.8.0 features and fixes Settings scroll/focus behavior when changing Modal Overlay options. A downloaded installer may not yet include every feature described here. Check [Releases](https://github.com/AliAl-ojeely/nexus-game-launcher/releases) for the features and assets of a particular published build.
 >
 > Some screenshots in this repository were captured from earlier interface revisions; the application UI may now look different.
 

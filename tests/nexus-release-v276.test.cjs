@@ -9,10 +9,14 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('new release version is consistent with lockfile and documentation', () => {
     const pkg = JSON.parse(read('package.json'));
     const lock = JSON.parse(read('package-lock.json'));
-    assert.equal(pkg.version, '2.8.0');
+    assert.equal(pkg.version, '2.8.1');
     assert.equal(lock.version, pkg.version);
     assert.equal(lock.packages[''].version, pkg.version);
-    assert.match(read('.github/release-notes/v2.8.0.md'), /experimental/i);
+    assert.match(read('.github/release-notes/v2.8.1.md'), /experimental/i);
+    assert.ok(read('index.html').includes('<span class="version-badge">v2.8.1</span>'));
+    assert.ok(read('index.html').includes('>version 2.8.1</p>'));
+    assert.ok(read('README.md').includes('Source version: 2.8.1.'));
+    assert.ok(read('.github/workflows/release.yml').includes("pkg.version !== '2.8.1'"));
 });
 test('manual publish opt-in only after successful build matrix and from main', () => {
     const yml = read('.github/workflows/release.yml');
