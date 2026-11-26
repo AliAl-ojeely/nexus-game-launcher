@@ -97,7 +97,8 @@ function getDailyStats(gameName, periodDays) {
     const sessions = readSessions();
     const now = Date.now();
     const cutoff = now - (periodDays * 24 * 60 * 60 * 1000);
-    const filtered = sessions.filter(s => s.gameName === gameName && s.endTime && s.endTime >= cutoff);
+    // NEXUS_OVERALL_STATS_V100: null explicitly selects all completed game sessions.
+    const filtered = sessions.filter(s => (gameName === null || s.gameName === gameName) && s.endTime && s.endTime >= cutoff);
     const grouped = {};
     for (const s of filtered) {
         const date = new Date(s.endTime).toISOString().split('T')[0];
@@ -108,6 +109,7 @@ function getDailyStats(gameName, periodDays) {
     return Object.entries(grouped).map(([date, data]) => ({
         date,
         count: data.count,
+        totalDuration: data.totalDuration,
         avgDuration: data.totalDuration / data.count
     })).sort((a, b) => a.date.localeCompare(b.date));
 }

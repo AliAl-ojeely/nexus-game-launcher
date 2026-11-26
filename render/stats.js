@@ -5,6 +5,9 @@ import { showToast } from './details-components.js';
 
 let currentGame = null;
 let currentPeriodDays = 1;
+let statsRefreshRevision = 0;
+let lastMainGame;
+let lastMainDays;
 let statsChart = null;
 let weekdayChart = null;
 let hourChart = null;
@@ -65,6 +68,7 @@ async function loadGameList() {
         const div = document.createElement('div');
         div.className = 'stats-game-item';
         div.setAttribute('data-game', game.name);
+        if (currentGame === game.name) div.classList.add('active');
 
         div.innerHTML = `
             ${logoUrl ? `<img src="${logoUrl}" class="stats-game-logo" onerror="this.style.display='none'">` : '<div class="stats-game-logo" style="background:var(--accent);"></div>'}
@@ -78,7 +82,7 @@ async function loadGameList() {
             document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
             div.classList.add('active');
             currentGame = game.name;
-            refreshAllStats();
+            void refreshStats();
         });
 
         const deleteBtn = div.querySelector('.delete-stat-btn');
@@ -105,11 +109,10 @@ async function loadGameList() {
 
                     if (currentGame === game.name) {
                         currentGame = null;
-                        const overallBtn = document.getElementById('overallStatsBtn');
-                        if (overallBtn) overallBtn.click();
                     }
 
                     await loadGameList();
+                    void refreshStats();
                 } catch (err) {
                     console.error('[FRONTEND] Error deleting stats:', err);
                     deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
@@ -124,127 +127,90 @@ async function loadGameList() {
 }
 
 // -----------------------------------------------------------------------------
-// Refresh all stats when a game is selected
+// Refresh the selected statistics scope (all games or one game)
 // -----------------------------------------------------------------------------
-async function refreshAllStats() {
-    // Hide overall‑only containers
-    const doughnutContainer = document.getElementById('doughnutChartContainer');
-    if (doughnutContainer) doughnutContainer.style.display = 'none';
-    const doughnutDivider = document.getElementById('dividerDoughnut');
-    if (doughnutDivider) doughnutDivider.style.display = 'none';
-
-    // Show game‑specific containers
-    const lineContainer = document.getElementById('monthlyLineChartContainer');
-    if (lineContainer) lineContainer.style.display = 'block';
-    const lineDivider = document.getElementById('dividerMonthlyLine');
-    if (lineDivider) lineDivider.style.display = 'block';
-
-    // Show daily circles container and its divider
-    const dailyCircles = document.getElementById('statsDailyCircles');
-    if (dailyCircles) dailyCircles.style.display = 'block';
-    const circlesDivider = document.getElementById('dividerDailyCircles');
-    if (circlesDivider) circlesDivider.style.display = 'block';
-
-    // Show cumulative chart (per‑game) with its divider
-    const cumContainer = document.getElementById('cumulativeChartContainer');
-    const cumDivider = document.getElementById('dividerCumulative');
-    if (cumContainer) cumContainer.style.display = 'block';
-    if (cumDivider) cumDivider.style.display = 'block';
-    await loadCumulativeChart(currentGame, currentPeriodDays);
-
-    // Hide library growth and heatmap (overall only)
-    const growthContainer = document.getElementById('growthChartContainer');
-    const heatmapContainer = document.getElementById('heatmapContainer');
-    if (growthContainer) growthContainer.style.display = 'none';
-    if (heatmapContainer) heatmapContainer.style.display = 'none';
-    const growthDivider = document.getElementById('dividerGrowth');
-    const heatmapDivider = document.getElementById('dividerHeatmap');
-    if (growthDivider) growthDivider.style.display = 'none';
-    if (heatmapDivider) heatmapDivider.style.display = 'none';
-
-    // Load all data
-    await loadMonthlyLineChart(currentGame);
-    await updateStatsForGame(currentGame, currentPeriodDays);
-    await loadExtraMetrics(currentGame);
-    await loadSessionHistory(currentGame);
-    await loadWeekdayChart(currentGame);
-    await loadHourChart(currentGame);
-    await loadTopGamesChart(currentPeriodDays);
-    await loadMonthlyChart();
-    await loadDailyCircles(currentGame, currentPeriodDays);
+// NEXUS_OVERALL_STATS_V100: one selection, one completed-session snapshot.
+// The existing IPC channel accepts null for the aggregate scope. All three
+// cards and the primary chart share the same period and duration totals.
+function clearMainStats() {
+    if (statsChart) { statsChart.destroy(); statsChart = null; }
+    for (const id of ['statTotalPlaytime', 'statPlayCount', 'statAvgSession']) {
+        document.getElementById(id).innerText = '—';
+    }
 }
 
-// -----------------------------------------------------------------------------
-// Update main stat cards for a specific game
-// -----------------------------------------------------------------------------
-async function updateStatsForGame(gameName, days) {
-    const stats = await window.api.getGameStats(gameName, days);
-    document.getElementById('statTotalPlaytime').innerText = formatDuration(stats.totalDuration);
-    document.getElementById('statPlayCount').innerText = stats.playCount;
-    document.getElementById('statAvgSession').innerText = formatDuration(stats.avgDuration);
-    await updateDailyChart(gameName, days);
+function refreshStats() {
+    const gameName = currentGame;
+    const days = currentPeriodDays;
+    const revision = ++statsRefreshRevision;
+    if (lastMainGame !== gameName || lastMainDays !== days) {
+        lastMainGame = gameName;
+        lastMainDays = days;
+        clearMainStats();
+    }
+    return refreshStatsView(gameName, days, revision).catch(error => {
+        if (revision === statsRefreshRevision) console.error('[NEXUS STATS] Refresh failed:', error);
+    });
 }
 
-// -----------------------------------------------------------------------------
-// Overall stats (no game selected)
-// -----------------------------------------------------------------------------
-async function updateOverallStats(days) {
-    // Hide game‑specific containers
-    const lineContainer = document.getElementById('monthlyLineChartContainer');
-    if (lineContainer) lineContainer.style.display = 'none';
-    const lineDivider = document.getElementById('dividerMonthlyLine');
-    if (lineDivider) lineDivider.style.display = 'none';
+async function refreshStatsView(gameName, days, revision) {
+    const overall = gameName === null;
+    // Preserve the existing overall-only and game-only panels and dividers.
+    for (const id of ['doughnutChartContainer', 'dividerDoughnut', 'growthChartContainer',
+        'dividerGrowth', 'heatmapContainer', 'dividerHeatmap']) setDivider(id, overall);
+    for (const id of ['monthlyLineChartContainer', 'dividerMonthlyLine', 'statsDailyCircles',
+        'dividerDailyCircles', 'dividerCumulative']) setDivider(id, !overall);
+    setDivider('cumulativeChartContainer', true);
 
-    // Hide daily circles container and its divider
-    const dailyCircles = document.getElementById('statsDailyCircles');
-    if (dailyCircles) dailyCircles.style.display = 'none';
-    const circlesDivider = document.getElementById('dividerDailyCircles');
-    if (circlesDivider) circlesDivider.style.display = 'none';
+    try {
+        await updateMainStats(gameName, days, revision);
+    } catch (error) {
+        if (revision === statsRefreshRevision) clearMainStats();
+        throw error;
+    }
+    // Each loader checks its own revision after IPC, before touching the DOM.
+    // Stop obsolete refresh chains without changing auxiliary chart time ranges.
+    const steps = overall ? [
+        () => loadCumulativeChart(null, days, revision),
+        () => loadGrowthChart(revision), () => loadHeatmap(revision),
+        () => loadTopGamesChart(days, revision), () => loadExtraMetrics(null, revision),
+        () => loadSessionHistory(null, revision), () => loadWeekdayChart(null, revision),
+        () => loadHourChart(null, revision), () => loadMonthlyChart(revision),
+        () => loadDoughnutChart(days, revision)
+    ] : [
+        () => loadCumulativeChart(gameName, days, revision),
+        () => loadMonthlyLineChart(gameName, revision), () => loadExtraMetrics(gameName, revision),
+        () => loadSessionHistory(gameName, revision), () => loadWeekdayChart(gameName, revision),
+        () => loadHourChart(gameName, revision), () => loadTopGamesChart(days, revision),
+        () => loadMonthlyChart(revision), () => loadDailyCircles(gameName, days, revision)
+    ];
+    for (const load of steps) {
+        if (revision !== statsRefreshRevision) return;
+        await load();
+    }
+}
 
-    // Show overall‑only containers
-    const doughnutContainer = document.getElementById('doughnutChartContainer');
-    if (doughnutContainer) doughnutContainer.style.display = 'block';
-    const doughnutDivider = document.getElementById('dividerDoughnut');
-    if (doughnutDivider) doughnutDivider.style.display = 'block';
-
-    // Show overall‑only charts (cumulative, growth, heatmap)
-    const cumContainer = document.getElementById('cumulativeChartContainer');
-    const cumDivider = document.getElementById('dividerCumulative');
-    if (cumContainer) cumContainer.style.display = 'block';
-    if (cumDivider) cumDivider.style.display = 'none'; // hide divider for overall
-    await loadCumulativeChart(null, days);
-
-    const growthContainer = document.getElementById('growthChartContainer');
-    if (growthContainer) growthContainer.style.display = 'block';
-    const growthDivider = document.getElementById('dividerGrowth');
-    if (growthDivider) growthDivider.style.display = 'block';
-    await loadGrowthChart();
-
-    const heatmapContainer = document.getElementById('heatmapContainer');
-    if (heatmapContainer) heatmapContainer.style.display = 'block';
-    const heatmapDivider = document.getElementById('dividerHeatmap');
-    if (heatmapDivider) heatmapDivider.style.display = 'block';
-    await loadHeatmap();
-
-    // Load overall data
-    const stats = await window.api.getOverallStats(days);
-    document.getElementById('statTotalPlaytime').innerText = formatDuration(stats.totalPlaytime);
-    document.getElementById('statPlayCount').innerText = stats.totalSessions;
-    document.getElementById('statAvgSession').innerText = formatDuration(stats.avgSession);
-
-    await loadTopGamesChart(days);
-    await loadExtraMetrics(null);
-    await loadSessionHistory(null);
-    await loadWeekdayChart(null);
-    await loadHourChart(null);
-    await loadMonthlyChart();
-    await loadDoughnutChart(days);
+async function updateMainStats(gameName, days, revision) {
+    const daily = await window.api.getDailyStats(gameName, days);
+    if (revision !== statsRefreshRevision) return;
+    if (!Array.isArray(daily) || daily.some(row => !row || typeof row.date !== 'string' ||
+        !Number.isSafeInteger(row.count) || row.count < 1 ||
+        !Number.isFinite(row.totalDuration) || row.totalDuration < 0 ||
+        !Number.isFinite(row.avgDuration) || row.avgDuration < 0)) {
+        throw new Error('Invalid daily statistics response');
+    }
+    const count = daily.reduce((sum, row) => sum + row.count, 0);
+    const seconds = daily.reduce((sum, row) => sum + row.totalDuration, 0);
+    renderDailyChart(daily);
+    document.getElementById('statTotalPlaytime').innerText = formatDuration(seconds);
+    document.getElementById('statPlayCount').innerText = count;
+    document.getElementById('statAvgSession').innerText = formatDuration(count ? seconds / count : 0);
 }
 
 // -----------------------------------------------------------------------------
 // Extra metrics (cards below main stats)
 // -----------------------------------------------------------------------------
-async function loadExtraMetrics(gameName) {
+async function loadExtraMetrics(gameName, revision) {
     const longest = await window.api.getLongestSession(gameName);
     const shortest = await window.api.getShortestSession(gameName);
     const weekdayData = await window.api.getPlaytimeByWeekday();
@@ -252,6 +218,7 @@ async function loadExtraMetrics(gameName) {
     const streak = await window.api.getLongestStreak();
     const uniqueGames = await window.api.getUniqueGamesCount();
     const firstPlayed = await window.api.getFirstPlayedDate();
+    if (revision !== statsRefreshRevision) return;
 
     document.getElementById('longestSession').innerText = longest ? `${formatDuration(longest.durationSeconds)} (${longest.gameName})` : '-';
     document.getElementById('shortestSession').innerText = shortest ? `${formatDuration(shortest.durationSeconds)} (${shortest.gameName})` : '-';
@@ -267,8 +234,9 @@ async function loadExtraMetrics(gameName) {
 // -----------------------------------------------------------------------------
 // Session history table
 // -----------------------------------------------------------------------------
-async function loadSessionHistory(gameName) {
+async function loadSessionHistory(gameName, revision) {
     let sessions = await window.api.getAllSessions();
+    if (revision !== statsRefreshRevision) return;
     if (gameName) sessions = sessions.filter(s => s.gameName === gameName);
     const recent = sessions.slice(-20).reverse();
     const tbody = document.getElementById('sessionHistoryBody');
@@ -284,7 +252,7 @@ async function loadSessionHistory(gameName) {
 // -----------------------------------------------------------------------------
 // Weekday chart
 // -----------------------------------------------------------------------------
-async function loadWeekdayChart(gameName) {
+async function loadWeekdayChart(gameName, revision) {
     let data = await window.api.getPlaytimeByWeekday();
     if (gameName) {
         const sessions = (await window.api.getAllSessions()).filter(s => s.gameName === gameName);
@@ -297,6 +265,7 @@ async function loadWeekdayChart(gameName) {
         }
         data = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => ({ day, playCount: counts[i], totalSeconds: counts[i] }));
     }
+    if (revision !== statsRefreshRevision) return;
     const labels = data.map(d => t(`weekday_${d.day.toLowerCase()}`, d.day));
     const playCounts = data.map(d => d.playCount);
     if (weekdayChart) weekdayChart.destroy();
@@ -316,7 +285,7 @@ async function loadWeekdayChart(gameName) {
 // -----------------------------------------------------------------------------
 // Hour chart
 // -----------------------------------------------------------------------------
-async function loadHourChart(gameName) {
+async function loadHourChart(gameName, revision) {
     let hourData = await window.api.getPlaytimeByHour();
     if (gameName) {
         const sessions = (await window.api.getAllSessions()).filter(s => s.gameName === gameName);
@@ -329,6 +298,7 @@ async function loadHourChart(gameName) {
         }
         hourData = hours;
     }
+    if (revision !== statsRefreshRevision) return;
     const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
     if (hourChart) hourChart.destroy();
     const ctx = document.getElementById('hourChart').getContext('2d');
@@ -347,8 +317,9 @@ async function loadHourChart(gameName) {
 // -----------------------------------------------------------------------------
 // Top games chart
 // -----------------------------------------------------------------------------
-async function loadTopGamesChart(periodDays) {
+async function loadTopGamesChart(periodDays, revision) {
     const topGames = await window.api.getTopGames(5, periodDays);
+    if (revision !== statsRefreshRevision) return;
     const labels = topGames.map(g => g.name);
     const playtimes = topGames.map(g => g.totalSeconds / 60);
     if (topGamesChart) topGamesChart.destroy();
@@ -366,10 +337,9 @@ async function loadTopGamesChart(periodDays) {
 }
 
 // -----------------------------------------------------------------------------
-// Daily chart (for selected game)
+// Daily chart (selected game or all games)
 // -----------------------------------------------------------------------------
-async function updateDailyChart(gameName, days) {
-    const daily = await window.api.getDailyStats(gameName, days);
+function renderDailyChart(daily) {
     if (statsChart) statsChart.destroy();
     const ctx = document.getElementById('statsChart').getContext('2d');
     const labels = daily.map(d => d.date);
@@ -388,6 +358,12 @@ async function updateDailyChart(gameName, days) {
         options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
+            plugins: {
+                tooltip: { callbacks: { afterBody(items) {
+                    const row = daily[items[0]?.dataIndex];
+                    return row ? `${t('total_playtime_minutes', 'Playtime (minutes)')}: ${(row.totalDuration / 60).toFixed(1)}` : '';
+                } } }
+            },
             scales: {
                 y: { beginAtZero: true, title: { display: true, text: t('play_count', 'Plays') }, grid: { color: gridColor } },
                 y1: { position: 'right', title: { text: t('avg_minutes', 'Avg Minutes') }, grid: { drawOnChartArea: false }, beginAtZero: true }
@@ -399,8 +375,9 @@ async function updateDailyChart(gameName, days) {
 // -----------------------------------------------------------------------------
 // Monthly chart
 // -----------------------------------------------------------------------------
-async function loadMonthlyChart() {
+async function loadMonthlyChart(revision) {
     const monthly = await window.api.getMonthlyPlaytime(12);
+    if (revision !== statsRefreshRevision) return;
     const labels = monthly.map(m => m.month);
     const data = monthly.map(m => Math.round(m.seconds / 60));
     const canvas = document.getElementById('monthlyChart');
@@ -421,8 +398,9 @@ async function loadMonthlyChart() {
     });
 }
 
-async function loadMonthlyLineChart(gameName) {
+async function loadMonthlyLineChart(gameName, revision) {
     const data = await window.api.getMonthlyStatsForGame(gameName, 12);
+    if (revision !== statsRefreshRevision) return;
     const labels = data.map(d => d.label);
     const hoursData = data.map(d => d.hours);
     const sessionCounts = data.map(d => d.count);
@@ -480,8 +458,9 @@ async function loadMonthlyLineChart(gameName) {
     console.log('[LineChart] Data received:', data);
 }
 
-async function loadCumulativeChart(gameName, days) {
+async function loadCumulativeChart(gameName, days, revision) {
     const data = await window.api.getCumulativeStats(gameName, days);
+    if (revision !== statsRefreshRevision) return;
     const labels = data.map(d => d.date);
     const hours = data.map(d => d.cumulativeHours);
     if (cumulativeChart) cumulativeChart.destroy();
@@ -508,8 +487,9 @@ async function loadCumulativeChart(gameName, days) {
     });
 }
 
-async function loadGrowthChart() {
+async function loadGrowthChart(revision) {
     const data = await window.api.getLibraryGrowth();
+    if (revision !== statsRefreshRevision) return;
     const labels = data.map(d => d.month);
     const counts = data.map(d => d.count);
     if (growthChart) growthChart.destroy();
@@ -532,8 +512,9 @@ async function loadGrowthChart() {
     });
 }
 
-async function loadHeatmap() {
+async function loadHeatmap(revision) {
     const data = await window.api.getHeatmapData();
+    if (revision !== statsRefreshRevision) return;
     const dateMap = new Map(data.map(d => [d.date, d.hours]));
     const now = new Date();
     const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -675,8 +656,7 @@ export async function initStatsPage() {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPeriodDays = parseInt(btn.dataset.days, 10);
-            if (currentGame) refreshAllStats();
-            else updateOverallStats(currentPeriodDays);
+            void refreshStats();
         });
     });
 
@@ -688,7 +668,7 @@ export async function initStatsPage() {
             document.querySelectorAll('.stats-game-item').forEach(el => el.classList.remove('active'));
             const circlesContainer = document.getElementById('dailyCirclesContainer');
             if (circlesContainer) circlesContainer.innerHTML = '';
-            updateOverallStats(currentPeriodDays);
+            void refreshStats();
         });
     }
 
@@ -702,24 +682,23 @@ export async function initStatsPage() {
     if (window.api && window.api.onGameStopped) {
         window.api.onGameStopped(async () => {
             await loadGameList();
-            if (currentGame) refreshAllStats();
-            else updateOverallStats(currentPeriodDays);
+            void refreshStats();
         });
     }
 
     // Watch theme changes to redraw charts
     const observer = new MutationObserver(() => {
-        if (currentGame) refreshAllStats();
-        else updateOverallStats(currentPeriodDays);
+        void refreshStats();
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
     // Initial load
-    updateOverallStats(currentPeriodDays);
+    void refreshStats();
 }
 
-async function loadDailyCircles(gameName, days) {
+async function loadDailyCircles(gameName, days, revision) {
     const dailyData = await window.api.getDailyPlaytimeForGame(gameName, days);
+    if (revision !== statsRefreshRevision) return;
     const container = document.getElementById('dailyCirclesContainer');
     if (!container) return;
     container.innerHTML = '';
@@ -804,8 +783,9 @@ function drawProgressCircle(ctx, percent, formattedTime, size) {
     ctx.fillText(formattedTime, centerX, centerY);
 }
 
-async function loadDoughnutChart(periodDays) {
+async function loadDoughnutChart(periodDays, revision) {
     const topGames = await window.api.getTopGames(5, periodDays);
+    if (revision !== statsRefreshRevision) return;
     const labels = topGames.map(g => g.name);
     const data = topGames.map(g => g.totalSeconds / 3600); // hours
     if (doughnutChart) doughnutChart.destroy();

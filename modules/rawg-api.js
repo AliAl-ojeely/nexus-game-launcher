@@ -1,114 +1,8 @@
-const axios = require("axios");
-const { titleScore, selectTitleMatch } = require('./asset-resolver');
+'use strict';
+const axios = require('axios');
 const secrets = require('./provider-credentials');
-const API_KEY = secrets.RAWG_API_KEY;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UTILS
-// ─────────────────────────────────────────────────────────────────────────────
-
-function extractYear(name) {
-    const match = name.match(/\b(19|20)\d{2}\b/);
-    return match ? match[0] : null;
-}
-
-function stripYear(name) {
-    return name.replace(/\b(19|20)\d{2}\d{2}\b/g, '').replace(/\b(19|20)\d{2}\b/g, '').replace(/\s+/g, ' ').trim();
-}
-
-function norm(s) {
-    return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function levenshtein(a, b) {
-    const dp = Array.from({ length: a.length + 1 }, (_, i) =>
-        Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-    );
-    for (let i = 1; i <= a.length; i++)
-        for (let j = 1; j <= b.length; j++)
-            dp[i][j] = a[i - 1] === b[j - 1]
-                ? dp[i - 1][j - 1]
-                : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    return dp[a.length][b.length];
-}
-
-const STOP_WORDS = new Set(['the', 'of', 'a', 'an', 'and', 'in', 'on', 'for', 'to']);
-
-function getSignificantWords(name) {
-    return (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
-}
-
-function wordOverlapRatio(resultName, queryName) {
-    const queryWords = getSignificantWords(queryName);
-    if (!queryWords.length) return 1;
-    const normResult = norm(resultName);
-    const matched = queryWords.filter(w => normResult.includes(norm(w)));
-    return matched.length / queryWords.length;
-}
-
-function pickBestMatch(results, originalName, cleanName, year) {
-    const target = norm(cleanName);
-    const originalLower = originalName.toLowerCase();
-
-    // Get significant words from original name (exclude stop words)
-    const querySignificant = getSignificantWords(originalName);
-
-    // Helper: check if a game name contains all significant words
-    function containsAllSignificant(gameName) {
-        const gameLower = gameName.toLowerCase();
-        return querySignificant.every(word => gameLower.includes(word));
-    }
-
-    // 1. Exact match on original name (case-insensitive)
-    const exactOriginal = results.find(g => g.name.toLowerCase() === originalLower);
-    if (exactOriginal) return exactOriginal;
-
-    // 2. Exact match on normalized name
-    const exactNorm = results.find(g => norm(g.name) === target);
-    if (exactNorm) return exactNorm;
-
-    // 3. Use a verified full-title identity before weaker token-overlap heuristics.
-    const strict = selectTitleMatch(cleanName, results, 0.85);
-    if (strict) return strict.item;
-
-    // 4. Filter by year if provided
-    let yearFiltered = results;
-    if (year) {
-        yearFiltered = results.filter(g => g.released && g.released.startsWith(year));
-        // Within same year, must contain all significant words
-        const yearMatches = yearFiltered.filter(g => containsAllSignificant(g.name));
-        if (yearMatches.length) {
-            // Sort by word overlap (higher better)
-            yearMatches.sort((a, b) => wordOverlapRatio(b.name, cleanName) - wordOverlapRatio(a.name, cleanName));
-            const bestYear = yearMatches[0];
-            if (wordOverlapRatio(bestYear.name, cleanName) >= 0.6) // stricter
-                return bestYear;
-        }
-    }
-
-    // 4. Prefer PC games with Metacritic, but require all significant words
-    const pcWithRating = results.filter(g => {
-        const hasPc = g.platforms?.some(p => p.platform?.slug === 'pc' || p.platform?.name === 'PC');
-        const hasMetacritic = g.metacritic && g.metacritic > 0;
-        return hasPc && hasMetacritic && containsAllSignificant(g.name);
-    });
-    if (pcWithRating.length) {
-        pcWithRating.sort((a, b) => levenshtein(norm(a.name), target) - levenshtein(norm(b.name), target));
-        const bestPc = pcWithRating[0];
-        if (wordOverlapRatio(bestPc.name, cleanName) >= 0.6)
-            return bestPc;
-    }
-
-    // 5. All results – must contain all significant words AND overlap >= 0.6
-    const viable = results.filter(g => containsAllSignificant(g.name) && wordOverlapRatio(g.name, cleanName) >= 0.6);
-    if (viable.length) {
-        viable.sort((a, b) => levenshtein(norm(a.name), target) - levenshtein(norm(b.name), target));
-        return viable[0];
-    }
-
-    console.warn(`[RAWG] No match for "${originalName}" – required significant words: [${querySignificant.join(', ')}]`);
-    return null;
-}
+const { lookupTitle, queryVariants, chooseRawg, exactRows, providerStatus, diagnostic, relatedCandidates } = require('./asset-search-identity-v063.cjs');
+const BASE = 'https://api.rawg.io/api/games';
 
 function extractYouTubeId(url) {
     if (!url) return null;
@@ -116,198 +10,146 @@ function extractYouTubeId(url) {
     return match ? match[1] : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN FETCH
-// ─────────────────────────────────────────────────────────────────────────────
+function steamId(data) {
+    const steam = data.stores?.find(s => s.store?.slug === 'steam' || s.store?.id === 1);
+    const match = /^https:\/\/store\.steampowered\.com\/app\/(\d{1,12})(?:\/|\?|$)/i.exec(steam?.url || '');
+    return match ? match[1] : null;
+}
 
-async function fetchGameDetails(name) {
+function requirements(data) {
+    const pc = data.platforms?.find(p => p.platform?.slug === 'pc');
+    return { minimum: pc?.requirements?.minimum || '', recommended: pc?.requirements?.recommended || '' };
+}
+
+function rating(data) {
+    return data.metacritic || data.metacritic_platforms?.find(p => p.platform?.slug === 'pc')?.metacritic ||
+        data.metacritic_platforms?.[0]?.metacritic || '';
+}
+
+function metadata(data, game, selection, requested) {
+    const original = selection.relation === 'base_game';
+    const trailerYouTubeId = extractYouTubeId(data.clip?.video) || extractYouTubeId(data.clip?.clip);
+    return {
+        name: data.name || game.name || '',
+        steamAppId: original ? null : steamId(data),
+        description: data.description_raw || '',
+        developer: data.developers?.map(d => d.name).join(', ') || '',
+        publisher: data.publishers?.map(p => p.name).join(', ') || '',
+        releaseDate: data.released || '',
+        metacritic: rating(data),
+        genres: data.genres?.map(g => g.name).join(', ') || '',
+        tags: data.tags?.filter(t => t.language === 'eng').map(t => t.name).slice(0, 8).join(', ') || '',
+        // The original catalog entry's PC requirements must not be represented as
+        // the requirements for a separately labeled unofficial port.
+        systemRequirements: original ? { minimum: '', recommended: '' } : requirements(data),
+        media: {
+            screenshots: game.short_screenshots?.map(s => s.image).filter(Boolean) || [],
+            trailerYouTubeId,
+            trailerThumbnail: data.clip?.preview || (trailerYouTubeId ? `https://img.youtube.com/vi/${trailerYouTubeId}/maxresdefault.jpg` : ''),
+            trailerSearchUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(data.name + ' official trailer')}`,
+        },
+        poster: data.background_image || '',
+        background: data.background_image_additional || data.background_image || '',
+        catalogIdentity: { provider: 'rawg', id: selection.id, name: data.name || game.name,
+            relation: selection.relation, releaseYear: selection.year, requestedYear: requested.year, edition: selection.edition || null },
+    };
+}
+
+async function fetchGameDetails(name, options = {}) {
+    const q = lookupTitle(name);
+    if (!q.key || q.conflict) { if (q.conflict) diagnostic(options, 'RAWG', 'conflicting_edition_intent'); return null; }
+    const key = options.apiKey === undefined ? secrets.RAWG_API_KEY : options.apiKey;
+    if (!key) { diagnostic(options, 'RAWG', 'missing_api_key'); return null; }
+    const http = options.http || axios;
+    const cfg = { timeout: 10000, maxRedirects: 0, maxContentLength: 4 * 1024 * 1024 };
+    const queries = queryVariants(name, [], 3);
+    const rows = [];
+    let complete = true;
+    // Always query the base title even when a year-qualified query returned
+    // unrelated games. A bounded secondary search is not gated on result count.
+    for (const search of queries) {
+        try {
+            const res = await http.get(BASE, { ...cfg, params: { key, search, page_size: 20, search_precise: true } });
+            if (!Array.isArray(res.data?.results)) { complete = false; continue; }
+            rows.push(...res.data.results);
+        } catch (error) {
+            complete = false;
+            const reason = providerStatus(error);
+            diagnostic(options, 'RAWG', reason);
+            if (['http_401', 'http_403', 'http_429'].includes(reason)) break;
+        }
+    }
+    // If precise queries did not resolve a title, try one broader catalog search.
+    // This expands discovery, not the criteria for automatic selection.
+    if (!exactRows(name, rows).length && complete) {
+        try {
+            const res = await http.get(BASE, { ...cfg, params: { key, search: q.base, page_size: 20 } });
+            if (!Array.isArray(res.data?.results)) complete = false;
+            else rows.push(...res.data.results);
+        } catch (error) { complete = false; diagnostic(options, 'RAWG', providerStatus(error)); }
+    }
+    // Edition labels are often absent from autocomplete. Inspect a bounded
+    // number of same-title catalog records, and reuse the selected details.
+    const hydrated = new Map();
+    if (q.edition && complete) {
+        const matching = exactRows(name, rows).filter(x => !q.year || !x.year || x.year === q.year);
+        if (matching.length > 4) complete = false;
+        else for (const item of matching) {
+            try {
+                const detail = await http.get(`${BASE}/${item.id}`, { ...cfg, params: { key } });
+                const data = detail.data;
+                const actual = exactRows(name, [data])[0];
+                if (!actual || actual.id !== item.id || (item.year && actual.year !== item.year)) { complete = false; break; }
+                hydrated.set(item.id, data);
+            } catch (error) { complete = false; diagnostic(options, 'RAWG', providerStatus(error)); break; }
+        }
+    }
+    const enriched = rows.map(row => hydrated.has(String(row.id)) ? { ...row, ...hydrated.get(String(row.id)) } : row);
+    const selection = chooseRawg(name, enriched, complete);
+    if (!selection) {
+        diagnostic(options, 'RAWG', q.edition || q.port ? 'edition_confirmation_required' : 'no_unambiguous_catalog_match',
+            { candidates: relatedCandidates(q, enriched) });
+        return null;
+    }
     try {
-        const year = extractYear(name);
-        const cleanName = stripYear(name);
-        const originalName = name.trim();
-
-        // ── Step 1: Search with original name (including year) if year exists ──
-        let results = [];
-        if (year) {
-            const searchWithYear = await axios.get('https://api.rawg.io/api/games', {
-                params: {
-                    key: API_KEY,
-                    search: originalName,
-                    page_size: 10,
-                    search_precise: true,
-                }
-            }).catch(() => null);
-            if (searchWithYear?.data?.results?.length) {
-                results = searchWithYear.data.results;
-                console.log(`[RAWG] Search with year returned ${results.length} results`);
-            }
+        const data = hydrated.get(selection.id) || (await http.get(`${BASE}/${selection.id}`, { ...cfg, params: { key } })).data;
+        // Validate the final response, rather than trusting only a search hit.
+        const actual = exactRows(name, [data])[0];
+        if (!actual || actual.id !== selection.id || (selection.year && actual.year !== selection.year)) {
+            diagnostic(options, 'RAWG', 'details_identity_mismatch'); return null;
         }
-
-        // ── Step 2: If no results, fallback to clean name (no year) ──────────
-        if (results.length === 0) {
-            const firstSearch = await axios.get('https://api.rawg.io/api/games', {
-                params: {
-                    key: API_KEY,
-                    search: cleanName,
-                    page_size: 10,
-                    search_precise: true,
-                }
-            }).catch(() => null);
-            if (firstSearch?.data?.results?.length) {
-                results = firstSearch.data.results;
-            }
-        }
-
-        // ── Step 3: If still less than 3 results, do a broader search ────────
-        if (results.length < 3) {
-            const secondSearch = await axios.get('https://api.rawg.io/api/games', {
-                params: {
-                    key: API_KEY,
-                    search: cleanName,
-                    page_size: 10,
-                    ordering: '-added',
-                }
-            }).catch(() => null);
-            if (secondSearch?.data?.results?.length) {
-                const existingIds = new Set(results.map(g => g.id));
-                const extra = secondSearch.data.results.filter(g => !existingIds.has(g.id));
-                results = [...results, ...extra];
-            }
-        }
-
-        if (!results.length) return null;
-
-        const game = pickBestMatch(results, originalName, cleanName, year);
-        if (!game || titleScore(cleanName, game.name) < 0.85) {
-            console.warn(`[RAWG] No high-confidence match for "${originalName}"`);
-            return null;
-        }
-
-        const details = await axios.get(`https://api.rawg.io/api/games/${game.id}`, {
-            params: { key: API_KEY }
-        });
-        const data = details.data;
-
-        const pcPlatform = data.platforms?.find(p => p.platform.slug === 'pc');
-        const systemRequirements = {
-            minimum: pcPlatform?.requirements?.minimum || '',
-            recommended: pcPlatform?.requirements?.recommended || ''
-        };
-
-        let metacritic = data.metacritic;
-        if (!metacritic && data.metacritic_platforms?.length) {
-            const pcMeta = data.metacritic_platforms.find(p => p.platform.slug === 'pc');
-            metacritic = pcMeta?.metacritic || data.metacritic_platforms[0].metacritic;
-        }
-
-        let trailerYouTubeId = null;
-        let trailerThumbnail = null;
-        if (data.clip) {
-            trailerYouTubeId = extractYouTubeId(data.clip.video) || extractYouTubeId(data.clip.clip);
-            trailerThumbnail = data.clip.preview || (trailerYouTubeId ? `https://img.youtube.com/vi/${trailerYouTubeId}/maxresdefault.jpg` : '');
-        }
-
-        const trailerSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(game.name + ' official trailer')}`;
-
-        let steamAppId = null;
-        if (data.stores) {
-            const steamStore = data.stores.find(s => s.store.slug === 'steam' || s.store.id === 1);
-            if (steamStore?.url) {
-                const match = steamStore.url.match(/\/app\/(\d+)/);
-                if (match) steamAppId = match[1];
-            }
-        }
-
-        console.log(`[RAWG] Match: "${data.name}" | metacritic:${metacritic} | year:${data.released?.slice(0, 4)} | steamAppId:${steamAppId}`);
-
-        return {
-            name: data.name || game.name || '',
-            steamAppId,
-            description: data.description_raw || '',
-            developer: data.developers?.map(d => d.name).join(', ') || '',
-            publisher: data.publishers?.map(p => p.name).join(', ') || '',
-            releaseDate: data.released || '',
-            metacritic: metacritic || '',
-            genres: data.genres?.map(g => g.name).join(', ') || '',
-            tags: data.tags?.filter(t => t.language === 'eng').map(t => t.name).slice(0, 8).join(', ') || '',
-            systemRequirements,
-            media: {
-                screenshots: game.short_screenshots?.map(s => s.image) || [],
-                trailerYouTubeId,
-                trailerThumbnail,
-                trailerSearchUrl
-            },
-            poster: data.background_image || '',
-            background: data.background_image_additional || data.background_image || ''
-        };
-
+        const verified = { ...selection, year: actual.year || selection.year };
+        if (q.year && verified.relation === 'exact_release' && verified.year !== q.year) return null;
+        diagnostic(options, 'RAWG', verified.relation, { releaseYear: verified.year, gameId: selection.id });
+        return metadata(data, selection.row, verified, q);
     } catch (error) {
-        console.error('[RAWG] API Error:', error.message);
+        diagnostic(options, 'RAWG', providerStatus(error));
         return null;
     }
 }
 
-// ── جلب بيانات RAWG عبر Steam AppID مباشرة (أدق من البحث بالاسم) ──────────
+// Preserve the legacy Steam-ID entry point, but require explicit same-AppID
+// evidence from the details response. This path never substitutes a name match.
 async function fetchGameDetailsBySteamId(steamAppId) {
+    const key = secrets.RAWG_API_KEY;
+    const wanted = String(steamAppId || '');
+    if (!key || !/^\d{1,12}$/.test(wanted)) return null;
+    const cfg = { timeout: 10000, maxRedirects: 0, maxContentLength: 4 * 1024 * 1024 };
     try {
-        const search = await axios.get('https://api.rawg.io/api/games', {
-            params: {
-                key: API_KEY,
-                stores: '1',
-                search: steamAppId,
-                page_size: 5,
-            }
-        });
-        const directSearch = await axios.get('https://api.rawg.io/api/games', {
-            params: {
-                key: API_KEY,
-                search: steamAppId,
-                page_size: 5,
-            }
-        }).catch(() => null);
-
-        let results = search.data?.results || [];
-        if (directSearch?.data?.results?.length) {
-            const existingIds = new Set(results.map(g => g.id));
-            results = [...results, ...directSearch.data.results.filter(g => !existingIds.has(g.id))];
+        const res = await axios.get(BASE, { ...cfg, params: { key, stores: '1', search: wanted, page_size: 5 } });
+        const direct = await axios.get(BASE, { ...cfg, params: { key, search: wanted, page_size: 5 } }).catch(() => null);
+        const ids = [...new Set([...(res.data?.results || []), ...(direct?.data?.results || [])].map(g => String(g.id)).filter(id => /^\d{1,12}$/.test(id)))].slice(0, 5);
+        for (const id of ids) {
+            const detail = await axios.get(`${BASE}/${id}`, { ...cfg, params: { key } });
+            const data = detail.data;
+            if (String(data?.id) === id && steamId(data) === wanted) return {
+                metacritic: rating(data), genres: data.genres?.map(g => g.name).join(', ') || '',
+                tags: data.tags?.filter(t => t.language === 'eng').map(t => t.name).slice(0, 8).join(', ') || '',
+                description: data.description_raw || '', systemRequirements: requirements(data),
+            };
         }
-        if (!results.length) return null;
-
-        const details = await axios.get(`https://api.rawg.io/api/games/${results[0].id}`, {
-            params: { key: API_KEY }
-        });
-        const data = details.data;
-
-        const steamStore = data.stores?.find(s => s.store.slug === 'steam' || s.store.id === 1);
-        if (steamStore?.url) {
-            const match = steamStore.url.match(/\/app\/(\d+)/);
-            if (match && match[1] === String(steamAppId)) {
-                console.log(`[RAWG] Found via Steam AppID ${steamAppId}: "${data.name}"`);
-                let metacritic = data.metacritic;
-                if (!metacritic && data.metacritic_platforms?.length) {
-                    const pcMeta = data.metacritic_platforms.find(p => p.platform.slug === 'pc');
-                    metacritic = pcMeta?.metacritic || data.metacritic_platforms[0].metacritic;
-                }
-                return {
-                    metacritic: metacritic || '',
-                    genres: data.genres?.map(g => g.name).join(', ') || '',
-                    tags: data.tags?.filter(t => t.language === 'eng').map(t => t.name).slice(0, 8).join(', ') || '',
-                    description: data.description_raw || '',
-                    systemRequirements: (() => {
-                        const pcPlatform = data.platforms?.find(p => p.platform.slug === 'pc');
-                        return {
-                            minimum: pcPlatform?.requirements?.minimum || '',
-                            recommended: pcPlatform?.requirements?.recommended || ''
-                        };
-                    })(),
-                };
-            }
-        }
-        return null;
-    } catch (err) {
-        console.warn('[RAWG] fetchGameDetailsBySteamId error:', err.message);
-        return null;
-    }
+    } catch (error) { diagnostic({}, 'RAWG', providerStatus(error)); }
+    return null;
 }
 
 module.exports = { fetchGameDetails, fetchGameDetailsBySteamId };

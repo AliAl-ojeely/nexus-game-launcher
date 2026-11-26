@@ -627,3 +627,76 @@
         transition: none;
     }
 }
+
+/* NEXUS_SHORTCUTS_WIDE_V1_BEGIN */
+#shortcutsModal > .shortcuts-modal {
+    box-sizing: border-box;
+    width: min(1120px, calc(100vw - 48px));
+    max-width: none;
+    max-height: 88vh;
+    padding: 28px 32px;
+}
+
+#shortcutsModal .shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 28px;
+    margin: 18px 0 0;
+}
+
+#shortcutsModal .shortcut-item {
+    min-width: 0;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 6px 0;
+}
+
+#shortcutsModal .shortcut-item kbd {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    min-width: 76px;
+    margin: 0;
+    white-space: nowrap;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+#shortcutsModal .shortcut-item:has(kbd + kbd) kbd {
+    min-width: 44px;
+}
+
+#shortcutsModal .shortcut-item span {
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 820px) {
+    #shortcutsModal > .shortcuts-modal {
+        width: min(620px, calc(100vw - 32px));
+        padding: 24px;
+    }
+    #shortcutsModal .shortcuts-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+    }
+}
+
+@media (max-width: 440px) {
+    #shortcutsModal > .shortcuts-modal {
+        width: calc(100vw - 24px);
+        padding: 18px;
+    }
+    #shortcutsModal .shortcut-item {
+        gap: 8px;
+    }
+    #shortcutsModal .shortcut-item kbd {
+        min-width: 56px;
+        padding-inline: 6px;
+    }
+    #shortcutsModal .shortcut-item:has(kbd + kbd) kbd {
+        min-width: 36px;
+    }
+}
+/* NEXUS_SHORTCUTS_WIDE_V1_END */

@@ -126,7 +126,8 @@ function trustedArtworkHost(value) {
     if (!validHttpUrl(value)) return false;
     try {
         const host = new URL(value).hostname.toLowerCase();
-        return host === 'steamgriddb.com' || host.endsWith('.steamgriddb.com') ||
+        return host === 'media.rawg.io' ||
+            host === 'steamgriddb.com' || host.endsWith('.steamgriddb.com') ||
             host === 'steamstatic.com' || host.endsWith('.steamstatic.com') ||
             host === 'steamusercontent.com' || host.endsWith('.steamusercontent.com');
     } catch { return false; }
